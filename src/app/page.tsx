@@ -521,7 +521,7 @@ export default function Home() {
                   {/* FAQ Section */}
           <div className="mt-24">
           <h2 className="text-2xl font-bold text-center mb-8 flex items-center justify-center gap-3">
-          <span className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full text-lg font-semibold">&#10067;</span>
+            <span className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full text-lg font-semibold">?</span>
           Frequently Asked Questions
         </h2>
           <div className="max-w-4xl mx-auto space-y-4">
