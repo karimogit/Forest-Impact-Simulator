@@ -259,9 +259,26 @@ export default function Home() {
         )}
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <div className="bg-white border border-primary/20 rounded-xl p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center justify-center w-10 h-10 bg-primary text-white rounded-full text-lg">1??</div>
+            <div className="bg-white border border-primary/20 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center justify-center w-10 h-10 bg-primary text-white rounded-full text-lg">
+                  <svg
+                    aria-hidden="true"
+                    className="w-5 h-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 11a3 3 0 100-6 3 3 0 000 6z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 11c0 4.5 7 11 7 11s7-6.5 7-11a7 7 0 10-14 0z"
+                    />
+                  </svg>
+                  <span className="sr-only">Location step icon</span>
+                </div>
               <div>
                 <h2 className="text-xl font-semibold text-gray-800">Select Location</h2>
                 <div className="text-sm text-gray-600">
@@ -290,7 +307,21 @@ export default function Home() {
           
           <div className="bg-white border border-primary/20 rounded-xl p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center justify-center w-10 h-10 bg-primary text-white rounded-full text-lg">2??</div>
+                <div className="flex items-center justify-center w-10 h-10 bg-primary text-white rounded-full text-lg">
+                  <svg
+                    aria-hidden="true"
+                    className="w-5 h-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4l4 6H8l4-6z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10l3 5H9l3-5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v5" />
+                  </svg>
+                  <span className="sr-only">Tree selection icon</span>
+                </div>
               <div>
                 <h2 className="text-xl font-semibold text-gray-800">
                   {simulationMode === 'planting' ? 'Select Tree Species' : 'Select Tree Species'}
@@ -327,9 +358,22 @@ export default function Home() {
         <div className="mt-24">
           <div className="bg-white border border-primary/20 rounded-xl p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-10 h-10 bg-primary text-white rounded-full text-lg">
-                3??
-              </div>
+                <div className="flex items-center justify-center w-10 h-10 bg-primary text-white rounded-full text-lg">
+                  <svg
+                    aria-hidden="true"
+                    className="w-5 h-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 19h16" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 15v4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 11v8" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7v12" />
+                  </svg>
+                  <span className="sr-only">Impact analysis icon</span>
+                </div>
               <div>
                 <h2 className="text-xl font-semibold text-gray-800">Impact Results</h2>
                 <p className="text-sm text-gray-600">
