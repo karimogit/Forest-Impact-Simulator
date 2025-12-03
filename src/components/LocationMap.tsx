@@ -33,6 +33,12 @@ interface OSMElement {
     maxlon: number;
   };
   geometry?: Array<{ lat: number; lon: number }>;
+  members?: Array<{
+    type: string;
+    ref: number;
+    role: string;
+    geometry?: Array<{ lat: number; lon: number }>;
+  }>;
   tags?: Record<string, string>;
 }
 
@@ -201,13 +207,34 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
         map.removeLayer(protectedLayerRef.current);
       }
       
+      // Helper function to extract geometries from an OSM element (handles both ways and relations)
+      const getGeometries = (element: OSMElement): Array<Array<[number, number]>> => {
+        const geometries: Array<Array<[number, number]>> = [];
+        
+        // For ways: geometry is directly on the element
+        if (element.geometry && element.geometry.length > 2) {
+          geometries.push(element.geometry.map((p) => [p.lat, p.lon]));
+        }
+        
+        // For relations: geometry is in members
+        if (element.members) {
+          for (const member of element.members) {
+            if (member.geometry && member.geometry.length > 2) {
+              geometries.push(member.geometry.map((p) => [p.lat, p.lon]));
+            }
+          }
+        }
+        
+        return geometries;
+      };
+
       // Create forest layer
       if (showForests && forests.length > 0) {
         const forestGroup = L.layerGroup();
         
         for (const element of forests) {
-          if (element.geometry && element.geometry.length > 2) {
-            const coords = element.geometry.map((p: { lat: number; lon: number }) => [p.lat, p.lon]);
+          const geometries = getGeometries(element);
+          for (const coords of geometries) {
             const polygon = L.polygon(coords, {
               color: '#228B22',
               fillColor: '#228B22',
@@ -228,8 +255,9 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
         const protectedGroup = L.layerGroup();
         
         for (const element of protectedAreas) {
-          if (element.geometry && element.geometry.length > 2) {
-            const coords = element.geometry.map((p: { lat: number; lon: number }) => [p.lat, p.lon]);
+          const geometries = getGeometries(element);
+          const name = element.tags?.name || 'Protected Area';
+          for (const coords of geometries) {
             const polygon = L.polygon(coords, {
               color: '#4169E1',
               fillColor: '#4169E1',
@@ -237,7 +265,6 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
               weight: 2,
               dashArray: '5, 5',
             });
-            const name = element.tags?.name || 'Protected Area';
             polygon.bindPopup(`<strong>🛡️ ${name}</strong><br/>Type: ${element.tags?.boundary || element.tags?.leisure || 'Nature Reserve'}<br/>OSM ID: ${element.id}`);
             protectedGroup.addLayer(polygon);
           }
@@ -963,8 +990,8 @@ const LocationMap: React.FC<LocationMapProps> = ({
         className: 'custom-marker-icon',
         html: '<span class="custom-marker-pin"></span>',
         iconSize: [24, 24],
-        iconAnchor: [12, 24],
-        popupAnchor: [0, -24],
+        iconAnchor: [12, 12],
+        popupAnchor: [0, -12],
       });
       setMarkerIcon(greenIcon);
     }
