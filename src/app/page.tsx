@@ -790,7 +790,7 @@ export default function Home() {
           <div className="flex justify-center items-center gap-4 flex-wrap">
             <div className="bg-white border border-primary/20 rounded-xl p-4 shadow-sm">
               <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-gray-700">Simulation Mode:</span>
+                <span className="text-sm font-medium text-gray-700">Pick a simulation mode</span>
                 <div className="flex bg-gray-100 rounded-lg p-1">
                   <button
                     onClick={() => setSimulationMode('planting')}
