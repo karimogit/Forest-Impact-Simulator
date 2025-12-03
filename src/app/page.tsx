@@ -39,8 +39,591 @@ export default function Home() {
   const [climateData, setClimateData] = useState<{ temperature: number | null; precipitation: number | null; historicalData?: { temperatures: number[]; precipitations: number[] } } | null>(null);
 
   const [faqOpen, setFaqOpen] = useState<{ [key: string]: boolean }>({});
+  const [faqSearch, setFaqSearch] = useState<string>('');
+  const [faqShowAll, setFaqShowAll] = useState<boolean>(false);
   const [exportData, setExportData] = useState<ExportData | null>(null);
   const [shareNotification, setShareNotification] = useState<string | null>(null);
+
+  const faqs = [
+    {
+      id: 1,
+      title: 'Who made this tool and how can I contribute?',
+      searchText: 'who made this tool contribute open source github creator karim osman typeScript python r simulator',
+      content: (
+        <p className="text-gray-900 mb-3">
+          The Forest Impact Simulator was created by{' '}
+          <a
+            href="https://kar.im"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-primary/80"
+          >
+            Karim Osman
+          </a>{' '}
+          to simulate and analyze the environmental impact of forest planting and clear-cutting operations. This tool is completely
+          open-source and available on GitHub. The simulator is available as a{' '}
+          <a
+            href="https://github.com/KarimOsmanGH/forest-impact-simulator"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-primary/80"
+          >
+            TypeScript (web)
+          </a>
+          ,{' '}
+          <a
+            href="https://github.com/KarimOsmanGH/forest-impact-simulator-python"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-primary/80"
+          >
+            Python notebook
+          </a>
+          , and{' '}
+          <a
+            href="https://github.com/KarimOsmanGH/forest-impact-simulator-r"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-primary/80"
+          >
+            R notebook
+          </a>
+          . We welcome contributions from the community! Whether you&apos;re a developer, environmental scientist, or forestry expert, there
+          are many ways to help improve this simulator.
+        </p>
+      ),
+    },
+    {
+      id: 2,
+      title: 'What is planting mode and how does it work?',
+      searchText: 'planting mode how it works carbon sequestration reforestation carbon offset biodiversity restoration environmental planning',
+      content: (
+        <>
+          <p className="text-gray-900 mb-3">
+            Planting mode allows you to analyze the environmental benefits of forest restoration and tree planting operations. This mode is
+            useful for:
+          </p>
+          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-2">
+            <li>
+              <strong>Reforestation Projects:</strong> Planning and quantifying the benefits of tree planting initiatives
+            </li>
+            <li>
+              <strong>Carbon Offset Planning:</strong> Calculating potential carbon sequestration from new forests
+            </li>
+            <li>
+              <strong>Biodiversity Restoration:</strong> Understanding how tree planting can enhance local ecosystems
+            </li>
+            <li>
+              <strong>Environmental Planning:</strong> Evaluating the long-term environmental benefits of forest restoration
+            </li>
+          </ul>
+          <p className="text-gray-900 mb-3">
+            In planting mode, the simulator shows carbon sequestration (positive values) representing the carbon that would be absorbed from
+            the atmosphere as trees grow and mature. The interface shows &quot;recommended species for this region&quot; and displays
+            planting configurations with timelines for project completion.
+          </p>
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mt-3">
+            <p className="text-sm text-primary">
+              <strong>Note:</strong> This tool is for educational and planning purposes. Always consult with forestry professionals and
+              environmental experts before making real-world decisions about forest management.
+            </p>
+          </div>
+        </>
+      ),
+    },
+    {
+      id: 3,
+      title: 'What is clear-cutting mode and how does it work?',
+      searchText: 'clear cutting mode how it works carbon emissions deforestation removal impacts policy analysis educational',
+      content: (
+        <>
+          <p className="text-gray-900 mb-3">
+            Clear-cutting mode allows you to analyze the environmental impacts of forest removal operations. This mode is useful for:
+          </p>
+          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-2">
+            <li>
+              <strong>Environmental Impact Assessment:</strong> Understanding the carbon emissions and biodiversity loss from forest removal
+            </li>
+            <li>
+              <strong>Land Use Planning:</strong> Evaluating the trade-offs of converting forested areas to other uses
+            </li>
+            <li>
+              <strong>Policy Analysis:</strong> Quantifying the environmental costs of deforestation
+            </li>
+            <li>
+              <strong>Educational Purposes:</strong> Demonstrating the value of existing forests
+            </li>
+          </ul>
+          <p className="text-gray-900 mb-3">
+            In clear-cutting mode, the simulator shows carbon emissions (positive values) representing the carbon that would be released
+            into the atmosphere, including both immediate emissions from tree removal and the lost future sequestration capacity. You can
+            specify the average age of trees in the forest area to get more accurate calculations. The interface adapts to show &quot;forest
+            types present in this region&quot; instead of &quot;recommended species&quot; and displays removal configurations with tree age
+            settings.
+          </p>
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mt-3">
+            <p className="text-sm text-primary">
+              <strong>Note:</strong> This tool is for educational and planning purposes. Always consult with forestry professionals and
+              environmental experts before making real-world decisions about forest management.
+            </p>
+          </div>
+        </>
+      ),
+    },
+    {
+      id: 4,
+      title: 'What do the different impact analysis tabs show?',
+      searchText: 'impact analysis tabs environment economic social land use what do they show',
+      content: (
+        <>
+          <p className="text-gray-900 mb-3">
+            The impact analysis is organized into four comprehensive tabs, each focusing on different aspects of forest impact:
+          </p>
+          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-2">
+            <li>
+              <strong>Environment Tab:</strong> Core environmental metrics including soil data, climate information, carbon
+              sequestration/emissions, biodiversity impact, forest resilience, water retention, and air quality improvement. This is the most
+              detailed tab with real-time environmental data integration.
+            </li>
+            <li>
+              <strong>Economic Tab:</strong> Economic benefits such as job creation estimates, conservation value, and economic impact
+              calculations based on forest size and type.
+            </li>
+            <li>
+              <strong>Social Tab:</strong> Community benefits, social impact scores, and societal value of forest restoration or the social
+              costs of forest removal.
+            </li>
+            <li>
+              <strong>Land Use Tab:</strong> Land management impacts including erosion reduction, soil improvement, habitat creation, and
+              land use change effects.
+            </li>
+          </ul>
+          <p className="text-gray-900 mb-3">
+            Each tab provides detailed metrics, real-world comparisons, and context-specific information to help you understand the full
+            scope of forest impact in your selected region.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: 5,
+      title: 'How accurate are the carbon sequestration estimates?',
+      searchText: 'how accurate carbon sequestration estimates ipcc growth model clear cutting calculations',
+      content: (
+        <>
+          <p className="text-gray-900 mb-3">
+            Our estimates are based on{' '}
+            <a
+              href="https://www.ipcc.ch/report/ar4/wg1/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:text-primary/80"
+            >
+              IPCC Fourth Assessment Report
+            </a>{' '}
+            data, with species-specific rates ranging from 15-30 kg CO₂/year for mature trees. We apply realistic growth curves that account
+            for the fact that young trees sequester much less carbon than mature ones.
+          </p>
+          <p className="text-gray-900 mb-3">
+            <strong>Growth Model:</strong> Trees don&apos;t reach full capacity immediately. Our realistic model shows: Year 1-3 (5-15% of
+            mature rate), Year 4-10 (15-80% of mature rate), Year 11-20 (80-95% of mature rate), and Year 20+ (95-100% of mature rate). This
+            reflects real-world tree growth patterns and provides more accurate long-term projections.
+          </p>
+          <p className="text-gray-900 mb-3">
+            <strong>Clear-cutting Carbon Calculations:</strong> In clear-cutting mode, the simulator calculates immediate carbon release as
+            the tree&apos;s current annual sequestration rate (representing carbon released when the tree is cut down) plus lost future
+            sequestration (carbon that would have been absorbed over the simulation period). This provides realistic emission estimates
+            based on the actual age of trees being removed.
+          </p>
+          <p className="text-gray-900 mb-3">The simulator also factors in local soil conditions and climate data for more accurate predictions.</p>
+        </>
+      ),
+    },
+    {
+      id: 6,
+      title: "What's the difference between single and multiple tree selection?",
+      searchText: 'difference between single and multiple tree selection forest mix equal split percentages',
+      content: (
+        <p className="text-gray-900 mb-3">
+          Single tree selection uses the specific carbon sequestration rate of that species. Multiple tree selection allows you to create a
+          mixed forest with custom percentage distributions. You can either use the &quot;Equal Split&quot; option for balanced distribution
+          or manually set percentages for each species to reflect your forest management strategy.
+        </p>
+      ),
+    },
+    {
+      id: 7,
+      title: 'How are environmental factors calculated and what benefits do they provide?',
+      searchText: 'environmental factors calculated benefits soilgrids open meteo biodiversity resilience water retention air quality',
+      content: (
+        <>
+          <p className="text-gray-900 mb-3">
+            <strong>Environmental Data Sources:</strong> The simulator uses real-time data from multiple sources: Soil carbon content from{' '}
+            <a
+              href="https://soilgrids.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:text-primary/80"
+            >
+              ISRIC SoilGrids
+            </a>{' '}
+            (adds 0.1 kg CO₂/year per g/kg of soil carbon) and climate data from{' '}
+            <a
+              href="https://open-meteo.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:text-primary/80"
+            >
+              Open-Meteo
+            </a>{' '}
+            (precipitation affects forest resilience). Biodiversity values are based on scientific literature and species-specific
+            ecological characteristics. When environmental data is unavailable, the simulator uses climate-zone based estimates to ensure
+            calculations remain accurate.
+          </p>
+          <p className="text-gray-900 mb-3">
+            <strong>Environmental Benefits Calculated:</strong> Beyond carbon sequestration, the simulator calculates biodiversity impact
+            (how well the forest supports wildlife), forest resilience (ability to withstand climate stresses), water retention (improved
+            soil moisture and reduced runoff), and air quality improvement (pollution filtration). In planting mode, these metrics improve
+            over time and scale with forest size. In clear-cutting mode, these metrics degrade over time and scale with the extent of forest
+            removal. These metrics provide a comprehensive view of the forest&apos;s environmental contribution or impact.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: 8,
+      title: 'Why should I simulate different time periods?',
+      searchText: 'why simulate different time periods years long term short term',
+      content: (
+        <p className="text-gray-900 mb-3">
+          Different time periods show how forest impact compounds over time. Short-term simulations (1-5 years) show immediate benefits like
+          soil stabilization and initial carbon capture. Long-term simulations (10-100 years) reveal the full potential for carbon
+          sequestration, biodiversity enhancement, and ecosystem restoration. This helps in planning both immediate and long-term
+          environmental strategies.
+        </p>
+      ),
+    },
+    {
+      id: 9,
+      title: 'How can I use this simulator for real-world projects?',
+      searchText: 'use simulator for real world projects reforestation urban tree planting carbon offset impact assessment',
+      content: (
+        <>
+          <p className="text-gray-900 mb-3">
+            The simulator is perfect for planning reforestation projects, urban tree planting initiatives, carbon offset programs, and
+            environmental impact assessments. Use it to compare different tree species for your climate zone, estimate long-term
+            environmental benefits, analyze the impacts of forest removal, and communicate the impact of your projects to stakeholders. The
+            region-specific data ensures your calculations are relevant to your actual forest management area.
+          </p>
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mt-3">
+            <p className="text-sm text-primary font-medium">
+              &#9888;&#65039; <strong>Disclaimer:</strong> This simulator is for educational and planning purposes only. Use at your own risk.
+              Always consult with forestry professionals, environmental experts, and local authorities before implementing any real-world
+              projects.
+            </p>
+          </div>
+        </>
+      ),
+    },
+    {
+      id: 10,
+      title: 'What formulas and calculations does the simulator use?',
+      searchText: 'formulas calculations simulator weighted average growth model climate prediction biodiversity resilience water retention air quality',
+      content: (
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-semibold text-black mb-2">Carbon Sequestration</h4>
+            <div className="bg-gray-50 p-3 rounded text-sm text-black">
+              <p className="mb-2">
+                <strong>Weighted Average Formula:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2">Carbon = Σ(Treeᵢ × Percentageᵢ) / 100</code>
+              <p className="mb-2">
+                <strong>Environmental Modifiers:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2">Soil Bonus = Soil Carbon (g/kg) × 0.1 kg CO₂/year</code>
+              <code className="block bg-white p-2 rounded mb-2">Final Carbon = Base Carbon + Soil Bonus</code>
+              <p className="mt-2 text-sm text-black">
+                <strong>Display Values:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded text-black">Annual Carbon = Yearly sequestration rate</code>
+              <code className="block bg-white p-2 rounded text-black">Total Carbon = Cumulative over entire simulation period</code>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-black mb-2">Tree Growth Model</h4>
+            <div className="bg-gray-50 p-3 rounded text-sm text-black">
+              <p className="mb-2">
+                <strong>4-Phase Growth Model:</strong>
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-sm text-black">
+                <div>
+                  <strong>Years 1-3:</strong> Establishment phase (5-15% of mature rate)
+                </div>
+                <div>
+                  <strong>Years 4-10:</strong> Rapid growth phase (15-80% of mature rate)
+                </div>
+                <div>
+                  <strong>Years 11-20:</strong> Maturation phase (80-95% of mature rate)
+                </div>
+                <div>
+                  <strong>Years 20+:</strong> Mature phase (95-100% of mature rate)
+                </div>
+              </div>
+              <p className="mt-2 text-sm text-black">
+                <strong>Annual Carbon Calculation:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded text-black">Annual Carbon = Mature Rate × Growth Factor (based on year)</code>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-black mb-2">Climate Prediction</h4>
+            <div className="bg-gray-50 p-3 rounded text-sm text-black">
+              <p className="mb-2">
+                <strong>Temperature Trend Analysis:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Historical Data = 11 years of temperature records</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Linear Regression = Calculate temperature trend (°C/year)</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Future Temperature = Current + (Trend × Years)</code>
+              <p className="mt-2 mb-2 text-sm text-black">
+                <strong>Growth Modifier:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Temperature Change = Future Temp - Current Temp</code>
+              <code className="block bg-white p-2 rounded text-black">Growth Modifier = 1 + (Temperature Change × 0.02)</code>
+              <p className="mt-2 text-sm text-black">
+                <strong>Regional Estimates (fallback):</strong>
+              </p>
+              <code className="block bg-white p-2 rounded text-black">
+                Tropical: 25°C, Temperate: 15°C, Boreal: 5°C, Arctic: -5°C
+              </code>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-black mb-2">Biodiversity Impact</h4>
+            <div className="bg-gray-50 p-3 rounded text-sm text-black">
+              <p className="mb-2">
+                <strong>Species Diversity Score:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Base Score = Average biodiversity value (1-5)</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Multiplier = 1 + (Number of species - 1) × 0.1</code>
+              <code className="block bg-white p-2 rounded text-black">Final Score = min(Base Score × Multiplier, 5)</code>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-black mb-2">Forest Resilience</h4>
+            <div className="bg-gray-50 p-3 rounded text-sm text-black">
+              <p className="mb-2">
+                <strong>Resilience Calculation:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Base Resilience = Average resilience score (1-5)</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Climate Bonus = Precipitation (mm) × 0.001</code>
+              <code className="block bg-white p-2 rounded text-black">Final Resilience = min(Base + Climate Bonus, 5)</code>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-black mb-2">Water Retention</h4>
+            <div className="bg-gray-50 p-3 rounded text-sm text-black">
+              <p className="mb-2">
+                <strong>Progressive Enhancement:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Base Retention = 70-85% (based on latitude)</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Annual Improvement = 0.3% per year</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Precipitation Bonus = Annual Precipitation (mm) × 0.01</code>
+              <code className="block bg-white p-2 rounded text-black">
+                Water Retention = min(Base + (Years × 0.3) + Bonus, 95%)
+              </code>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-black mb-2">Air Quality Improvement</h4>
+            <div className="bg-gray-50 p-3 rounded text-sm text-black">
+              <p className="mb-2">
+                <strong>Progressive Enhancement:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Base Quality = 60%</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Annual Improvement = 0.7% per year</code>
+              <code className="block bg-white p-2 rounded text-black">Air Quality = min(Base + (Years × 0.7), 95%)</code>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-black mb-2">Mathematical Notation</h4>
+            <div className="bg-gray-50 p-3 rounded text-base text-black">
+              <ul className="space-y-2">
+                <li>
+                  <strong>Σ:</strong> Summation across all selected tree species
+                </li>
+                <li>
+                  <strong>Treeᵢ:</strong> Carbon sequestration rate of tree species i
+                </li>
+                <li>
+                  <strong>Percentageᵢ:</strong> User-specified percentage for tree species i
+                </li>
+                <li>
+                  <strong>n:</strong> Number of selected tree species
+                </li>
+                <li>
+                  <strong>Years:</strong> Simulation duration in years
+                </li>
+                <li>
+                  <strong>min():</strong> Function returning the minimum value (capping at maximum)
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 11,
+      title: 'What tree species are included in the database?',
+      searchText: 'what tree species are included database temperate tropical boreal arid subtropical',
+      content: (
+        <>
+          <p className="text-gray-900 mb-3">
+            Our comprehensive tree database includes 80 species from around the world, covering diverse ecosystems and 7 major climate
+            zones:
+          </p>
+          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-1">
+            <li>
+              <strong>Temperate Trees:</strong> Oak, Beech, Ash, Maple, Birch, and European/North American species
+            </li>
+            <li>
+              <strong>Coniferous Trees:</strong> Pine, Spruce, Cedar, Redwood, and other evergreens
+            </li>
+            <li>
+              <strong>Tropical Trees:</strong> Mahogany, Teak, Mango, Mangrove, and tropical hardwoods
+            </li>
+            <li>
+              <strong>Mediterranean Trees:</strong> Olive, Cork Oak, Aleppo Pine, and Mediterranean climate species
+            </li>
+            <li>
+              <strong>Boreal Trees:</strong> Black Spruce, White Spruce, Balsam Fir, Tamarack, Jack Pine, and northern forest species
+            </li>
+            <li>
+              <strong>Arid Zone Trees:</strong> Mesquite, Palo Verde, Desert Ironwood, Joshua Tree, and drought-resistant species
+            </li>
+            <li>
+              <strong>Subtropical Trees:</strong> Live Oak, Bald Cypress, Southern Magnolia, Pecan, and warm climate species
+            </li>
+          </ul>
+          <p className="text-gray-900 mb-3">
+            Each tree species includes detailed data on carbon sequestration rates, growth characteristics, biodiversity value, climate
+            preferences, and environmental impact factors. The database is continuously updated with new species and improved data.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: 12,
+      title: 'What export formats are available and how can I use them?',
+      searchText: 'export formats available pdf geojson json csv share link how to use',
+      content: (
+        <>
+          <p className="text-gray-900 mb-3">The simulator offers multiple export and sharing options to suit different use cases:</p>
+          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-2">
+            <li>
+              <strong>PDF Report:</strong> Professional formatted report with all analysis results, charts, and metrics. Perfect for
+              presentations, reports, and documentation.
+            </li>
+            <li>
+              <strong>GeoJSON:</strong> Geographic data format for GIS professionals and mapping tools. Includes point features (analysis
+              location) and polygon features (forest region) with all environmental metrics as properties.
+            </li>
+            <li>
+              <strong>JSON:</strong> Complete structured data export for developers and data analysis. Contains all simulation parameters,
+              environmental data, impact results, and forest management specifications.
+            </li>
+            <li>
+              <strong>CSV:</strong> Spreadsheet-friendly format organized by sections (metadata, trees, environmental data, results, forest
+              data) for use in Excel, R, Python, and other data analysis tools.
+            </li>
+            <li>
+              <strong>Share Link:</strong> Generate a shareable URL that preserves your entire analysis configuration. Others can view your
+              exact analysis by opening the link, with all settings, species selections, and region data preserved.
+            </li>
+          </ul>
+          <p className="text-gray-900 mb-3">
+            All exports include timestamps and are automatically generated once you complete your analysis. Files are downloaded directly to
+            your browser with descriptive filenames.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: 13,
+      title: 'Why does environmental data sometimes show as "Estimated"?',
+      searchText: 'why environmental data sometimes show estimated fallback climate zone api soilgrids open meteo cache',
+      content: (
+        <>
+          <p className="text-gray-900 mb-3">
+            The Forest Impact Simulator fetches real-time environmental data from two scientific sources:
+          </p>
+          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-1">
+            <li>
+              <strong>Soil data:</strong>{' '}
+              <a
+                href="https://soilgrids.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80"
+              >
+                ISRIC SoilGrids
+              </a>{' '}
+              (global soil property database)
+            </li>
+            <li>
+              <strong>Climate data:</strong>{' '}
+              <a
+                href="https://open-meteo.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80"
+              >
+                Open-Meteo
+              </a>{' '}
+              (weather and climate API)
+            </li>
+          </ul>
+          <p className="text-gray-900 mb-3">Sometimes this data cannot be fetched because:</p>
+          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-1">
+            <li>The APIs may be temporarily unavailable or experiencing high latency</li>
+            <li>Your selected location may not have data coverage in these databases</li>
+            <li>Network connectivity issues or firewall/ad-blocker restrictions</li>
+            <li>API rate limits may be reached during high traffic periods</li>
+          </ul>
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mb-3">
+            <p className="text-sm text-primary">
+              <strong>Don&apos;t worry!</strong> When real-time data is unavailable, the simulator automatically uses{' '}
+              <strong>scientifically-based estimates</strong> derived from:
+            </p>
+            <ul className="list-disc pl-6 text-sm text-primary mt-2 space-y-1">
+              <li>Climate zone analysis (based on latitude)</li>
+              <li>Regional climate patterns</li>
+              <li>Established environmental science models</li>
+            </ul>
+          </div>
+          <p className="text-gray-900 mb-3">
+            These estimates are reliable and the calculations remain accurate. You&apos;ll see an &quot;(Estimated)&quot; indicator when
+            fallback data is used. Additionally:
+          </p>
+          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-1">
+            <li>
+              Data is <strong>cached locally</strong> for 1 hour to reduce API calls
+            </li>
+            <li>The simulator tries 3 times with different timeouts before using estimates</li>
+            <li>Estimated values are based on peer-reviewed climate zone classifications</li>
+          </ul>
+        </>
+      ),
+    },
+  ];
 
   // Load state from URL on mount
   useEffect(() => {
@@ -516,544 +1099,112 @@ export default function Home() {
         
 
 
+        {/* FAQ Section */}
+        <div className="mt-24">
+          <h2 className="text-2xl font-bold text-center mb-6 flex items-center justify-center gap-3">
+            <span className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full text-lg font-semibold">
+              ?
+            </span>
+            Frequently Asked Questions
+          </h2>
 
-        
-                  {/* FAQ Section */}
-          <div className="mt-24">
-          <h2 className="text-2xl font-bold text-center mb-8 flex items-center justify-center gap-3">
-            <span className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full text-lg font-semibold">?</span>
-          Frequently Asked Questions
-        </h2>
+          {/* FAQ Search */}
+          <div className="max-w-xl mx-auto mb-6">
+            <label htmlFor="faq-search" className="sr-only">
+              Search frequently asked questions
+            </label>
+            <div className="relative">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+                <svg
+                  className="h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+                </svg>
+              </span>
+              <input
+                id="faq-search"
+                type="text"
+                value={faqSearch}
+                onChange={(e) => {
+                  setFaqSearch(e.target.value);
+                  setFaqShowAll(false);
+                }}
+                placeholder="Search questions about modes, data, exports, and more..."
+                className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <p className="mt-2 text-xs text-center text-gray-500">
+              Try searching for terms like &quot;clear-cutting&quot;, &quot;carbon&quot;, &quot;exports&quot;, or &quot;species&quot;.
+            </p>
+          </div>
+
+          {/* FAQ List */}
           <div className="max-w-4xl mx-auto space-y-4">
-            {/* FAQ Item 1 - Who made this tool and how can I contribute? */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => setFaqOpen(prev => ({ ...prev, 1: !prev[1] }))}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">Who made this tool and how can I contribute?</h3>
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[1] ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {faqOpen[1] && (
-                <div className="px-6 pb-6">
-                  <p className="text-gray-900 mb-3">
-                    The Forest Impact Simulator was created by <a href="https://kar.im" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">Karim Osman</a> to simulate and analyze the environmental impact of forest planting and clear-cutting operations. This tool is completely open-source and available on GitHub. The simulator is available as a <a href="https://github.com/KarimOsmanGH/forest-impact-simulator" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">TypeScript (web)</a>, <a href="https://github.com/KarimOsmanGH/forest-impact-simulator-python" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">Python notebook</a>, and <a href="https://github.com/KarimOsmanGH/forest-impact-simulator-r" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">R notebook</a>. We welcome contributions from the community! Whether you&apos;re a developer, environmental scientist, or forestry expert, there are many ways to help improve this simulator.
-                  </p>
-                </div>
-              )}
-            </div>
+            {(() => {
+              const query = faqSearch.trim().toLowerCase();
+              const filtered = query
+                ? faqs.filter((faq) => faq.searchText.toLowerCase().includes(query) || faq.title.toLowerCase().includes(query))
+                : faqs;
+              const visible = !query && !faqShowAll ? filtered.slice(0, 5) : filtered;
 
-            {/* FAQ Item 2 - What is planting mode and how does it work? */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => setFaqOpen(prev => ({ ...prev, 2: !prev[2] }))}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">What is planting mode and how does it work?</h3>
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[2] ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {faqOpen[2] && (
-                <div className="px-6 pb-6">
-                  <p className="text-gray-900 mb-3">
-                    Planting mode allows you to analyze the environmental benefits of forest restoration and tree planting operations. This mode is useful for:
-                  </p>
-                  <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-2">
-                    <li><strong>Reforestation Projects:</strong> Planning and quantifying the benefits of tree planting initiatives</li>
-                    <li><strong>Carbon Offset Planning:</strong> Calculating potential carbon sequestration from new forests</li>
-                    <li><strong>Biodiversity Restoration:</strong> Understanding how tree planting can enhance local ecosystems</li>
-                    <li><strong>Environmental Planning:</strong> Evaluating the long-term environmental benefits of forest restoration</li>
-                  </ul>
-                  <p className="text-gray-900 mb-3">
-                    In planting mode, the simulator shows carbon sequestration (positive values) representing the carbon that would be absorbed from the atmosphere as trees grow and mature. The interface shows &quot;recommended species for this region&quot; and displays planting configurations with timelines for project completion.
-                  </p>
-                  <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mt-3">
-                    <p className="text-sm text-primary">
-                      <strong>Note:</strong> This tool is for educational and planning purposes. Always consult with forestry professionals and environmental experts before making real-world decisions about forest management.
-                    </p>
+              if (!visible.length) {
+                return (
+                  <div className="bg-white border border-dashed border-gray-300 rounded-lg p-6 text-center text-sm text-gray-600">
+                    No questions match your search yet. Try a different keyword or clear the search box.
                   </div>
-                </div>
-              )}
-            </div>
+                );
+              }
 
-            {/* FAQ Item 3 - What is clear-cutting mode and how does it work? */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => setFaqOpen(prev => ({ ...prev, 3: !prev[3] }))}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">What is clear-cutting mode and how does it work?</h3>
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[3] ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {faqOpen[3] && (
-                <div className="px-6 pb-6">
-                  <p className="text-gray-900 mb-3">
-                    Clear-cutting mode allows you to analyze the environmental impacts of forest removal operations. This mode is useful for:
-                  </p>
-                  <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-2">
-                    <li><strong>Environmental Impact Assessment:</strong> Understanding the carbon emissions and biodiversity loss from forest removal</li>
-                    <li><strong>Land Use Planning:</strong> Evaluating the trade-offs of converting forested areas to other uses</li>
-                    <li><strong>Policy Analysis:</strong> Quantifying the environmental costs of deforestation</li>
-                    <li><strong>Educational Purposes:</strong> Demonstrating the value of existing forests</li>
-                  </ul>
-                  <p className="text-gray-900 mb-3">
-                    In clear-cutting mode, the simulator shows carbon emissions (positive values) representing the carbon that would be released into the atmosphere, including both immediate emissions from tree removal and the lost future sequestration capacity. You can specify the average age of trees in the forest area to get more accurate calculations. The interface adapts to show &quot;forest types present in this region&quot; instead of &quot;recommended species&quot; and displays removal configurations with tree age settings.
-                  </p>
-                  <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mt-3">
-                    <p className="text-sm text-primary">
-                      <strong>Note:</strong> This tool is for educational and planning purposes. Always consult with forestry professionals and environmental experts before making real-world decisions about forest management.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* FAQ Item 4 - What do the different impact analysis tabs show? */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => setFaqOpen(prev => ({ ...prev, 4: !prev[4] }))}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">What do the different impact analysis tabs show?</h3>
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[4] ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {faqOpen[4] && (
-                <div className="px-6 pb-6">
-                  <p className="text-gray-900 mb-3">
-                    The impact analysis is organized into four comprehensive tabs, each focusing on different aspects of forest impact:
-                  </p>
-                  <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-2">
-                    <li><strong>Environment Tab:</strong> Core environmental metrics including soil data, climate information, carbon sequestration/emissions, biodiversity impact, forest resilience, water retention, and air quality improvement. This is the most detailed tab with real-time environmental data integration.</li>
-                    <li><strong>Economic Tab:</strong> Economic benefits such as job creation estimates, conservation value, and economic impact calculations based on forest size and type.</li>
-                    <li><strong>Social Tab:</strong> Community benefits, social impact scores, and societal value of forest restoration or the social costs of forest removal.</li>
-                    <li><strong>Land Use Tab:</strong> Land management impacts including erosion reduction, soil improvement, habitat creation, and land use change effects.</li>
-                  </ul>
-                  <p className="text-gray-900 mb-3">
-                    Each tab provides detailed metrics, real-world comparisons, and context-specific information to help you understand the full scope of forest impact in your selected region.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* FAQ Item 5 - Combined Carbon Sequestration & Growth Model */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => setFaqOpen(prev => ({ ...prev, 5: !prev[5] }))}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">How accurate are the carbon sequestration estimates?</h3>
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[5] ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {faqOpen[5] && (
-                <div className="px-6 pb-6">
-                  <p className="text-gray-900 mb-3">
-                    Our estimates are based on <a href="https://www.ipcc.ch/report/ar4/wg1/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">IPCC Fourth Assessment Report</a> data, with species-specific rates ranging from 15-30 kg CO?/year for mature trees. We apply realistic growth curves that account for the fact that young trees sequester much less carbon than mature ones.
-                  </p>
-                  <p className="text-gray-900 mb-3">
-                    <strong>Growth Model:</strong> Trees don&apos;t reach full capacity immediately. Our realistic model shows: Year 1-3 (5-15% of mature rate), Year 4-10 (15-80% of mature rate), Year 11-20 (80-95% of mature rate), and Year 20+ (95-100% of mature rate). This reflects real-world tree growth patterns and provides more accurate long-term projections.
-                  </p>
-                  <p className="text-gray-900 mb-3">
-                    <strong>Clear-cutting Carbon Calculations:</strong> In clear-cutting mode, the simulator calculates immediate carbon release as the tree&apos;s current annual sequestration rate (representing carbon released when the tree is cut down) plus lost future sequestration (carbon that would have been absorbed over the simulation period). This provides realistic emission estimates based on the actual age of trees being removed.
-                  </p>
-                  <p className="text-gray-900 mb-3">
-                    The simulator also factors in local soil conditions and climate data for more accurate predictions.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* FAQ Item 6 - Tree Selection */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => setFaqOpen(prev => ({ ...prev, 6: !prev[6] }))}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">What&apos;s the difference between single and multiple tree selection?</h3>
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[6] ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {faqOpen[6] && (
-                <div className="px-6 pb-6">
-                  <p className="text-gray-900 mb-3">
-                    Single tree selection uses the specific carbon sequestration rate of that species. Multiple tree selection allows you to create a mixed forest with custom percentage distributions. You can either use the &quot;Equal Split&quot; option for balanced distribution or manually set percentages for each species to reflect your forest management strategy.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* FAQ Item 7 - Combined Environmental Factors & Benefits */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => setFaqOpen(prev => ({ ...prev, 7: !prev[7] }))}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">How are environmental factors calculated and what benefits do they provide?</h3>
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[7] ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {faqOpen[7] && (
-                <div className="px-6 pb-6">
-                  <p className="text-gray-900 mb-3">
-                    <strong>Environmental Data Sources:</strong> The simulator uses real-time data from multiple sources: Soil carbon content from <a href="https://soilgrids.org/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">ISRIC SoilGrids</a> (adds 0.1 kg CO?/year per g/kg of soil carbon) and climate data from <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">Open-Meteo</a> (precipitation affects forest resilience). Biodiversity values are based on scientific literature and species-specific ecological characteristics. When environmental data is unavailable, the simulator uses climate-zone based estimates to ensure calculations remain accurate.
-                  </p>
-                  <p className="text-gray-900 mb-3">
-                    <strong>Environmental Benefits Calculated:</strong> Beyond carbon sequestration, the simulator calculates biodiversity impact (how well the forest supports wildlife), forest resilience (ability to withstand climate stresses), water retention (improved soil moisture and reduced runoff), and air quality improvement (pollution filtration). In planting mode, these metrics improve over time and scale with forest size. In clear-cutting mode, these metrics degrade over time and scale with the extent of forest removal. These metrics provide a comprehensive view of the forest&apos;s environmental contribution or impact.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* FAQ Item 8 - Time Periods */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => setFaqOpen(prev => ({ ...prev, 8: !prev[8] }))}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">Why should I simulate different time periods?</h3>
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[8] ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {faqOpen[8] && (
-                <div className="px-6 pb-6">
-                  <p className="text-gray-900 mb-3">
-                    Different time periods show how forest impact compounds over time. Short-term simulations (1-5 years) show immediate benefits like soil stabilization and initial carbon capture. Long-term simulations (10-100 years) reveal the full potential for carbon sequestration, biodiversity enhancement, and ecosystem restoration. This helps in planning both immediate and long-term environmental strategies.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* FAQ Item 9 - Real-world Applications */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => setFaqOpen(prev => ({ ...prev, 9: !prev[9] }))}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">How can I use this simulator for real-world projects?</h3>
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[9] ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {faqOpen[9] && (
-                <div className="px-6 pb-6">
-                  <p className="text-gray-900 mb-3">
-                    The simulator is perfect for planning reforestation projects, urban tree planting initiatives, carbon offset programs, and environmental impact assessments. Use it to compare different tree species for your climate zone, estimate long-term environmental benefits, analyze the impacts of forest removal, and communicate the impact of your projects to stakeholders. The region-specific data ensures your calculations are relevant to your actual forest management area.
-                  </p>
-                  <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mt-3">
-                    <p className="text-sm text-primary font-medium">
-                      &#9888;&#65039; <strong>Disclaimer:</strong> This simulator is for educational and planning purposes only. Use at your own risk. Always consult with forestry professionals, environmental experts, and local authorities before implementing any real-world projects.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* FAQ Item 10 - Formulas & Calculations */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => setFaqOpen(prev => ({ ...prev, 10: !prev[10] }))}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">What formulas and calculations does the simulator use?</h3>
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[10] ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {faqOpen[10] && (
-                <div className="px-6 pb-6">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold text-black mb-2">Carbon Sequestration</h4>
-                      <div className="bg-gray-50 p-3 rounded text-sm text-black">
-                        <p className="mb-2"><strong>Weighted Average Formula:</strong></p>
-                        <code className="block bg-white p-2 rounded mb-2">Carbon = ?(Tree_i ? Percentage_i) / 100</code>
-                        <p className="mb-2"><strong>Environmental Modifiers:</strong></p>
-                        <code className="block bg-white p-2 rounded mb-2">Soil Bonus = Soil Carbon (g/kg) ? 0.1 kg CO?/year</code>
-                        <code className="block bg-white p-2 rounded mb-2">Final Carbon = Base Carbon + Soil Bonus</code>
-                        <p className="mt-2 text-sm text-black"><strong>Display Values:</strong></p>
-                        <code className="block bg-white p-2 rounded text-black">Annual Carbon = Yearly sequestration rate</code>
-                        <code className="block bg-white p-2 rounded text-black">Total Carbon = Cumulative over entire simulation period</code>
-                      </div>
+              return (
+                <>
+                  {visible.map((faq) => (
+                    <div key={faq.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                      <button
+                        onClick={() => setFaqOpen((prev) => ({ ...prev, [faq.id]: !prev[faq.id] }))}
+                        className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                        aria-expanded={!!faqOpen[faq.id]}
+                      >
+                        <h3 className="text-lg font-semibold text-gray-800">{faq.title}</h3>
+                        <svg
+                          className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[faq.id] ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {faqOpen[faq.id] && <div className="px-6 pb-6">{faq.content}</div>}
                     </div>
+                  ))}
 
-                    <div>
-                      <h4 className="font-semibold text-black mb-2">Tree Growth Model</h4>
-                      <div className="bg-gray-50 p-3 rounded text-sm text-black">
-                        <p className="mb-2"><strong>4-Phase Growth Model:</strong></p>
-                        <div className="grid grid-cols-2 gap-2 text-sm text-black">
-                          <div><strong>Years 1-3:</strong> Establishment phase (5-15% of mature rate)</div>
-                          <div><strong>Years 4-10:</strong> Rapid growth phase (15-80% of mature rate)</div>
-                          <div><strong>Years 11-20:</strong> Maturation phase (80-95% of mature rate)</div>
-                          <div><strong>Years 20+:</strong> Mature phase (95-100% of mature rate)</div>
-                        </div>
-                        <p className="mt-2 text-sm text-black"><strong>Annual Carbon Calculation:</strong></p>
-                        <code className="block bg-white p-2 rounded text-black">Annual Carbon = Mature Rate ? Growth Factor (based on year)</code>
-                      </div>
+                  {!query && filtered.length > 5 && (
+                    <div className="flex justify-center pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setFaqShowAll((prev) => !prev)}
+                        className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                      >
+                        <span>{faqShowAll ? 'Show fewer questions' : `Show ${filtered.length - 5} more questions`}</span>
+                        <svg
+                          className={`h-3.5 w-3.5 transition-transform ${faqShowAll ? 'rotate-180' : ''}`}
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
                     </div>
-
-                    <div>
-                      <h4 className="font-semibold text-black mb-2">Climate Prediction</h4>
-                      <div className="bg-gray-50 p-3 rounded text-sm text-black">
-                        <p className="mb-2"><strong>Temperature Trend Analysis:</strong></p>
-                        <code className="block bg-white p-2 rounded mb-2 text-black">Historical Data = 11 years of temperature records</code>
-                        <code className="block bg-white p-2 rounded mb-2 text-black">Linear Regression = Calculate temperature trend (?C/year)</code>
-                        <code className="block bg-white p-2 rounded mb-2 text-black">Future Temperature = Current + (Trend ? Years)</code>
-                        <p className="mt-2 mb-2 text-sm text-black"><strong>Growth Modifier:</strong></p>
-                        <code className="block bg-white p-2 rounded mb-2 text-black">Temperature Change = Future Temp - Current Temp</code>
-                        <code className="block bg-white p-2 rounded text-black">Growth Modifier = 1 + (Temperature Change ? 0.02)</code>
-                        <p className="mt-2 text-sm text-black"><strong>Regional Estimates (fallback):</strong></p>
-                        <code className="block bg-white p-2 rounded text-black">Tropical: 25?C, Temperate: 15?C, Boreal: 5?C, Arctic: -5?C</code>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-black mb-2">Biodiversity Impact</h4>
-                      <div className="bg-gray-50 p-3 rounded text-sm text-black">
-                        <p className="mb-2"><strong>Species Diversity Score:</strong></p>
-                        <code className="block bg-white p-2 rounded mb-2 text-black">Base Score = Average biodiversity value (1-5)</code>
-                        <code className="block bg-white p-2 rounded mb-2 text-black">Multiplier = 1 + (Number of species - 1) ? 0.1</code>
-                        <code className="block bg-white p-2 rounded text-black">Final Score = min(Base Score ? Multiplier, 5)</code>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-black mb-2">Forest Resilience</h4>
-                      <div className="bg-gray-50 p-3 rounded text-sm text-black">
-                        <p className="mb-2"><strong>Resilience Calculation:</strong></p>
-                        <code className="block bg-white p-2 rounded mb-2 text-black">Base Resilience = Average resilience score (1-5)</code>
-                        <code className="block bg-white p-2 rounded mb-2 text-black">Climate Bonus = Precipitation (mm) ? 0.001</code>
-                        <code className="block bg-white p-2 rounded text-black">Final Resilience = min(Base + Climate Bonus, 5)</code>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-black mb-2">Water Retention</h4>
-                      <div className="bg-gray-50 p-3 rounded text-sm text-black">
-                        <p className="mb-2"><strong>Progressive Enhancement:</strong></p>
-                        <code className="block bg-white p-2 rounded mb-2 text-black">Base Retention = 70-85% (based on latitude)</code>
-                        <code className="block bg-white p-2 rounded mb-2 text-black">Annual Improvement = 0.3% per year</code>
-                        <code className="block bg-white p-2 rounded mb-2 text-black">Precipitation Bonus = Annual Precipitation (mm) ? 0.01</code>
-                        <code className="block bg-white p-2 rounded text-black">Water Retention = min(Base + (Years ? 0.3) + Bonus, 95%)</code>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-black mb-2">Air Quality Improvement</h4>
-                      <div className="bg-gray-50 p-3 rounded text-sm text-black">
-                        <p className="mb-2"><strong>Progressive Enhancement:</strong></p>
-                        <code className="block bg-white p-2 rounded mb-2 text-black">Base Quality = 60%</code>
-                        <code className="block bg-white p-2 rounded mb-2 text-black">Annual Improvement = 0.7% per year</code>
-                        <code className="block bg-white p-2 rounded text-black">Air Quality = min(Base + (Years ? 0.7), 95%)</code>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-black mb-2">Mathematical Notation</h4>
-                      <div className="bg-gray-50 p-3 rounded text-base text-black">
-                        <ul className="space-y-2">
-                          <li><strong>?:</strong> Summation across all selected tree species</li>
-                          <li><strong>Tree_i:</strong> Carbon sequestration rate of tree species i</li>
-                          <li><strong>Percentage_i:</strong> User-specified percentage for tree species i</li>
-                          <li><strong>n:</strong> Number of selected tree species</li>
-                          <li><strong>Years:</strong> Simulation duration in years</li>
-                          <li><strong>min():</strong> Function returning the minimum value (capping at maximum)</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* FAQ Item 11 - Tree Database */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => setFaqOpen(prev => ({ ...prev, 11: !prev[11] }))}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">What tree species are included in the database?</h3>
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[11] ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {faqOpen[11] && (
-                <div className="px-6 pb-6">
-                  <p className="text-gray-900 mb-3">
-                    Our comprehensive tree database includes 80 species from around the world, covering diverse ecosystems and 7 major climate zones:
-                  </p>
-                  <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-1">
-                    <li><strong>Temperate Trees:</strong> Oak, Beech, Ash, Maple, Birch, and European/North American species</li>
-                    <li><strong>Coniferous Trees:</strong> Pine, Spruce, Cedar, Redwood, and other evergreens</li>
-                    <li><strong>Tropical Trees:</strong> Mahogany, Teak, Mango, Mangrove, and tropical hardwoods</li>
-                    <li><strong>Mediterranean Trees:</strong> Olive, Cork Oak, Aleppo Pine, and Mediterranean climate species</li>
-                    <li><strong>Boreal Trees:</strong> Black Spruce, White Spruce, Balsam Fir, Tamarack, Jack Pine, and northern forest species</li>
-                    <li><strong>Arid Zone Trees:</strong> Mesquite, Palo Verde, Desert Ironwood, Joshua Tree, and drought-resistant species</li>
-                    <li><strong>Subtropical Trees:</strong> Live Oak, Bald Cypress, Southern Magnolia, Pecan, and warm climate species</li>
-                  </ul>
-                  <p className="text-gray-900 mb-3">
-                    Each tree species includes detailed data on carbon sequestration rates, growth characteristics, biodiversity value, climate preferences, and environmental impact factors. The database is continuously updated with new species and improved data.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* FAQ Item 12 - Export Features */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => setFaqOpen(prev => ({ ...prev, 12: !prev[12] }))}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">What export formats are available and how can I use them?</h3>
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[12] ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {faqOpen[12] && (
-                <div className="px-6 pb-6">
-                  <p className="text-gray-900 mb-3">
-                    The simulator offers multiple export and sharing options to suit different use cases:
-                  </p>
-                  <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-2">
-                    <li><strong>PDF Report:</strong> Professional formatted report with all analysis results, charts, and metrics. Perfect for presentations, reports, and documentation.</li>
-                    <li><strong>GeoJSON:</strong> Geographic data format for GIS professionals and mapping tools. Includes point features (analysis location) and polygon features (forest region) with all environmental metrics as properties.</li>
-                    <li><strong>JSON:</strong> Complete structured data export for developers and data analysis. Contains all simulation parameters, environmental data, impact results, and forest management specifications.</li>
-                    <li><strong>CSV:</strong> Spreadsheet-friendly format organized by sections (metadata, trees, environmental data, results, forest data) for use in Excel, R, Python, and other data analysis tools.</li>
-                    <li><strong>Share Link:</strong> Generate a shareable URL that preserves your entire analysis configuration. Others can view your exact analysis by opening the link, with all settings, species selections, and region data preserved.</li>
-                  </ul>
-                  <p className="text-gray-900 mb-3">
-                    All exports include timestamps and are automatically generated once you complete your analysis. Files are downloaded directly to your browser with descriptive filenames.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* FAQ Item 13 - Why Environmental Data Shows as Estimated */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => setFaqOpen(prev => ({ ...prev, 13: !prev[13] }))}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">Why does environmental data sometimes show as &quot;Estimated&quot;?</h3>
-                <svg
-                  className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[13] ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {faqOpen[13] && (
-                <div className="px-6 pb-6">
-                  <p className="text-gray-900 mb-3">
-                    The Forest Impact Simulator fetches real-time environmental data from two scientific sources:
-                  </p>
-                  <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-1">
-                    <li><strong>Soil data:</strong> <a href="https://soilgrids.org/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">ISRIC SoilGrids</a> (global soil property database)</li>
-                    <li><strong>Climate data:</strong> <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">Open-Meteo</a> (weather and climate API)</li>
-                  </ul>
-                  <p className="text-gray-900 mb-3">
-                    Sometimes this data cannot be fetched because:
-                  </p>
-                  <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-1">
-                    <li>The APIs may be temporarily unavailable or experiencing high latency</li>
-                    <li>Your selected location may not have data coverage in these databases</li>
-                    <li>Network connectivity issues or firewall/ad-blocker restrictions</li>
-                    <li>API rate limits may be reached during high traffic periods</li>
-                  </ul>
-                  <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mb-3">
-                    <p className="text-sm text-primary">
-                      <strong>Don&apos;t worry!</strong> When real-time data is unavailable, the simulator automatically uses <strong>scientifically-based estimates</strong> derived from:
-                    </p>
-                    <ul className="list-disc pl-6 text-sm text-primary mt-2 space-y-1">
-                      <li>Climate zone analysis (based on latitude)</li>
-                      <li>Regional climate patterns</li>
-                      <li>Established environmental science models</li>
-                    </ul>
-                  </div>
-                  <p className="text-gray-900 mb-3">
-                    These estimates are reliable and the calculations remain accurate. You&apos;ll see an &quot;(Estimated)&quot; indicator when fallback data is used. Additionally:
-                  </p>
-                  <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-1">
-                    <li>Data is <strong>cached locally</strong> for 1 hour to reduce API calls</li>
-                    <li>The simulator tries 3 times with different timeouts before using estimates</li>
-                    <li>Estimated values are based on peer-reviewed climate zone classifications</li>
-                  </ul>
-                </div>
-              )}
-            </div>
-
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
 
