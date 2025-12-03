@@ -172,6 +172,11 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
   const [isLoading, setIsLoading] = useState(false);
   const lastBoundsRef = useRef<string>('');
   
+  // Reset bounds cache when toggles change to force reload
+  useEffect(() => {
+    lastBoundsRef.current = '';
+  }, [showForests, showProtectedAreas]);
+  
   const loadOSMData = useCallback(async () => {
     if (!map || (!showForests && !showProtectedAreas)) return;
     
@@ -180,12 +185,12 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
     
     // Only load data when zoomed in enough (zoom >= 10)
     if (zoom < 10) {
-      console.log('Zoom level too low for OSM data');
+      console.log('Zoom level too low for OSM data, need zoom >= 10 (current:', zoom, ')');
       return;
     }
     
     // Check if bounds have changed significantly
-    const boundsKey = `${bounds.getSouth().toFixed(3)},${bounds.getWest().toFixed(3)},${bounds.getNorth().toFixed(3)},${bounds.getEast().toFixed(3)}`;
+    const boundsKey = `${bounds.getSouth().toFixed(3)},${bounds.getWest().toFixed(3)},${bounds.getNorth().toFixed(3)},${bounds.getEast().toFixed(3)},forests:${showForests},protected:${showProtectedAreas}`;
     if (boundsKey === lastBoundsRef.current) {
       return;
     }
@@ -317,12 +322,45 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
     }
   }, [map, showForests, showProtectedAreas]);
   
+  // Show zoom hint when overlays are enabled but zoom is too low
+  const [zoomLevel, setZoomLevel] = useState<number>(0);
+  
+  useEffect(() => {
+    if (!map) return;
+    
+    const updateZoom = () => {
+      setZoomLevel(map.getZoom());
+    };
+    
+    updateZoom();
+    map.on('zoomend', updateZoom);
+    
+    return () => {
+      map.off('zoomend', updateZoom);
+    };
+  }, [map]);
+  
+  const showZoomHint = (showForests || showProtectedAreas) && zoomLevel < 10;
+  
   if (isLoading) {
     return (
       <div className="leaflet-top leaflet-left" style={{ top: '60px', left: '10px' }}>
         <div className="bg-white px-2 py-1 rounded shadow-md text-xs text-gray-600 flex items-center gap-1">
           <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
           Loading map data...
+        </div>
+      </div>
+    );
+  }
+  
+  if (showZoomHint) {
+    return (
+      <div className="leaflet-top leaflet-left" style={{ top: '60px', left: '10px' }}>
+        <div className="bg-amber-50 border border-amber-200 px-2 py-1 rounded shadow-md text-xs text-amber-700 flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+          </svg>
+          Zoom in to see overlays (level 10+, current: {zoomLevel})
         </div>
       </div>
     );
