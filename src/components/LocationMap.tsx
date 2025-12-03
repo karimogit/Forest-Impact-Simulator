@@ -146,7 +146,7 @@ const LocateControl = ({ onLocate }: { onLocate?: (lat: number, lng: number) => 
 // Layer switcher control component
 const LayerSwitcher = () => {
   const map = useMap();
-  const [activeLayer, setActiveLayer] = useState<'street' | 'satellite' | 'terrain'>('terrain');
+  const [activeLayer, setActiveLayer] = useState<'street' | 'satellite' | 'terrain'>('satellite');
   const [isOpen, setIsOpen] = useState(false);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   
@@ -585,6 +585,7 @@ const LocationMap: React.FC<LocationMapProps> = ({
   const [locationHistory, setLocationHistory] = useState<LocationHistoryItem[]>([]);
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [markerIcon, setMarkerIcon] = useState<L.DivIcon | null>(null);
 
   // Load location history on mount
   useEffect(() => {
@@ -596,12 +597,14 @@ const LocationMap: React.FC<LocationMapProps> = ({
     if (typeof window !== 'undefined') {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const L = require('leaflet');
-      delete (L.Icon.Default.prototype as Record<string, unknown>)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      const greenIcon = L.divIcon({
+        className: 'custom-marker-icon',
+        html: '<span class="custom-marker-pin"></span>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 24],
+        popupAnchor: [0, -24],
       });
+      setMarkerIcon(greenIcon);
     }
   }, []);
 
@@ -784,8 +787,8 @@ const LocationMap: React.FC<LocationMapProps> = ({
                 <MapController center={mapCenter} zoom={mapZoom} />
                 <ScaleControl />
                 <LayerSwitcher />
-                {selectedLocation && (
-                  <Marker position={selectedLocation} />
+                {selectedLocation && markerIcon && (
+                  <Marker position={selectedLocation} icon={markerIcon} />
                 )}
                 {selectedRegion && (
                   <Rectangle 
@@ -798,12 +801,13 @@ const LocationMap: React.FC<LocationMapProps> = ({
                     fillOpacity={0.2}
                   />
                 )}
-                {selectedRegion && (
+                {selectedRegion && markerIcon && (
                   <Marker
                     position={[
                       (selectedRegion[0] + selectedRegion[2]) / 2,
                       (selectedRegion[1] + selectedRegion[3]) / 2,
                     ]}
+                    icon={markerIcon}
                   />
                 )}
                 

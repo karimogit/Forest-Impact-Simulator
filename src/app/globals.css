@@ -38,3 +38,19 @@ main {
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
+
+/* Custom Leaflet marker styled with branding green */
+.custom-marker-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-marker-pin {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background-color: #1B4D3E; /* branding primary green */
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 0 0 2px rgba(27, 77, 62, 0.3), 0 6px 10px rgba(15, 23, 42, 0.35);
+}
