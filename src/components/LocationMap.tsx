@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useMap } from 'react-leaflet';
 import type * as L from 'leaflet';
@@ -21,6 +21,24 @@ const Rectangle = dynamic(
   () => import('react-leaflet').then((mod) => mod.Rectangle),
   { ssr: false }
 );
+
+// Types for OSM data
+interface OSMElement {
+  type: 'way' | 'relation' | 'node';
+  id: number;
+  bounds?: {
+    minlat: number;
+    minlon: number;
+    maxlat: number;
+    maxlon: number;
+  };
+  geometry?: Array<{ lat: number; lon: number }>;
+  tags?: Record<string, string>;
+}
+
+interface OverpassResponse {
+  elements: OSMElement[];
+}
 
 // Create a client-only wrapper component
 const ClientOnlyMap = ({ children }: { children: React.ReactNode }) => {
@@ -66,6 +84,271 @@ const ScaleControl = () => {
       scaleControl.remove();
     };
   }, [map]);
+  
+  return null;
+};
+
+// Fetch forests and protected areas from OpenStreetMap via Overpass API
+const fetchOSMData = async (bounds: L.LatLngBounds): Promise<{ forests: OSMElement[]; protectedAreas: OSMElement[] }> => {
+  const south = bounds.getSouth();
+  const west = bounds.getWest();
+  const north = bounds.getNorth();
+  const east = bounds.getEast();
+  
+  // Limit query to reasonable area (prevent huge queries)
+  const latDiff = north - south;
+  const lngDiff = east - west;
+  if (latDiff > 1 || lngDiff > 1) {
+    console.log('Area too large for OSM query, skipping');
+    return { forests: [], protectedAreas: [] };
+  }
+  
+  const bbox = `${south},${west},${north},${east}`;
+  
+  // Query for forests and protected areas
+  const query = `
+    [out:json][timeout:15];
+    (
+      way["natural"="wood"](${bbox});
+      way["landuse"="forest"](${bbox});
+      relation["natural"="wood"](${bbox});
+      relation["landuse"="forest"](${bbox});
+      relation["leisure"="nature_reserve"](${bbox});
+      relation["boundary"="protected_area"](${bbox});
+      way["leisure"="nature_reserve"](${bbox});
+      way["boundary"="protected_area"](${bbox});
+    );
+    out geom;
+  `;
+  
+  try {
+    const response = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      body: query,
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Overpass API error: ${response.status}`);
+    }
+    
+    const data: OverpassResponse = await response.json();
+    
+    // Separate forests from protected areas
+    const forests: OSMElement[] = [];
+    const protectedAreas: OSMElement[] = [];
+    
+    for (const element of data.elements) {
+      const tags = element.tags || {};
+      if (tags.natural === 'wood' || tags.landuse === 'forest') {
+        forests.push(element);
+      }
+      if (tags.leisure === 'nature_reserve' || tags.boundary === 'protected_area') {
+        protectedAreas.push(element);
+      }
+    }
+    
+    console.log(`Found ${forests.length} forests, ${protectedAreas.length} protected areas`);
+    return { forests, protectedAreas };
+  } catch (error) {
+    console.error('Error fetching OSM data:', error);
+    return { forests: [], protectedAreas: [] };
+  }
+};
+
+// Component to display OSM forest and protected area overlays
+const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean; showProtectedAreas: boolean }) => {
+  const map = useMap();
+  const forestLayerRef = useRef<L.LayerGroup | null>(null);
+  const protectedLayerRef = useRef<L.LayerGroup | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const lastBoundsRef = useRef<string>('');
+  
+  const loadOSMData = useCallback(async () => {
+    if (!map || (!showForests && !showProtectedAreas)) return;
+    
+    const bounds = map.getBounds();
+    const zoom = map.getZoom();
+    
+    // Only load data when zoomed in enough (zoom >= 10)
+    if (zoom < 10) {
+      console.log('Zoom level too low for OSM data');
+      return;
+    }
+    
+    // Check if bounds have changed significantly
+    const boundsKey = `${bounds.getSouth().toFixed(3)},${bounds.getWest().toFixed(3)},${bounds.getNorth().toFixed(3)},${bounds.getEast().toFixed(3)}`;
+    if (boundsKey === lastBoundsRef.current) {
+      return;
+    }
+    lastBoundsRef.current = boundsKey;
+    
+    setIsLoading(true);
+    
+    try {
+      const { forests, protectedAreas } = await fetchOSMData(bounds);
+      
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const L = require('leaflet');
+      
+      // Clear existing layers
+      if (forestLayerRef.current) {
+        map.removeLayer(forestLayerRef.current);
+      }
+      if (protectedLayerRef.current) {
+        map.removeLayer(protectedLayerRef.current);
+      }
+      
+      // Create forest layer
+      if (showForests && forests.length > 0) {
+        const forestGroup = L.layerGroup();
+        
+        for (const element of forests) {
+          if (element.geometry && element.geometry.length > 2) {
+            const coords = element.geometry.map((p: { lat: number; lon: number }) => [p.lat, p.lon]);
+            const polygon = L.polygon(coords, {
+              color: '#228B22',
+              fillColor: '#228B22',
+              fillOpacity: 0.3,
+              weight: 1,
+            });
+            polygon.bindPopup(`<strong>🌲 Forest</strong><br/>OSM ID: ${element.id}`);
+            forestGroup.addLayer(polygon);
+          }
+        }
+        
+        forestGroup.addTo(map);
+        forestLayerRef.current = forestGroup;
+      }
+      
+      // Create protected areas layer
+      if (showProtectedAreas && protectedAreas.length > 0) {
+        const protectedGroup = L.layerGroup();
+        
+        for (const element of protectedAreas) {
+          if (element.geometry && element.geometry.length > 2) {
+            const coords = element.geometry.map((p: { lat: number; lon: number }) => [p.lat, p.lon]);
+            const polygon = L.polygon(coords, {
+              color: '#4169E1',
+              fillColor: '#4169E1',
+              fillOpacity: 0.25,
+              weight: 2,
+              dashArray: '5, 5',
+            });
+            const name = element.tags?.name || 'Protected Area';
+            polygon.bindPopup(`<strong>🛡️ ${name}</strong><br/>Type: ${element.tags?.boundary || element.tags?.leisure || 'Nature Reserve'}<br/>OSM ID: ${element.id}`);
+            protectedGroup.addLayer(polygon);
+          }
+        }
+        
+        protectedGroup.addTo(map);
+        protectedLayerRef.current = protectedGroup;
+      }
+    } catch (error) {
+      console.error('Error loading OSM overlays:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [map, showForests, showProtectedAreas]);
+  
+  // Load data when map moves or settings change
+  useEffect(() => {
+    if (!map) return;
+    
+    loadOSMData();
+    
+    const handleMoveEnd = () => {
+      loadOSMData();
+    };
+    
+    map.on('moveend', handleMoveEnd);
+    
+    return () => {
+      map.off('moveend', handleMoveEnd);
+      if (forestLayerRef.current) {
+        map.removeLayer(forestLayerRef.current);
+      }
+      if (protectedLayerRef.current) {
+        map.removeLayer(protectedLayerRef.current);
+      }
+    };
+  }, [map, loadOSMData]);
+  
+  // Clean up layers when toggles are turned off
+  useEffect(() => {
+    if (!map) return;
+    
+    if (!showForests && forestLayerRef.current) {
+      map.removeLayer(forestLayerRef.current);
+      forestLayerRef.current = null;
+    }
+    if (!showProtectedAreas && protectedLayerRef.current) {
+      map.removeLayer(protectedLayerRef.current);
+      protectedLayerRef.current = null;
+    }
+  }, [map, showForests, showProtectedAreas]);
+  
+  if (isLoading) {
+    return (
+      <div className="leaflet-top leaflet-left" style={{ top: '60px', left: '10px' }}>
+        <div className="bg-white px-2 py-1 rounded shadow-md text-xs text-gray-600 flex items-center gap-1">
+          <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
+          Loading map data...
+        </div>
+      </div>
+    );
+  }
+  
+  return null;
+};
+
+// NASA GIBS Vegetation Layer Component
+const VegetationLayer = ({ show }: { show: boolean }) => {
+  const map = useMap();
+  const layerRef = useRef<L.TileLayer | null>(null);
+  
+  useEffect(() => {
+    if (!map) return;
+    
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const L = require('leaflet');
+    
+    if (show) {
+      // Add NASA GIBS VIIRS NDVI layer
+      // Using 8-day NDVI composite from VIIRS on NOAA-20
+      const today = new Date();
+      // Go back 10 days to ensure data is available
+      today.setDate(today.getDate() - 10);
+      const dateStr = today.toISOString().split('T')[0];
+      
+      const vegetationLayer = L.tileLayer(
+        `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_NOAA20_NDVI_8Day/default/${dateStr}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png`,
+        {
+          attribution: '&copy; NASA GIBS - VIIRS NDVI',
+          maxZoom: 9,
+          minZoom: 1,
+          opacity: 0.6,
+        }
+      );
+      
+      vegetationLayer.addTo(map);
+      layerRef.current = vegetationLayer;
+    } else {
+      if (layerRef.current) {
+        map.removeLayer(layerRef.current);
+        layerRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (layerRef.current) {
+        map.removeLayer(layerRef.current);
+        layerRef.current = null;
+      }
+    };
+  }, [map, show]);
   
   return null;
 };
@@ -144,7 +427,23 @@ const LocateControl = ({ onLocate }: { onLocate?: (lat: number, lng: number) => 
 };
 
 // Layer switcher control component
-const LayerSwitcher = () => {
+interface LayerSwitcherProps {
+  showForests: boolean;
+  showProtectedAreas: boolean;
+  showVegetation: boolean;
+  onToggleForests: () => void;
+  onToggleProtectedAreas: () => void;
+  onToggleVegetation: () => void;
+}
+
+const LayerSwitcher = ({ 
+  showForests, 
+  showProtectedAreas, 
+  showVegetation,
+  onToggleForests,
+  onToggleProtectedAreas,
+  onToggleVegetation
+}: LayerSwitcherProps) => {
   const map = useMap();
   const [activeLayer, setActiveLayer] = useState<'street' | 'satellite' | 'terrain'>('satellite');
   const [isOpen, setIsOpen] = useState(false);
@@ -197,7 +496,6 @@ const LayerSwitcher = () => {
   
   const handleLayerChange = (layer: 'street' | 'satellite' | 'terrain') => {
     setActiveLayer(layer);
-    setIsOpen(false);
   };
   
   return (
@@ -206,15 +504,19 @@ const LayerSwitcher = () => {
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 border-none cursor-pointer flex items-center gap-2"
-          title="Change map layer"
+          title="Map layers & overlays"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
           </svg>
-          <span className="hidden sm:inline">{activeLayer === 'street' ? 'Street' : activeLayer === 'satellite' ? 'Satellite' : 'Terrain'}</span>
+          <span className="hidden sm:inline">Layers</span>
         </button>
         {isOpen && (
-          <div className="absolute bottom-full right-0 mb-2 bg-white rounded shadow-lg border border-gray-200 min-w-[120px]">
+          <div className="absolute bottom-full right-0 mb-2 bg-white rounded shadow-lg border border-gray-200 min-w-[180px]">
+            {/* Base Layers Section */}
+            <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-200">
+              <span className="text-xs font-semibold text-gray-600">Base Map</span>
+            </div>
             <button
               onClick={() => handleLayerChange('street')}
               className={`w-full px-3 py-2 text-xs text-left hover:bg-gray-50 border-none cursor-pointer flex items-center gap-2 ${activeLayer === 'street' ? 'bg-primary/10 font-semibold' : ''}`}
@@ -238,10 +540,65 @@ const LayerSwitcher = () => {
               className={`w-full px-3 py-2 text-xs text-left hover:bg-gray-50 border-none cursor-pointer flex items-center gap-2 ${activeLayer === 'terrain' ? 'bg-primary/10 font-semibold' : ''}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18M5 20v-2a2 2 0 012-2h10a2 2 0 012 2v2" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l4 4-4 4m6-8v8m4-8l-4 4 4 4M5 17h14" />
               </svg>
               <span>Terrain</span>
             </button>
+            
+            {/* Overlay Layers Section */}
+            <div className="px-3 py-1.5 bg-gray-50 border-t border-b border-gray-200 mt-1">
+              <span className="text-xs font-semibold text-gray-600">Overlays</span>
+            </div>
+            <button
+              onClick={onToggleForests}
+              className={`w-full px-3 py-2 text-xs text-left hover:bg-gray-50 border-none cursor-pointer flex items-center gap-2 ${showForests ? 'bg-green-50' : ''}`}
+            >
+              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${showForests ? 'bg-green-600 border-green-600' : 'border-gray-300'}`}>
+                {showForests && (
+                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+              <span className="flex items-center gap-1">
+                <span style={{ color: '#228B22' }}>🌲</span> Forests
+              </span>
+            </button>
+            <button
+              onClick={onToggleProtectedAreas}
+              className={`w-full px-3 py-2 text-xs text-left hover:bg-gray-50 border-none cursor-pointer flex items-center gap-2 ${showProtectedAreas ? 'bg-blue-50' : ''}`}
+            >
+              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${showProtectedAreas ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                {showProtectedAreas && (
+                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+              <span className="flex items-center gap-1">
+                <span style={{ color: '#4169E1' }}>🛡️</span> Protected Areas
+              </span>
+            </button>
+            <button
+              onClick={onToggleVegetation}
+              className={`w-full px-3 py-2 text-xs text-left hover:bg-gray-50 border-none cursor-pointer flex items-center gap-2 ${showVegetation ? 'bg-lime-50' : ''}`}
+            >
+              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${showVegetation ? 'bg-lime-600 border-lime-600' : 'border-gray-300'}`}>
+                {showVegetation && (
+                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+              <span className="flex items-center gap-1">
+                <span style={{ color: '#84cc16' }}>🌿</span> Vegetation (NASA)
+              </span>
+            </button>
+            
+            {/* Legend hint */}
+            <div className="px-3 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
+              <p>Zoom in (level 10+) to see forests &amp; reserves</p>
+            </div>
           </div>
         )}
       </div>
@@ -586,6 +943,11 @@ const LocationMap: React.FC<LocationMapProps> = ({
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [markerIcon, setMarkerIcon] = useState<L.DivIcon | null>(null);
+  
+  // Overlay layer toggles
+  const [showForests, setShowForests] = useState(false);
+  const [showProtectedAreas, setShowProtectedAreas] = useState(false);
+  const [showVegetation, setShowVegetation] = useState(false);
 
   // Load location history on mount
   useEffect(() => {
@@ -786,7 +1148,19 @@ const LocationMap: React.FC<LocationMapProps> = ({
               >
                 <MapController center={mapCenter} zoom={mapZoom} />
                 <ScaleControl />
-                <LayerSwitcher />
+                <LayerSwitcher 
+                  showForests={showForests}
+                  showProtectedAreas={showProtectedAreas}
+                  showVegetation={showVegetation}
+                  onToggleForests={() => setShowForests(!showForests)}
+                  onToggleProtectedAreas={() => setShowProtectedAreas(!showProtectedAreas)}
+                  onToggleVegetation={() => setShowVegetation(!showVegetation)}
+                />
+                
+                {/* Overlay layers */}
+                <OSMOverlays showForests={showForests} showProtectedAreas={showProtectedAreas} />
+                <VegetationLayer show={showVegetation} />
+                
                 {selectedLocation && markerIcon && (
                   <Marker position={selectedLocation} icon={markerIcon} />
                 )}
