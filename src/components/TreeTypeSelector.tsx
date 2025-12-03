@@ -170,12 +170,12 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
           role="searchbox"
         />
         
-        <div className="flex flex-wrap gap-1" role="group" aria-label="Filter trees by category">
+        <div className="flex gap-1 overflow-x-auto whitespace-nowrap pb-1" role="group" aria-label="Filter trees by category">
           {categories.map(category => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+              className={`px-2 py-1 rounded-full text-xs font-medium transition-colors flex-shrink-0 ${
                 selectedCategory === category
                   ? getTreeCategoryColor(category as 'deciduous' | 'coniferous' | 'tropical' | 'mediterranean' | 'boreal' | 'arid' | 'subtropical' | 'all', 'bg')
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

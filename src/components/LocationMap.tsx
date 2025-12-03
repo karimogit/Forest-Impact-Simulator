@@ -146,7 +146,7 @@ const LocateControl = ({ onLocate }: { onLocate?: (lat: number, lng: number) => 
 // Layer switcher control component
 const LayerSwitcher = () => {
   const map = useMap();
-  const [activeLayer, setActiveLayer] = useState<'street' | 'satellite' | 'terrain'>('street');
+  const [activeLayer, setActiveLayer] = useState<'street' | 'satellite' | 'terrain'>('terrain');
   const [isOpen, setIsOpen] = useState(false);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   
@@ -796,6 +796,14 @@ const LocationMap: React.FC<LocationMapProps> = ({
                     color="green"
                     fillColor="green"
                     fillOpacity={0.2}
+                  />
+                )}
+                {selectedRegion && (
+                  <Marker
+                    position={[
+                      (selectedRegion[0] + selectedRegion[2]) / 2,
+                      (selectedRegion[1] + selectedRegion[3]) / 2,
+                    ]}
                   />
                 )}
                 
