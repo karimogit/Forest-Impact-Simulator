@@ -46,11 +46,32 @@ main {
   justify-content: center;
 }
 
+/* Pulsing animation for the marker to make it more visible */
+@keyframes marker-pulse {
+  0% {
+    box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.4), 0 6px 12px rgba(15, 23, 42, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(27, 77, 62, 0.2), 0 6px 12px rgba(15, 23, 42, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.4), 0 6px 12px rgba(15, 23, 42, 0.4);
+  }
+}
+
 .custom-marker-pin {
-  width: 20px;
-  height: 20px;
+  display: block;
+  width: 24px;
+  height: 24px;
   border-radius: 9999px;
   background-color: #1B4D3E; /* branding primary green */
-  border: 2px solid #FFFFFF;
-  box-shadow: 0 0 0 2px rgba(27, 77, 62, 0.3), 0 6px 10px rgba(15, 23, 42, 0.35);
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.4), 0 6px 12px rgba(15, 23, 42, 0.4);
+  animation: marker-pulse 2s ease-in-out infinite;
+}
+
+/* Ensure Leaflet marker containers don't interfere with custom styling */
+.leaflet-marker-icon.custom-marker-icon {
+  background: transparent !important;
+  border: none !important;
 }
