@@ -788,31 +788,43 @@ export default function Home() {
         {/* Simulation Mode Selector and Reset Button */}
         <div className="mb-8">
           <div className="flex justify-center items-center gap-4 flex-wrap">
-            <div className="bg-white border border-primary/20 rounded-xl p-4 shadow-sm">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-gray-700">Pick a simulation mode:</span>
-                <div className="flex bg-gray-100 rounded-lg p-1">
-                  <button
-                    onClick={() => setSimulationMode('planting')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      simulationMode === 'planting'
-                        ? 'bg-green-800 text-white shadow-sm'
-                        : 'text-gray-600 hover:text-gray-800'
-                    }`}
-                  >
-                    &#127793; Planting
-                  </button>
-                  <button
-                    onClick={() => setSimulationMode('clear-cutting')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      simulationMode === 'clear-cutting'
-                        ? 'bg-green-800 text-white shadow-sm'
-                        : 'text-gray-600 hover:text-gray-800'
-                    }`}
-                  >
-                    &#129683; Clear-cutting
-                  </button>
-                </div>
+            <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-2xl p-2 shadow-lg">
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setSimulationMode('planting')}
+                  className={`relative px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                    simulationMode === 'planting'
+                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-green-500/30 scale-[1.02]'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m-8-9H3m18 0h-1M5.636 5.636l.707.707m11.314 11.314l.707.707M5.636 18.364l.707-.707m11.314-11.314l.707-.707" />
+                    <circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.3" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v8M8 12h8" />
+                  </svg>
+                  <span>Planting</span>
+                  {simulationMode === 'planting' && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+                  )}
+                </button>
+                <div className="w-px h-8 bg-gray-200 mx-1" />
+                <button
+                  onClick={() => setSimulationMode('clear-cutting')}
+                  className={`relative px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                    simulationMode === 'clear-cutting'
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30 scale-[1.02]'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                  <span>Clear-cutting</span>
+                  {simulationMode === 'clear-cutting' && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full animate-pulse" />
+                  )}
+                </button>
               </div>
             </div>
             {/* Reset Button */}
