@@ -58,13 +58,12 @@ function toUltraCompactString(state: ShareableState): string {
   // Average tree age (only if defined)
   parts.push(state.averageTreeAge !== undefined ? state.averageTreeAge.toString() : '');
   
-  // Trees with percentages (id:pct,id:pct)
+  // Trees with percentages (id:pct,id:pct) - include all trees, even with 0%
   const treesWithPcts: string[] = [];
   state.treeIds.forEach(id => {
-    const pct = state.treePercentages[id];
-    if (pct > 0) {
-      treesWithPcts.push(`${id}:${pct}`);
-    }
+    const pct = state.treePercentages[id] ?? 0;
+    // Always include the tree ID, with its percentage (even if 0)
+    treesWithPcts.push(`${id}:${pct}`);
   });
   parts.push(treesWithPcts.join(','));
   
