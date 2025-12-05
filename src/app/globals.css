@@ -75,3 +75,21 @@ main {
   background: transparent !important;
   border: none !important;
 }
+
+/* Custom overlay panes for forest and protected area overlays */
+.leaflet-forestOverlayPane-pane,
+.leaflet-protectedOverlayPane-pane {
+  z-index: 450 !important;
+  pointer-events: auto;
+}
+
+.leaflet-protectedOverlayPane-pane {
+  z-index: 455 !important;
+}
+
+/* Ensure overlay polygons are visible and clickable */
+.leaflet-forestOverlayPane-pane path,
+.leaflet-protectedOverlayPane-pane path {
+  pointer-events: auto;
+  cursor: pointer;
+}

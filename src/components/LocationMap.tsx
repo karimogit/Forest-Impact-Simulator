@@ -175,20 +175,27 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
   
   // Create custom pane for overlays with higher z-index
   useEffect(() => {
-    if (!map || paneCreatedRef.current) return;
+    if (!map) return;
     
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const L = require('leaflet');
+    // Create or get custom panes for forest/protected area overlays above tiles
+    // Always ensure z-index is set correctly, even if pane already exists
+    let forestPane = map.getPane('forestOverlayPane');
+    if (!forestPane) {
+      forestPane = map.createPane('forestOverlayPane');
+      console.log('[OSM Overlays] Created forestOverlayPane');
+    }
+    // Ensure proper CSS for the pane - z-index above tiles (200) but below markers (600)
+    forestPane.style.zIndex = '450';
+    forestPane.style.pointerEvents = 'auto';
     
-    // Create a custom pane for forest/protected area overlays above tiles
-    if (!map.getPane('forestOverlayPane')) {
-      const forestPane = map.createPane('forestOverlayPane');
-      forestPane.style.zIndex = '450'; // Above tiles (200) but below markers (600)
+    let protectedPane = map.getPane('protectedOverlayPane');
+    if (!protectedPane) {
+      protectedPane = map.createPane('protectedOverlayPane');
+      console.log('[OSM Overlays] Created protectedOverlayPane');
     }
-    if (!map.getPane('protectedOverlayPane')) {
-      const protectedPane = map.createPane('protectedOverlayPane');
-      protectedPane.style.zIndex = '455'; // Slightly above forest pane
-    }
+    // Slightly above forest pane
+    protectedPane.style.zIndex = '455';
+    protectedPane.style.pointerEvents = 'auto';
     
     paneCreatedRef.current = true;
   }, [map]);
@@ -201,12 +208,18 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
   const loadOSMData = useCallback(async () => {
     if (!map || (!showForests && !showProtectedAreas)) return;
     
+    // Ensure panes are created before loading data
+    if (!paneCreatedRef.current) {
+      console.log('[OSM Overlays] Panes not ready, skipping load');
+      return;
+    }
+    
     const bounds = map.getBounds();
     const zoom = map.getZoom();
     
     // Only load data when zoomed in enough (zoom >= 10)
     if (zoom < 10) {
-      console.log('Zoom level too low for OSM data, need zoom >= 10 (current:', zoom, ')');
+      console.log('[OSM Overlays] Zoom level too low, need >= 10 (current:', zoom, ')');
       return;
     }
     
@@ -217,6 +230,7 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
     }
     lastBoundsRef.current = boundsKey;
     
+    console.log('[OSM Overlays] Loading data for bounds:', boundsKey);
     setIsLoading(true);
     
     try {
@@ -228,9 +242,29 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
       // Clear existing layers
       if (forestLayerRef.current) {
         map.removeLayer(forestLayerRef.current);
+        forestLayerRef.current = null;
       }
       if (protectedLayerRef.current) {
         map.removeLayer(protectedLayerRef.current);
+        protectedLayerRef.current = null;
+      }
+      
+      // Verify panes exist before adding layers, create them if missing
+      let forestPane = map.getPane('forestOverlayPane');
+      let protectedPane = map.getPane('protectedOverlayPane');
+      
+      if (!forestPane) {
+        console.warn('[OSM Overlays] forestOverlayPane not found, creating...');
+        forestPane = map.createPane('forestOverlayPane');
+        forestPane.style.zIndex = '450';
+        forestPane.style.pointerEvents = 'auto';
+      }
+      
+      if (!protectedPane) {
+        console.warn('[OSM Overlays] protectedOverlayPane not found, creating...');
+        protectedPane = map.createPane('protectedOverlayPane');
+        protectedPane.style.zIndex = '455';
+        protectedPane.style.pointerEvents = 'auto';
       }
       
       // Helper function to extract geometries from an OSM element (handles both ways and relations)
@@ -420,6 +454,7 @@ const VegetationLayer = ({ show }: { show: boolean }) => {
           maxZoom: 9,
           minZoom: 1,
           opacity: 0.6,
+          pane: 'overlayPane', // Use overlayPane (z-index 400) - above tiles but below forest/protected overlays
         }
       );
       
@@ -571,7 +606,8 @@ const LayerSwitcher = ({
     
     const newTileLayer = L.tileLayer(tileUrl, {
       attribution,
-      maxZoom: 19
+      maxZoom: 19,
+      pane: 'tilePane', // Explicitly use tilePane (z-index 200) to ensure overlays appear above
     });
     
     newTileLayer.addTo(map);
