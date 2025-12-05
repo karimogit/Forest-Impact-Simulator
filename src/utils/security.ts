@@ -131,8 +131,8 @@ export class RateLimiter {
   }
 }
 
-// Create a global rate limiter instance
-export const apiRateLimiter = new RateLimiter(30, 60000); // 30 requests per minute
+// Create a global rate limiter instance - generous limits for better UX
+export const apiRateLimiter = new RateLimiter(60, 60000); // 60 requests per minute
 
 // Clean up rate limiter periodically
 setInterval(() => {

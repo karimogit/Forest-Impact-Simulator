@@ -200,18 +200,22 @@ const fetchSoilData = async (lat: number, lon: number, retries = 2): Promise<Soi
     // Validate coordinates
     if (!validateLatitude(lat) || !validateLongitude(lon)) {
       console.warn('Invalid coordinates for soil data:', { lat, lon });
-      throw new Error('Invalid coordinates');
+      return estimateSoilData(lat);
     }
     
-    // Rate limiting
+    // Rate limiting - be more lenient
     if (!apiRateLimiter.isAllowed('soil')) {
-      console.warn('Soil API rate limit exceeded, will retry after cooldown');
-      throw new Error('Rate limit exceeded');
+      console.warn('[SOIL API] Rate limit - using estimates');
+      return estimateSoilData(lat);
     }
     
-    console.log('[SOIL API] Fetching soil data for:', lat, lon, '(attempt', 3 - retries, 'of 3)');
+    const attemptNum = 3 - retries;
+    console.log(`[SOIL API] Fetching soil data for: ${lat.toFixed(4)}, ${lon.toFixed(4)} (attempt ${attemptNum} of 3)`);
     
-    // Use the ISRIC SoilGrids API endpoint with increased timeout
+    // Use progressively longer timeouts on retries
+    const timeout = 15000 + (attemptNum * 10000); // 15s, 25s, 35s
+    
+    // Use the ISRIC SoilGrids API endpoint
     const res = await fetchWithTimeout(
       `https://rest.isric.org/soilgrids/v2.0/properties/query?lon=${lon}&lat=${lat}&property=soc&property=phh2o&depth=0-5cm&value=mean`,
       {
@@ -220,16 +224,19 @@ const fetchSoilData = async (lat: number, lon: number, retries = 2): Promise<Soi
         },
         mode: 'cors'
       },
-      30000 // Increased timeout to 30 seconds
+      timeout
     );
     
     if (!res.ok) {
-      console.warn(`Soil API returned status ${res.status}: ${res.statusText}`);
+      // For 404 or 400, the location might not have data - use estimates without retrying
+      if (res.status === 404 || res.status === 400) {
+        console.log(`[SOIL API] No data available for this location (${res.status}). Using estimates.`);
+        return estimateSoilData(lat);
+      }
       throw new Error(`Soil API error: ${res.status} ${res.statusText}`);
     }
     
     const data = await res.json();
-    console.log('[SOIL API] Response received successfully');
     
     // Extract organic carbon and pH from the response
     let carbon = null;
@@ -239,39 +246,51 @@ const fetchSoilData = async (lat: number, lon: number, retries = 2): Promise<Soi
       for (const layer of data.properties.layers) {
         if (layer.name === 'soc' && layer.depths && layer.depths[0]) {
           // Convert from dg/kg to g/kg (divide by 10)
-          const rawValue = layer.depths[0].values?.mean || null;
-          carbon = rawValue ? rawValue / 10 : null;
+          const rawValue = layer.depths[0].values?.mean;
+          carbon = rawValue != null ? rawValue / 10 : null;
         }
         if (layer.name === 'phh2o' && layer.depths && layer.depths[0]) {
           // Convert from pHx10 to actual pH (divide by 10)
-          const rawValue = layer.depths[0].values?.mean || null;
-          ph = rawValue ? rawValue / 10 : null;
+          const rawValue = layer.depths[0].values?.mean;
+          ph = rawValue != null ? rawValue / 10 : null;
         }
       }
     }
     
-    console.log('[SOIL API] Data extracted:', { carbon, ph });
-    
     // If API returns null values (no data available for this location), use estimates
-    if (carbon === null || ph === null) {
-      console.log('[SOIL API] API returned null values - no data available for this location. Using climate-based estimates.');
+    if (carbon === null && ph === null) {
+      console.log('[SOIL API] API returned null values. Using climate-based estimates.');
       return estimateSoilData(lat);
     }
     
-    console.log('[SOIL API] Successfully retrieved real soil data from SoilGrids');
-    return { carbon, ph, isEstimated: false };
+    // Allow partial data - use estimates for missing values
+    const result: SoilData = {
+      carbon: carbon ?? estimateSoilData(lat).carbon,
+      ph: ph ?? estimateSoilData(lat).ph,
+      isEstimated: carbon === null || ph === null
+    };
+    
+    console.log('[SOIL API] Success:', { carbon: result.carbon, ph: result.ph, partial: result.isEstimated });
+    return result;
   } catch (error) {
-    console.error('Error fetching soil data:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Don't retry for certain errors
+    if (errorMessage.includes('aborted') || errorMessage.includes('timeout')) {
+      console.warn(`[SOIL API] Request timed out (attempt ${3 - retries})`);
+    } else {
+      console.warn(`[SOIL API] Error: ${errorMessage}`);
+    }
     
     // Retry logic with exponential backoff
     if (retries > 0) {
-      const waitTime = (3 - retries) * 3000; // Progressive backoff: 3s, 6s
-      console.log(`[SOIL API] Retry ${3 - retries} failed. Waiting ${waitTime/1000}s before retry ${3 - retries + 1}...`);
+      const waitTime = (3 - retries) * 2000; // Progressive backoff: 2s, 4s
+      console.log(`[SOIL API] Retrying in ${waitTime/1000}s...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
       return fetchSoilData(lat, lon, retries - 1);
     }
     
-    console.warn('[SOIL API] All 3 attempts failed. Using climate-based estimates.');
+    console.log('[SOIL API] All attempts exhausted. Using climate-based estimates.');
     return estimateSoilData(lat);
   }
 };
@@ -312,108 +331,110 @@ const fetchClimateData = async (lat: number, lon: number, retries = 2): Promise<
     // Validate coordinates
     if (!validateLatitude(lat) || !validateLongitude(lon)) {
       console.warn('Invalid coordinates for climate data:', { lat, lon });
-      throw new Error('Invalid coordinates');
+      return estimateClimateData(lat);
     }
     
-    // Rate limiting
+    // Rate limiting - be more lenient
     if (!apiRateLimiter.isAllowed('climate')) {
-      console.warn('Climate API rate limit exceeded, will retry after cooldown');
-      throw new Error('Rate limit exceeded');
+      console.warn('[CLIMATE API] Rate limit - using estimates');
+      return estimateClimateData(lat);
     }
     
-    console.log('[CLIMATE API] Fetching climate data for:', lat, lon, '(attempt', 3 - retries, 'of 3)');
+    const attemptNum = 3 - retries;
+    console.log(`[CLIMATE API] Fetching for: ${lat.toFixed(4)}, ${lon.toFixed(4)} (attempt ${attemptNum} of 3)`);
     
-    // Fetch current weather data with increased timeout
+    // Use progressively longer timeouts on retries
+    const timeout = 10000 + (attemptNum * 5000); // 10s, 15s, 20s
+    
+    // Fetch current weather data
     const weatherRes = await fetchWithTimeout(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation&timezone=auto`,
       {},
-      30000 // 30 second timeout
+      timeout
     );
     
     if (!weatherRes.ok) {
-      console.warn(`Weather API returned status ${weatherRes.status}: ${weatherRes.statusText}`);
       throw new Error(`Weather API error: ${weatherRes.status} ${weatherRes.statusText}`);
     }
     
     const weatherData = await weatherRes.json();
-    console.log('[CLIMATE API] Current weather data received successfully');
     
-    // Fetch historical data for climate trend analysis (reduced to 5 years for performance)
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setFullYear(startDate.getFullYear() - 5); // Reduced from 11 to 5 years
+    const currentTemp = weatherData.current?.temperature_2m;
+    const currentPrecip = weatherData.current?.precipitation;
     
-    const historicalRes = await fetchWithTimeout(
-      `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${startDate.toISOString().split('T')[0]}&end_date=${endDate.toISOString().split('T')[0]}&daily=temperature_2m_mean,precipitation_sum&timezone=auto`,
-      {},
-      30000 // 30 second timeout
-    );
-    
-    let historicalData = undefined;
-    if (historicalRes.ok) {
-      const historicalWeatherData = await historicalRes.json();
-      console.log('[CLIMATE API] Historical weather data received successfully');
-      
-      if (historicalWeatherData.daily) {
-        const temperatures = historicalWeatherData.daily.temperature_2m_mean || [];
-        const precipitations = historicalWeatherData.daily.precipitation_sum || [];
-        
-        // Process daily data into yearly averages
-        const yearlyData = processDailyToYearly(temperatures, precipitations);
-        
-        if (yearlyData.temperatures.length > 0) {
-          historicalData = {
-            temperatures: yearlyData.temperatures,
-            precipitations: yearlyData.precipitations,
-            years: yearlyData.years
-          };
-        }
-      }
-    } else {
-      console.warn('Historical weather data unavailable, predictions will use fallback values');
-    }
-    
-    const currentTemp = weatherData.current?.temperature_2m || null;
-    const currentPrecip = weatherData.current?.precipitation || null;
-    
-    console.log('[CLIMATE API] Data extracted:', { currentTemp, currentPrecip, hasHistoricalData: !!historicalData });
-    
-    // If API returns null values, use estimates
-    if (currentTemp === null || currentPrecip === null) {
-      console.log('[CLIMATE API] API returned null values - no data available for this location. Using climate-based estimates.');
+    // If current data is missing, use estimates
+    if (currentTemp == null) {
+      console.log('[CLIMATE API] No temperature data. Using estimates.');
       return estimateClimateData(lat);
     }
     
-    console.log('[CLIMATE API] Successfully retrieved real climate data from Open-Meteo');
+    // Try to fetch historical data (non-blocking - we continue even if this fails)
+    let historicalData = undefined;
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setFullYear(startDate.getFullYear() - 3); // Reduced to 3 years for faster response
+      
+      const historicalRes = await fetchWithTimeout(
+        `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${startDate.toISOString().split('T')[0]}&end_date=${endDate.toISOString().split('T')[0]}&daily=temperature_2m_mean,precipitation_sum&timezone=auto`,
+        {},
+        timeout
+      );
+      
+      if (historicalRes.ok) {
+        const historicalWeatherData = await historicalRes.json();
+        
+        if (historicalWeatherData.daily) {
+          const temperatures = historicalWeatherData.daily.temperature_2m_mean || [];
+          const precipitations = historicalWeatherData.daily.precipitation_sum || [];
+          
+          // Process daily data into yearly averages
+          const yearlyData = processDailyToYearly(temperatures, precipitations);
+          
+          if (yearlyData.temperatures.length > 0) {
+            historicalData = {
+              temperatures: yearlyData.temperatures,
+              precipitations: yearlyData.precipitations,
+              years: yearlyData.years
+            };
+          }
+        }
+      }
+    } catch (histError) {
+      // Historical data fetch failed - continue without it
+      console.log('[CLIMATE API] Historical data unavailable, continuing with current data only');
+    }
+    
+    console.log('[CLIMATE API] Success:', { 
+      temperature: currentTemp, 
+      precipitation: currentPrecip ?? 0,
+      hasHistorical: !!historicalData 
+    });
+    
     return {
       temperature: currentTemp,
-      precipitation: currentPrecip,
+      precipitation: currentPrecip ?? 0, // Default to 0 if no precipitation data
       historicalData,
       isEstimated: false
     };
   } catch (error) {
-    console.error('Error fetching climate data:', error);
-    // Log more specific error information
-    if (error instanceof Error) {
-      console.error('Error message:', error.message);
-      if (error.message.includes('Rate limit')) {
-        console.error('Rate limit exceeded - try again in a minute');
-      } else if (error.message.includes('Weather API error')) {
-        console.error('Weather API is temporarily unavailable');
-      } else if (error.message.includes('aborted')) {
-        console.error('API request timed out');
-      }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (errorMessage.includes('aborted') || errorMessage.includes('timeout')) {
+      console.warn(`[CLIMATE API] Request timed out (attempt ${3 - retries})`);
+    } else {
+      console.warn(`[CLIMATE API] Error: ${errorMessage}`);
     }
     
-    // Retry logic with exponential backoff
+    // Retry logic with shorter backoff for climate API (usually more reliable)
     if (retries > 0) {
-      const waitTime = (3 - retries) * 3000; // Progressive backoff: 3s, 6s
-      console.log(`[CLIMATE API] Retry ${3 - retries} failed. Waiting ${waitTime/1000}s before retry ${3 - retries + 1}...`);
+      const waitTime = (3 - retries) * 1500; // Progressive backoff: 1.5s, 3s
+      console.log(`[CLIMATE API] Retrying in ${waitTime/1000}s...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
       return fetchClimateData(lat, lon, retries - 1);
     }
     
-    console.warn('[CLIMATE API] All 3 attempts failed. Using climate-based estimates.');
+    console.log('[CLIMATE API] All attempts exhausted. Using climate-based estimates.');
     return estimateClimateData(lat);
   }
 };

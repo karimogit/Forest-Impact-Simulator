@@ -171,6 +171,27 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
   const protectedLayerRef = useRef<L.LayerGroup | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const lastBoundsRef = useRef<string>('');
+  const paneCreatedRef = useRef(false);
+  
+  // Create custom pane for overlays with higher z-index
+  useEffect(() => {
+    if (!map || paneCreatedRef.current) return;
+    
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const L = require('leaflet');
+    
+    // Create a custom pane for forest/protected area overlays above tiles
+    if (!map.getPane('forestOverlayPane')) {
+      const forestPane = map.createPane('forestOverlayPane');
+      forestPane.style.zIndex = '450'; // Above tiles (200) but below markers (600)
+    }
+    if (!map.getPane('protectedOverlayPane')) {
+      const protectedPane = map.createPane('protectedOverlayPane');
+      protectedPane.style.zIndex = '455'; // Slightly above forest pane
+    }
+    
+    paneCreatedRef.current = true;
+  }, [map]);
   
   // Reset bounds cache when toggles change to force reload
   useEffect(() => {
@@ -233,7 +254,7 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
         return geometries;
       };
 
-      // Create forest layer
+      // Create forest layer with custom pane for proper z-index
       if (showForests && forests.length > 0) {
         const forestGroup = L.layerGroup();
         
@@ -243,8 +264,9 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
             const polygon = L.polygon(coords, {
               color: '#228B22',
               fillColor: '#228B22',
-              fillOpacity: 0.3,
-              weight: 1,
+              fillOpacity: 0.4,
+              weight: 2,
+              pane: 'forestOverlayPane', // Use custom pane with higher z-index
             });
             polygon.bindPopup(`<strong>🌲 Forest</strong><br/>OSM ID: ${element.id}`);
             forestGroup.addLayer(polygon);
@@ -253,9 +275,10 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
         
         forestGroup.addTo(map);
         forestLayerRef.current = forestGroup;
+        console.log('[OSM Overlays] Added', forests.length, 'forest polygons to map');
       }
       
-      // Create protected areas layer
+      // Create protected areas layer with custom pane for proper z-index
       if (showProtectedAreas && protectedAreas.length > 0) {
         const protectedGroup = L.layerGroup();
         
@@ -266,9 +289,10 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
             const polygon = L.polygon(coords, {
               color: '#4169E1',
               fillColor: '#4169E1',
-              fillOpacity: 0.25,
-              weight: 2,
+              fillOpacity: 0.35,
+              weight: 3,
               dashArray: '5, 5',
+              pane: 'protectedOverlayPane', // Use custom pane with higher z-index
             });
             polygon.bindPopup(`<strong>🛡️ ${name}</strong><br/>Type: ${element.tags?.boundary || element.tags?.leisure || 'Nature Reserve'}<br/>OSM ID: ${element.id}`);
             protectedGroup.addLayer(polygon);
@@ -277,6 +301,7 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
         
         protectedGroup.addTo(map);
         protectedLayerRef.current = protectedGroup;
+        console.log('[OSM Overlays] Added', protectedAreas.length, 'protected area polygons to map');
       }
     } catch (error) {
       console.error('Error loading OSM overlays:', error);
@@ -1003,6 +1028,57 @@ const LocationMap: React.FC<LocationMapProps> = ({
   const [mapZoom, setMapZoom] = useState<number>(
     initialRegion || (initialLatitude && initialLongitude) ? 10 : 4
   );
+  
+  // Update map center/zoom when initial props change (e.g., from shared links)
+  useEffect(() => {
+    // Skip if no initial props or already processed in this render cycle
+    if (!initialRegion && !initialLatitude && !initialLongitude) {
+      return;
+    }
+    
+    // Calculate new center and zoom based on initial props
+    let newCenter: [number, number];
+    let newZoom: number;
+    
+    if (initialRegion) {
+      newCenter = [
+        (initialRegion.north + initialRegion.south) / 2,
+        (initialRegion.east + initialRegion.west) / 2
+      ];
+      // Calculate appropriate zoom based on region size
+      const latSpan = initialRegion.north - initialRegion.south;
+      const lngSpan = initialRegion.east - initialRegion.west;
+      const maxSpan = Math.max(latSpan, lngSpan);
+      // Approximate zoom level based on region size
+      if (maxSpan > 10) newZoom = 5;
+      else if (maxSpan > 5) newZoom = 6;
+      else if (maxSpan > 2) newZoom = 7;
+      else if (maxSpan > 1) newZoom = 8;
+      else if (maxSpan > 0.5) newZoom = 9;
+      else if (maxSpan > 0.2) newZoom = 10;
+      else if (maxSpan > 0.1) newZoom = 11;
+      else if (maxSpan > 0.05) newZoom = 12;
+      else newZoom = 13;
+      
+      // Update selected region state
+      setSelectedRegion([initialRegion.north, initialRegion.west, initialRegion.south, initialRegion.east]);
+      setSelectedLocation(null);
+    } else if (initialLatitude && initialLongitude) {
+      newCenter = [initialLatitude, initialLongitude];
+      newZoom = 12; // Zoom in closer for point locations
+      setSelectedLocation([initialLatitude, initialLongitude]);
+      setSelectedRegion(null);
+    } else {
+      return;
+    }
+    
+    // Only update if different from current state
+    if (newCenter[0] !== mapCenter[0] || newCenter[1] !== mapCenter[1] || newZoom !== mapZoom) {
+      console.log('[LocationMap] Updating map from initial props:', { newCenter, newZoom });
+      setMapCenter(newCenter);
+      setMapZoom(newZoom);
+    }
+  }, [initialRegion, initialLatitude, initialLongitude]); // Intentionally excluding mapCenter and mapZoom to avoid loops
   const [showHistory, setShowHistory] = useState(false);
   const [locationHistory, setLocationHistory] = useState<LocationHistoryItem[]>([]);
   const mapRef = useRef<L.Map | null>(null);
