@@ -776,11 +776,11 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-8 lg:p-12">
       <div className="container mx-auto max-w-7xl w-full">
-        <section className="text-center mb-12 space-y-section" aria-labelledby="main-heading">
-          <h1 id="main-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold text-center mb-4 text-gray-900">
+        <section className="text-center mb-8" aria-labelledby="main-heading">
+          <h1 id="main-heading" className="text-4xl font-bold text-center mb-2">
             Simulate the Impact of Forest Management
           </h1>
-          <p className="text-lg md:text-xl text-gray-700 mb-8 max-w-4xl mx-auto text-center leading-relaxed">
+          <p className="text-lg text-gray-600 mb-8 max-w-3xl mx-auto text-center">
             Use real-time environmental data to analyze the impacts of forest planting and clear-cutting on carbon storage, biodiversity, economic value, social outcomes, and land use.
           </p>
         </section>
@@ -794,10 +794,10 @@ export default function Home() {
                   onClick={() => setSimulationMode('planting')}
                   aria-label="Switch to planting mode"
                   aria-pressed={simulationMode === 'planting'}
-                  className={`relative px-6 md:px-8 py-3 md:py-4 rounded-xl text-base md:text-lg font-semibold transition-all duration-300 flex items-center gap-2 md:gap-3 ${
+                  className={`relative px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                     simulationMode === 'planting'
                       ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-green-500/30 scale-[1.02]'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -815,10 +815,10 @@ export default function Home() {
                   onClick={() => setSimulationMode('clear-cutting')}
                   aria-label="Switch to clear-cutting mode"
                   aria-pressed={simulationMode === 'clear-cutting'}
-                  className={`relative px-6 md:px-8 py-3 md:py-4 rounded-xl text-base md:text-lg font-semibold transition-all duration-300 flex items-center gap-2 md:gap-3 ${
+                  className={`relative px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                     simulationMode === 'clear-cutting'
                       ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30 scale-[1.02]'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -835,7 +835,7 @@ export default function Home() {
             {(selectedLatitude || selectedLongitude || selectedRegion || selectedTrees.length > 0) && (
               <button
                 onClick={handleReset}
-                className="bg-white border-2 border-red-300 text-red-700 hover:bg-red-50 px-5 md:px-6 py-3 md:py-4 rounded-xl text-base md:text-lg font-semibold transition-colors shadow-md hover:shadow-lg flex items-center gap-2 md:gap-3"
+                className="bg-white border border-red-300 text-red-700 hover:bg-red-50 px-4 py-3 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
                 title="Reset all selections"
                 aria-label="Reset all selections"
               >
@@ -861,7 +861,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 mb-12">
             <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-shadow">
               <div className="flex items-start gap-4 mb-6">
-                <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full flex-shrink-0">
+                <div className="flex items-center justify-center w-10 h-10 bg-primary text-white rounded-full text-lg">
                   <svg
                     aria-hidden="true"
                     className="w-6 h-6 md:w-7 md:h-7"
@@ -880,8 +880,8 @@ export default function Home() {
                   <span className="sr-only">Location step icon</span>
                 </div>
               <div className="flex-1">
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Select Location</h2>
-                <div className="text-base md:text-lg text-gray-700 space-y-2">
+                <h2 className="text-xl font-semibold text-gray-800">Select Location</h2>
+                <div className="text-sm text-gray-600">
                   <p className="font-semibold">How to select:</p>
                   <ul className="list-disc pl-6 space-y-2">
                     <li><strong>Desktop:</strong> Press CTRL + mouse click and drag.</li>
@@ -908,7 +908,7 @@ export default function Home() {
           
           <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-shadow">
             <div className="flex items-start gap-4 mb-6">
-                <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full flex-shrink-0">
+                <div className="flex items-center justify-center w-10 h-10 bg-primary text-white rounded-full text-lg">
                   <svg
                     aria-hidden="true"
                     className="w-6 h-6 md:w-7 md:h-7"
@@ -924,10 +924,10 @@ export default function Home() {
                   <span className="sr-only">Tree selection icon</span>
                 </div>
               <div className="flex-1">
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+                <h2 className="text-xl font-semibold text-gray-800">
                   {simulationMode === 'planting' ? 'Select Tree Species' : 'Select Tree Species'}
                 </h2>
-                <p className="text-base md:text-lg text-gray-700">
+                <p className="text-sm text-gray-600">
                   {simulationMode === 'planting' 
                     ? 'Select one or multiple tree types and set their distribution'
                     : 'Select the tree species to be removed and their composition'
@@ -959,7 +959,7 @@ export default function Home() {
         <div className="mt-16 md:mt-24">
           <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg">
             <div className="flex items-start gap-4 mb-8">
-                <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full flex-shrink-0">
+                <div className="flex items-center justify-center w-10 h-10 bg-primary text-white rounded-full text-lg">
                   <svg
                     aria-hidden="true"
                     className="w-6 h-6 md:w-7 md:h-7"
@@ -976,8 +976,8 @@ export default function Home() {
                   <span className="sr-only">Impact analysis icon</span>
                 </div>
               <div className="flex-1">
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Impact Results</h2>
-                <p className="text-base md:text-lg text-gray-700">
+                <h2 className="text-xl font-semibold text-gray-800">Impact Results</h2>
+                <p className="text-sm text-gray-600">
                   {simulationMode === 'planting' 
                     ? 'Calculate planting details and see environmental benefits'
                     : 'Calculate removal details and see environmental impacts'
@@ -990,7 +990,7 @@ export default function Home() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Calculator Section */}
                 <div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
                     {simulationMode === 'planting' ? 'Planting Calculations' : 'Removal Configuration'}
                   </h3>
                   <Suspense fallback={
@@ -1022,7 +1022,7 @@ export default function Home() {
                 
                 {/* Impact Results Section */}
                 <div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">Impact Analysis</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Impact Analysis</h3>
                   <Suspense fallback={
                     <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
@@ -1120,7 +1120,7 @@ export default function Home() {
         {/* FAQ Section */}
         <div className="mt-20 md:mt-28">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-10 flex items-center justify-center gap-4 text-gray-900">
-            <span className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full text-xl md:text-2xl font-bold">
+            <span className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full text-lg font-semibold">
               ?
             </span>
             Frequently Asked Questions
@@ -1152,7 +1152,7 @@ export default function Home() {
                   setFaqShowAll(false);
                 }}
                 placeholder="Search questions about modes, data, exports, and more..."
-                className="w-full rounded-xl border-2 border-gray-300 bg-white py-3 md:py-4 pl-11 pr-4 text-base md:text-lg text-gray-900 placeholder:text-gray-400 shadow-md focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-xl border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             <p className="mt-3 text-sm md:text-base text-center text-gray-600">
@@ -1171,7 +1171,7 @@ export default function Home() {
 
               if (!visible.length) {
                 return (
-                  <div className="bg-white border-2 border-dashed border-gray-300 rounded-xl p-8 md:p-10 text-center text-base md:text-lg text-gray-700">
+                  <div className="bg-white border border-dashed border-gray-300 rounded-xl p-6 text-center text-sm text-gray-700">
                     No questions match your search yet. Try a different keyword or clear the search box.
                   </div>
                 );
@@ -1186,7 +1186,7 @@ export default function Home() {
                         className="w-full p-6 md:p-8 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
                         aria-expanded={!!faqOpen[faq.id]}
                       >
-                        <h3 className="text-xl md:text-2xl font-bold text-gray-900 pr-4">{faq.title}</h3>
+                        <h3 className="text-lg font-semibold text-gray-800 pr-4">{faq.title}</h3>
                         <svg
                           className={`w-6 h-6 md:w-7 md:h-7 text-gray-500 transition-transform flex-shrink-0 ${faqOpen[faq.id] ? 'rotate-180' : ''}`}
                           fill="none"
@@ -1196,7 +1196,7 @@ export default function Home() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </button>
-                      {faqOpen[faq.id] && <div className="px-6 md:px-8 pb-6 md:pb-8 text-base md:text-lg text-gray-700 leading-relaxed">{faq.content}</div>}
+                      {faqOpen[faq.id] && <div className="px-6 pb-6 text-sm text-gray-700">{faq.content}</div>}
                     </div>
                   ))}
 
@@ -1205,7 +1205,7 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => setFaqShowAll((prev) => !prev)}
-                        className="inline-flex items-center gap-3 rounded-full border-2 border-primary/30 bg-primary/5 px-5 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold text-primary hover:bg-primary/10 transition-colors"
+                        className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
                       >
                         <span>{faqShowAll ? 'Show fewer questions' : `Show ${filtered.length - 5} more questions`}</span>
                         <svg
