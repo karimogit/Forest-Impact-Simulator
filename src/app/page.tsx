@@ -762,7 +762,7 @@ export default function Home() {
     }
   };
 
-  const hasLocation = selectedRegion || (selectedLatitude && selectedLongitude);
+  const hasLocation = !!(selectedRegion || (selectedLatitude && selectedLongitude));
   const hasTrees = selectedTrees.length > 0;
 
   return (
