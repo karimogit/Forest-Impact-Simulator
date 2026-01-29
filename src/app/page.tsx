@@ -3,8 +3,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { TreeType, TREE_TYPES } from '@/types/treeTypes';
 import { ExportData } from '@/utils/exportUtils';
-import { getShareParameterFromUrl, decodeUrlToState } from '@/utils/shareableLink';
-import { calculateRegionArea } from '@/utils/treePlanting';
+import { generateShareableUrl, getShareParameterFromUrl, decodeUrlToState, copyToClipboard, ShareableState } from '@/utils/shareableLink';
 
 // Lazy load components for better performance
 const LocationMap = lazy(() => import('@/components/LocationMap'));
@@ -12,85 +11,6 @@ const ForestImpactCalculator = lazy(() => import('@/components/ForestImpactCalcu
 const TreeTypeSelector = lazy(() => import('@/components/TreeTypeSelector'));
 const TreePlantingCalculator = lazy(() => import('@/components/TreePlantingCalculator'));
 const ExportResults = lazy(() => import('@/components/ExportResults'));
-
-// Step Indicator Component
-const StepIndicator = ({ 
-  step, 
-  currentStep, 
-  completed, 
-  title 
-}: { 
-  step: number; 
-  currentStep: number; 
-  completed: boolean; 
-  title: string;
-}) => {
-  const isActive = step === currentStep;
-  const isCompleted = completed || step < currentStep;
-  
-  return (
-    <div className="flex items-center gap-4">
-      <div className={`flex items-center justify-center w-12 h-12 rounded-full font-bold text-lg transition-all ${
-        isActive 
-          ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-110' 
-          : isCompleted
-          ? 'bg-green-500 text-white'
-          : 'bg-gray-200 text-gray-500'
-      }`}>
-        {isCompleted && !isActive ? (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-          </svg>
-        ) : (
-          step
-        )}
-      </div>
-      <div className={`text-lg font-semibold ${isActive ? 'text-primary' : isCompleted ? 'text-gray-600' : 'text-gray-400'}`}>
-        {title}
-      </div>
-    </div>
-  );
-};
-
-// Progress Line Component
-const ProgressLine = ({ completed }: { completed: boolean }) => (
-  <div className={`h-1 w-full transition-all ${completed ? 'bg-primary' : 'bg-gray-200'}`} />
-);
-
-// Summary Card Component for Results
-const SummaryCard = ({ 
-  title, 
-  value, 
-  unit, 
-  icon, 
-  color = 'primary' 
-}: { 
-  title: string; 
-  value: string | number; 
-  unit?: string; 
-  icon: React.ReactNode;
-  color?: 'primary' | 'green' | 'blue' | 'amber';
-}) => {
-  const colorClasses = {
-    primary: 'bg-primary/10 border-primary/30 text-primary',
-    green: 'bg-green-50 border-green-200 text-green-700',
-    blue: 'bg-blue-50 border-blue-200 text-blue-700',
-    amber: 'bg-amber-50 border-amber-200 text-amber-700',
-  };
-  
-  return (
-    <div className={`p-6 rounded-xl border-2 ${colorClasses[color]} transition-all hover:shadow-lg`}>
-      <div className="flex items-start justify-between mb-3">
-        <div className="text-sm font-semibold uppercase tracking-wide opacity-80">{title}</div>
-        <div className="text-2xl">{icon}</div>
-      </div>
-      <div className="text-3xl font-bold">
-        {typeof value === 'number' ? value.toLocaleString() : value}
-        {unit && <span className="text-xl ml-1 opacity-70">{unit}</span>}
-      </div>
-    </div>
-  );
-};
 
 export default function Home() {
   const [simulationMode, setSimulationMode] = useState<'planting' | 'clear-cutting'>('planting');
@@ -123,44 +43,6 @@ export default function Home() {
   const [faqShowAll, setFaqShowAll] = useState<boolean>(false);
   const [exportData, setExportData] = useState<ExportData | null>(null);
   const [shareNotification, setShareNotification] = useState<string | null>(null);
-  
-  // Results summary state
-  const [resultsSummary, setResultsSummary] = useState<{
-    totalCarbon: number;
-    biodiversityScore: number;
-    waterRetention: number;
-    airQuality: number;
-    jobsCreated: number;
-    areaSize: number;
-  } | null>(null);
-
-  // Helper function to calculate job creation based on area and simulation mode
-  const calculateJobCreation = (areaHectares: number, mode: 'planting' | 'clear-cutting'): number => {
-    if (mode === 'planting') {
-      if (areaHectares < 0.1) return 2;
-      if (areaHectares < 0.5) return 2;
-      if (areaHectares < 1) return 3;
-      if (areaHectares < 5) return 4;
-      if (areaHectares < 20) return 6;
-      if (areaHectares < 50) return 10;
-      if (areaHectares < 100) return 15;
-      return Math.floor(areaHectares / 10);
-    } else {
-      if (areaHectares < 0.1) return 3;
-      if (areaHectares < 0.5) return 4;
-      if (areaHectares < 1) return 5;
-      if (areaHectares < 5) return 8;
-      if (areaHectares < 20) return 15;
-      if (areaHectares < 50) return 30;
-      if (areaHectares < 100) return 50;
-      return Math.floor(areaHectares / 2);
-    }
-  };
-
-  // Determine current step for progressive disclosure
-  const currentStep = !selectedRegion && !selectedLatitude ? 1 
-    : selectedTrees.length === 0 ? 2 
-    : 3;
 
   const faqs = [
     {
@@ -461,8 +343,14 @@ export default function Home() {
               </p>
               <code className="block bg-white p-2 rounded mb-2">Soil Bonus = Soil Carbon (g/kg) × 0.1 kg CO₂/year</code>
               <code className="block bg-white p-2 rounded mb-2">Final Carbon = Base Carbon + Soil Bonus</code>
+              <p className="mt-2 text-sm text-black">
+                <strong>Display Values:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded text-black">Annual Carbon = Yearly sequestration rate</code>
+              <code className="block bg-white p-2 rounded text-black">Total Carbon = Cumulative over entire simulation period</code>
             </div>
           </div>
+
           <div>
             <h4 className="font-semibold text-black mb-2">Tree Growth Model</h4>
             <div className="bg-gray-50 p-3 rounded text-sm text-black">
@@ -483,6 +371,110 @@ export default function Home() {
                   <strong>Years 20+:</strong> Mature phase (95-100% of mature rate)
                 </div>
               </div>
+              <p className="mt-2 text-sm text-black">
+                <strong>Annual Carbon Calculation:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded text-black">Annual Carbon = Mature Rate × Growth Factor (based on year)</code>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-black mb-2">Climate Prediction</h4>
+            <div className="bg-gray-50 p-3 rounded text-sm text-black">
+              <p className="mb-2">
+                <strong>Temperature Trend Analysis:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Historical Data = 11 years of temperature records</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Linear Regression = Calculate temperature trend (°C/year)</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Future Temperature = Current + (Trend × Years)</code>
+              <p className="mt-2 mb-2 text-sm text-black">
+                <strong>Growth Modifier:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Temperature Change = Future Temp - Current Temp</code>
+              <code className="block bg-white p-2 rounded text-black">Growth Modifier = 1 + (Temperature Change × 0.02)</code>
+              <p className="mt-2 text-sm text-black">
+                <strong>Regional Estimates (fallback):</strong>
+              </p>
+              <code className="block bg-white p-2 rounded text-black">
+                Tropical: 25°C, Temperate: 15°C, Boreal: 5°C, Arctic: -5°C
+              </code>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-black mb-2">Biodiversity Impact</h4>
+            <div className="bg-gray-50 p-3 rounded text-sm text-black">
+              <p className="mb-2">
+                <strong>Species Diversity Score:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Base Score = Average biodiversity value (1-5)</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Multiplier = 1 + (Number of species - 1) × 0.1</code>
+              <code className="block bg-white p-2 rounded text-black">Final Score = min(Base Score × Multiplier, 5)</code>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-black mb-2">Forest Resilience</h4>
+            <div className="bg-gray-50 p-3 rounded text-sm text-black">
+              <p className="mb-2">
+                <strong>Resilience Calculation:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Base Resilience = Average resilience score (1-5)</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Climate Bonus = Precipitation (mm) × 0.001</code>
+              <code className="block bg-white p-2 rounded text-black">Final Resilience = min(Base + Climate Bonus, 5)</code>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-black mb-2">Water Retention</h4>
+            <div className="bg-gray-50 p-3 rounded text-sm text-black">
+              <p className="mb-2">
+                <strong>Progressive Enhancement:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Base Retention = 70-85% (based on latitude)</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Annual Improvement = 0.3% per year</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Precipitation Bonus = Annual Precipitation (mm) × 0.01</code>
+              <code className="block bg-white p-2 rounded text-black">
+                Water Retention = min(Base + (Years × 0.3) + Bonus, 95%)
+              </code>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-black mb-2">Air Quality Improvement</h4>
+            <div className="bg-gray-50 p-3 rounded text-sm text-black">
+              <p className="mb-2">
+                <strong>Progressive Enhancement:</strong>
+              </p>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Base Quality = 60%</code>
+              <code className="block bg-white p-2 rounded mb-2 text-black">Annual Improvement = 0.7% per year</code>
+              <code className="block bg-white p-2 rounded text-black">Air Quality = min(Base + (Years × 0.7), 95%)</code>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-black mb-2">Mathematical Notation</h4>
+            <div className="bg-gray-50 p-3 rounded text-base text-black">
+              <ul className="space-y-2">
+                <li>
+                  <strong>Σ:</strong> Summation across all selected tree species
+                </li>
+                <li>
+                  <strong>Treeᵢ:</strong> Carbon sequestration rate of tree species i
+                </li>
+                <li>
+                  <strong>Percentageᵢ:</strong> User-specified percentage for tree species i
+                </li>
+                <li>
+                  <strong>n:</strong> Number of selected tree species
+                </li>
+                <li>
+                  <strong>Years:</strong> Simulation duration in years
+                </li>
+                <li>
+                  <strong>min():</strong> Function returning the minimum value (capping at maximum)
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -664,13 +656,16 @@ export default function Home() {
   const handleLocationSelect = (lat: number, lng: number) => {
     setSelectedLatitude(lat);
     setSelectedLongitude(lng);
+    // Clear any existing region selection when point is selected
     setSelectedRegion(null);
   };
 
   const handleSearchLocation = (lat: number, lng: number, name: string) => {
     setSelectedLatitude(lat);
     setSelectedLongitude(lng);
+    // Clear any existing region selection when location is searched
     setSelectedRegion(null);
+    // You could add a toast notification here to show the searched location
     console.log(`Searched for: ${name} at ${lat}, ${lng}`);
   };
 
@@ -681,45 +676,34 @@ export default function Home() {
     west: number;
   }) => {
     setSelectedRegion(bounds);
+    // Clear any existing point selection when region is selected
     setSelectedLatitude(null);
     setSelectedLongitude(null);
+    // Clear planting data as it needs to be recalculated
     setPlantingData(null);
   };
 
   const handleTreeSelectionChange = (trees: TreeType[]) => {
     setSelectedTrees(trees);
+    // Clear percentages when trees change
     const newPercentages: { [key: string]: number } = {};
     trees.forEach(tree => {
       newPercentages[tree.id] = 0;
     });
     setTreePercentages(newPercentages);
+    // Clear planting data as it needs to be recalculated
     setPlantingData(null);
   };
 
   const handleTreePercentagesChange = (percentages: { [key: string]: number }) => {
     setTreePercentages(percentages);
+    // Clear planting data as it needs to be recalculated
     setPlantingData(null);
   };
 
   const handleImpactDataReady = (data: Partial<ExportData>) => {
     try {
       setExportData(prev => prev ? { ...prev, ...data } : data as ExportData);
-      
-      // Extract summary metrics
-      if (data.impactResults) {
-        // Calculate area in hectares
-        const areaHectares = plantingData?.area || (selectedRegion ? calculateRegionArea(selectedRegion) : 0);
-        const jobsCreated = calculateJobCreation(areaHectares, simulationMode);
-        
-        setResultsSummary({
-          totalCarbon: data.impactResults.totalCarbon || 0,
-          biodiversityScore: data.impactResults.averageBiodiversity || 0,
-          waterRetention: data.impactResults.waterRetention || 0,
-          airQuality: data.impactResults.airQualityImprovement || 0,
-          jobsCreated,
-          areaSize: plantingData?.area || (selectedRegion ? calculateRegionArea(selectedRegion) * 1000000 : 0), // Convert to m²
-        });
-      }
     } catch (error) {
       console.warn('Error updating impact data:', error);
     }
@@ -728,6 +712,7 @@ export default function Home() {
   const handlePlantingDataReady = (data: Partial<ExportData>) => {
     try {
       setExportData(prev => prev ? { ...prev, ...data } : data as ExportData);
+      // Store planting data for ForestImpactCalculator
       if (data.plantingData) {
         setPlantingData(data.plantingData);
       }
@@ -755,30 +740,54 @@ export default function Home() {
       setSoilData(null);
       setClimateData(null);
       setExportData(null);
-      setResultsSummary(null);
+      // Don't reset simulationMode to preserve user's choice
+      // Clear URL parameter
       if (typeof window !== 'undefined') {
         window.history.replaceState({}, '', window.location.pathname);
       }
     }
   };
 
-  const hasLocation = !!(selectedRegion || (selectedLatitude && selectedLongitude));
-  const hasTrees = selectedTrees.length > 0;
+  const handleShare = async () => {
+    const state: ShareableState = {
+      mode: simulationMode,
+      latitude: selectedLatitude || undefined,
+      longitude: selectedLongitude || undefined,
+      region: selectedRegion || undefined,
+      years,
+      calculationMode,
+      averageTreeAge: simulationMode === 'clear-cutting' ? averageTreeAge : undefined,
+      treeIds: selectedTrees.map(t => t.id),
+      treePercentages
+    };
+
+    const url = generateShareableUrl(state);
+    const success = await copyToClipboard(url);
+    
+    if (success) {
+      setShareNotification('Link copied to clipboard!');
+      setTimeout(() => setShareNotification(null), 3000);
+    } else {
+      setShareNotification('Failed to copy link. Please try again.');
+      setTimeout(() => setShareNotification(null), 3000);
+    }
+  };
 
   return (
-    <main className="min-h-screen bg-white">
-      <div className="container mx-auto max-w-6xl px-4 md:px-6 lg:px-8 py-8 md:py-12">
-        {/* Hero Section */}
-        <section className="text-center mb-12 md:mb-16" aria-labelledby="main-heading">
-          <h1 id="main-heading" className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-gray-900">
+    <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-8 lg:p-12">
+      <div className="container mx-auto max-w-7xl w-full">
+        <section className="text-center mb-12 space-y-section" aria-labelledby="main-heading">
+          <h1 id="main-heading" className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-4 text-gray-900">
             Simulate the Impact of Forest Management
           </h1>
-          <p className="text-lg md:text-xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-700 mb-8 max-w-4xl mx-auto text-center leading-relaxed">
             Use real-time environmental data to analyze the impacts of forest planting and clear-cutting on carbon storage, biodiversity, economic value, social outcomes, and land use.
           </p>
-          
-          {/* Mode Selector */}
-          <div className="flex justify-center items-center gap-4 md:gap-6 flex-wrap mb-4">
+        </section>
+        
+        {/* Simulation Mode Selector and Reset Button */}
+        <div className="mb-10 md:mb-12">
+          <div className="flex justify-center items-center gap-4 md:gap-6 flex-wrap">
             <div className="bg-gradient-to-r from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-2 shadow-xl">
               <div className="flex items-center gap-1">
                 <button
@@ -822,7 +831,8 @@ export default function Home() {
                 </button>
               </div>
             </div>
-            {(hasLocation || hasTrees) && (
+            {/* Reset Button */}
+            {(selectedLatitude || selectedLongitude || selectedRegion || selectedTrees.length > 0) && (
               <button
                 onClick={handleReset}
                 className="bg-white border-2 border-red-300 text-red-700 hover:bg-red-50 px-5 md:px-6 py-3 md:py-4 rounded-xl text-base md:text-lg font-semibold transition-colors shadow-md hover:shadow-lg flex items-center gap-2 md:gap-3"
@@ -836,8 +846,8 @@ export default function Home() {
               </button>
             )}
           </div>
-        </section>
-
+        </div>
+        
         {/* Share Notification Toast */}
         {shareNotification && (
           <div className="fixed top-4 right-4 z-50 bg-primary text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in">
@@ -847,480 +857,375 @@ export default function Home() {
             {shareNotification}
           </div>
         )}
-
-        {/* Step-by-Step Workflow */}
-        <div className="space-y-12 md:space-y-16">
-          {/* STEP 1: Location Selection */}
-          <div className={`transition-all ${currentStep >= 1 ? 'opacity-100' : 'opacity-50'}`}>
-            <div className="mb-6">
-              <StepIndicator 
-                step={1} 
-                currentStep={currentStep} 
-                completed={hasLocation}
-                title="Select Location"
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 mb-12">
+            <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full flex-shrink-0">
+                  <svg
+                    aria-hidden="true"
+                    className="w-6 h-6 md:w-7 md:h-7"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 11a3 3 0 100-6 3 3 0 000 6z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 11c0 4.5 7 11 7 11s7-6.5 7-11a7 7 0 10-14 0z"
+                    />
+                  </svg>
+                  <span className="sr-only">Location step icon</span>
+                </div>
+              <div className="flex-1">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">Select Location</h2>
+                <div className="text-base md:text-lg text-gray-700 space-y-2">
+                  <p className="font-semibold">How to select:</p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><strong>Desktop:</strong> Press CTRL + mouse click and drag.</li>
+                    <li><strong>Mobile:</strong> Tap to create a selection square, then drag to resize.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-96">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            }>
+              <LocationMap 
+                onLocationSelect={handleLocationSelect}
+                onRegionSelect={handleRegionSelect}
+                onSearchLocation={handleSearchLocation}
+                initialRegion={selectedRegion}
+                initialLatitude={selectedLatitude}
+                initialLongitude={selectedLongitude}
               />
-            </div>
-            
-            <div className={`bg-white border-2 rounded-2xl p-6 md:p-8 shadow-lg transition-all ${
-              currentStep === 1 
-                ? 'border-primary/30 shadow-xl' 
-                : hasLocation 
-                ? 'border-green-200' 
-                : 'border-gray-200'
-            }`}>
-              {/* Compact Instructions */}
-              <div className="mb-6 pb-6 border-b border-gray-200">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-2">How to select a location:</h3>
-                    <ul className="text-sm text-gray-700 space-y-1">
-                      <li><strong>Desktop:</strong> Press CTRL + mouse click and drag to create a selection area</li>
-                      <li><strong>Mobile:</strong> Tap to create a selection square, then drag to resize</li>
-                      <li>Or use the search bar above the map to find a specific location</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Map */}
-              <Suspense fallback={
-                <div className="flex items-center justify-center h-96 bg-gray-50 rounded-lg">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              }>
-                <LocationMap 
-                  onLocationSelect={handleLocationSelect}
-                  onRegionSelect={handleRegionSelect}
-                  onSearchLocation={handleSearchLocation}
-                  initialRegion={selectedRegion}
-                  initialLatitude={selectedLatitude}
-                  initialLongitude={selectedLongitude}
-                />
-              </Suspense>
-            </div>
+            </Suspense>
           </div>
-
-          {/* Progress Line */}
-          {hasLocation && (
-            <div className="px-6">
-              <ProgressLine completed={hasLocation} />
-            </div>
-          )}
-
-          {/* STEP 2: Tree Selection */}
-          {hasLocation && (
-            <div className={`transition-all ${currentStep >= 2 ? 'opacity-100' : 'opacity-50'}`}>
-              <div className="mb-6">
-                <StepIndicator 
-                  step={2} 
-                  currentStep={currentStep} 
-                  completed={hasTrees}
-                  title="Select Tree Species"
-                />
-              </div>
-              
-              <div className={`bg-white border-2 rounded-2xl p-6 md:p-8 shadow-lg transition-all ${
-                currentStep === 2 
-                  ? 'border-primary/30 shadow-xl' 
-                  : hasTrees 
-                  ? 'border-green-200' 
-                  : 'border-gray-200'
-              }`}>
-                <div className="mb-6">
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
-                    {simulationMode === 'planting' ? 'Select Tree Species' : 'Select Forest Types'}
-                  </h3>
-                  <p className="text-base md:text-lg text-gray-700">
-                    {simulationMode === 'planting' 
-                      ? 'Choose one or multiple tree types and set their distribution percentages'
-                      : 'Select the tree species to be removed and their composition'
-                    }
-                  </p>
+          
+          <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex items-start gap-4 mb-6">
+                <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full flex-shrink-0">
+                  <svg
+                    aria-hidden="true"
+                    className="w-6 h-6 md:w-7 md:h-7"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4l4 6H8l4-6z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10l3 5H9l3-5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v5" />
+                  </svg>
+                  <span className="sr-only">Tree selection icon</span>
                 </div>
-                
-                <Suspense fallback={
-                  <div className="flex items-center justify-center h-48">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                  </div>
-                }>
-                  <TreeTypeSelector
-                    selectedTrees={selectedTrees}
-                    onTreeSelectionChange={handleTreeSelectionChange}
-                    treePercentages={treePercentages}
-                    onTreePercentagesChange={handleTreePercentagesChange}
-                    latitude={selectedLatitude || undefined}
-                    selectedRegion={selectedRegion}
-                    simulationMode={simulationMode}
-                  />
-                </Suspense>
+              <div className="flex-1">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
+                  {simulationMode === 'planting' ? 'Select Tree Species' : 'Select Tree Species'}
+                </h2>
+                <p className="text-base md:text-lg text-gray-700">
+                  {simulationMode === 'planting' 
+                    ? 'Select one or multiple tree types and set their distribution'
+                    : 'Select the tree species to be removed and their composition'
+                  }
+                </p>
               </div>
             </div>
-          )}
-
-          {/* Progress Line */}
-          {hasTrees && (
-            <div className="px-6">
-              <ProgressLine completed={hasTrees} />
-            </div>
-          )}
-
-          {/* STEP 3: Configuration */}
-          {hasTrees && (
-            <div className={`transition-all ${currentStep >= 3 ? 'opacity-100' : 'opacity-50'}`}>
-              <div className="mb-6">
-                <StepIndicator 
-                  step={3} 
-                  currentStep={currentStep} 
-                  completed={false}
-                  title="Configure Simulation"
-                />
-              </div>
-              
-              <div className={`bg-white border-2 rounded-2xl p-6 md:p-8 shadow-lg transition-all ${
-                currentStep === 3 
-                  ? 'border-primary/30 shadow-xl' 
-                  : 'border-gray-200'
-              }`}>
-                <div className="mb-6">
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Simulation Settings</h3>
-                  <p className="text-base md:text-lg text-gray-700">Adjust the simulation parameters</p>
-                </div>
-                
-                <Suspense fallback={
-                  <div className="flex items-center justify-center h-48">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                  </div>
-                }>
-                  <TreePlantingCalculator
-                    selectedRegion={selectedRegion || (selectedLatitude && selectedLongitude ? {
-                      north: selectedLatitude + 0.01,
-                      south: selectedLatitude - 0.01,
-                      east: selectedLongitude + 0.01,
-                      west: selectedLongitude - 0.01
-                    } : null)}
-                    selectedTreeType={selectedTrees.length === 1 ? selectedTrees[0] : null}
-                    selectedTrees={selectedTrees}
-                    treePercentages={treePercentages}
-                    onDataReady={handlePlantingDataReady}
-                    simulationMode={simulationMode}
-                    years={years}
-                    onYearsChange={setYears}
-                    onCalculationModeChange={setCalculationMode}
-                    onTreeAgeChange={setAverageTreeAge}
-                    soil={soilData}
-                    climate={climateData}
-                  />
-                </Suspense>
-              </div>
-            </div>
-          )}
-
-          {/* Progress Line */}
-          {hasTrees && (
-            <div className="px-6">
-              <ProgressLine completed={hasTrees} />
-            </div>
-          )}
-
-          {/* RESULTS: Impact Analysis */}
-          {hasLocation && hasTrees && (
-            <div className="transition-all">
-              <div className="mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">Impact Results</div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-green-50/50 to-white border-2 border-primary/30 rounded-2xl p-6 md:p-8 shadow-xl">
-                {/* Summary Cards */}
-                {resultsSummary && (
-                  <div className="mb-8">
-                    <h3 className="text-xl font-bold text-gray-900 mb-6">Key Metrics</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                      <SummaryCard
-                        title="Total Carbon"
-                        value={resultsSummary.totalCarbon}
-                        unit="kg CO₂"
-                        icon="🌳"
-                        color="green"
-                      />
-                      <SummaryCard
-                        title="Biodiversity Score"
-                        value={resultsSummary.biodiversityScore.toFixed(1)}
-                        unit="/5.0"
-                        icon="🦋"
-                        color="blue"
-                      />
-                      <SummaryCard
-                        title="Water Retention"
-                        value={`${resultsSummary.waterRetention.toFixed(1)}%`}
-                        icon="💧"
-                        color="blue"
-                      />
-                      <SummaryCard
-                        title="Air Quality"
-                        value={`${resultsSummary.airQuality.toFixed(1)}%`}
-                        icon="🌬️"
-                        color="green"
-                      />
-                      <SummaryCard
-                        title="Jobs Created"
-                        value={Math.round(resultsSummary.jobsCreated)}
-                        icon="👥"
-                        color="amber"
-                      />
-                      {resultsSummary.areaSize > 0 && (
-                        <SummaryCard
-                          title="Area Size"
-                          value={`${(resultsSummary.areaSize / 1000000).toFixed(2)}`}
-                          unit="km²"
-                          icon="🗺️"
-                          color="primary"
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Detailed Analysis */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">
-                      {simulationMode === 'planting' ? 'Planting Calculations' : 'Removal Configuration'}
-                    </h3>
-                    <Suspense fallback={
-                      <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                      </div>
-                    }>
-                      <TreePlantingCalculator
-                        selectedRegion={selectedRegion || (selectedLatitude && selectedLongitude ? {
-                          north: selectedLatitude + 0.01,
-                          south: selectedLatitude - 0.01,
-                          east: selectedLongitude + 0.01,
-                          west: selectedLongitude - 0.01
-                        } : null)}
-                        selectedTreeType={selectedTrees.length === 1 ? selectedTrees[0] : null}
-                        selectedTrees={selectedTrees}
-                        treePercentages={treePercentages}
-                        onDataReady={handlePlantingDataReady}
-                        simulationMode={simulationMode}
-                        years={years}
-                        onYearsChange={setYears}
-                        onCalculationModeChange={setCalculationMode}
-                        onTreeAgeChange={setAverageTreeAge}
-                        soil={soilData}
-                        climate={climateData}
-                      />
-                    </Suspense>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">Detailed Impact Analysis</h3>
-                    <Suspense fallback={
-                      <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                      </div>
-                    }>
-                      <ForestImpactCalculator 
-                        latitude={selectedLatitude || (selectedRegion ? (selectedRegion.north + selectedRegion.south) / 2 : null)}
-                        longitude={selectedLongitude || (selectedRegion ? (selectedRegion.east + selectedRegion.west) / 2 : null)}
-                        years={years}
-                        selectedTreeType={selectedTrees.length === 1 ? selectedTrees[0] : null}
-                        selectedTrees={selectedTrees.length > 1 ? selectedTrees : undefined}
-                        treePercentages={treePercentages}
-                        selectedRegion={selectedRegion}
-                        plantingData={plantingData}
-                        onYearsChange={setYears}
-                        onDataReady={handleImpactDataReady}
-                        simulationMode={simulationMode}
-                        calculationMode={calculationMode}
-                        averageTreeAge={averageTreeAge}
-                        onSoilClimateDataReady={handleSoilClimateDataReady}
-                      />
-                    </Suspense>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Export Section */}
-          {hasLocation && hasTrees && (
-            <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg">
+            <div className="flex-1">
               <Suspense fallback={
-                <div className="flex items-center justify-center h-32">
+                <div className="flex items-center justify-center h-48">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                 </div>
               }>
-                <ExportResults 
-                  exportData={exportData || {
-                    metadata: {
-                      timestamp: new Date().toISOString(),
-                      simulatorVersion: "1.0.0",
-                      location: {
-                        latitude: selectedLatitude,
-                        longitude: selectedLongitude,
-                        region: selectedRegion
-                      },
-                      simulation: {
-                        years,
-                        selectedTrees,
-                        treePercentages
-                      }
-                    },
-                    environmentalData: {},
-                    impactResults: {
-                      carbonSequestration: 0,
-                      biodiversityImpact: 0,
-                      forestResilience: 0,
-                      waterRetention: 0,
-                      airQualityImprovement: 0,
-                      totalCarbon: 0,
-                      averageBiodiversity: 0,
-                      averageResilience: 0
-                    }
-                  }}
-                  disabled={!hasTrees || !hasLocation}
-                  shareableState={hasLocation && hasTrees ? {
-                    mode: simulationMode,
-                    latitude: selectedLatitude || undefined,
-                    longitude: selectedLongitude || undefined,
-                    region: selectedRegion || undefined,
-                    years,
-                    calculationMode,
-                    averageTreeAge: simulationMode === 'clear-cutting' ? averageTreeAge : undefined,
-                    treeIds: selectedTrees.map(t => t.id),
-                    treePercentages
-                  } : undefined}
-                  onShareSuccess={(message) => {
-                    setShareNotification(message);
-                    setTimeout(() => setShareNotification(null), 3000);
-                  }}
+                <TreeTypeSelector
+                  selectedTrees={selectedTrees}
+                  onTreeSelectionChange={handleTreeSelectionChange}
+                  treePercentages={treePercentages}
+                  onTreePercentagesChange={handleTreePercentagesChange}
+                  latitude={selectedLatitude || undefined}
+                  selectedRegion={selectedRegion}
+                  simulationMode={simulationMode}
                 />
               </Suspense>
             </div>
-          )}
-
-          {/* FAQ Section */}
-          <div className="mt-20 md:mt-28">
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-10 flex items-center justify-center gap-4 text-gray-900">
-              <span className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full text-xl md:text-2xl font-bold">
-                ?
-              </span>
-              Frequently Asked Questions
-            </h2>
-
-            {/* FAQ Search */}
-            <div className="max-w-xl mx-auto mb-6">
-              <label htmlFor="faq-search" className="sr-only">
-                Search frequently asked questions
-              </label>
-              <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
-                  <svg
-                    className="h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
-                  </svg>
-                </span>
-                <input
-                  id="faq-search"
-                  type="text"
-                  value={faqSearch}
-                  onChange={(e) => {
-                    setFaqSearch(e.target.value);
-                    setFaqShowAll(false);
-                  }}
-                  placeholder="Search questions about modes, data, exports, and more..."
-                  className="w-full rounded-xl border-2 border-gray-300 bg-white py-3 md:py-4 pl-11 pr-4 text-base md:text-lg text-gray-900 placeholder:text-gray-400 shadow-md focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-              <p className="mt-3 text-sm md:text-base text-center text-gray-600">
-                Try searching for terms like &quot;clear-cutting&quot;, &quot;carbon&quot;, &quot;exports&quot;, or &quot;species&quot;.
-              </p>
-            </div>
-
-            {/* FAQ List */}
-            <div className="max-w-4xl mx-auto space-y-4">
-              {(() => {
-                const query = faqSearch.trim().toLowerCase();
-                const filtered = query
-                  ? faqs.filter((faq) => faq.searchText.toLowerCase().includes(query) || faq.title.toLowerCase().includes(query))
-                  : faqs;
-                const visible = !query && !faqShowAll ? filtered.slice(0, 5) : filtered;
-
-                if (!visible.length) {
-                  return (
-                    <div className="bg-white border-2 border-dashed border-gray-300 rounded-xl p-8 md:p-10 text-center text-base md:text-lg text-gray-700">
-                      No questions match your search yet. Try a different keyword or clear the search box.
-                    </div>
-                  );
-                }
-
-                return (
-                  <>
-                    {visible.map((faq) => (
-                      <div key={faq.id} className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden mb-4">
-                        <button
-                          onClick={() => setFaqOpen((prev) => ({ ...prev, [faq.id]: !prev[faq.id] }))}
-                          className="w-full p-6 md:p-8 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-                          aria-expanded={!!faqOpen[faq.id]}
-                        >
-                          <h3 className="text-xl md:text-2xl font-bold text-gray-900 pr-4">{faq.title}</h3>
-                          <svg
-                            className={`w-6 h-6 md:w-7 md:h-7 text-gray-500 transition-transform flex-shrink-0 ${faqOpen[faq.id] ? 'rotate-180' : ''}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                        {faqOpen[faq.id] && <div className="px-6 md:px-8 pb-6 md:pb-8 text-base md:text-lg text-gray-700 leading-relaxed">{faq.content}</div>}
-                      </div>
-                    ))}
-
-                    {!query && filtered.length > 5 && (
-                      <div className="flex justify-center pt-2">
-                        <button
-                          type="button"
-                          onClick={() => setFaqShowAll((prev) => !prev)}
-                          className="inline-flex items-center gap-3 rounded-full border-2 border-primary/30 bg-primary/5 px-5 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold text-primary hover:bg-primary/10 transition-colors"
-                        >
-                          <span>{faqShowAll ? 'Show fewer questions' : `Show ${filtered.length - 5} more questions`}</span>
-                          <svg
-                            className={`h-5 w-5 md:h-6 md:w-6 transition-transform ${faqShowAll ? 'rotate-180' : ''}`}
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
           </div>
         </div>
+        
+        {/* Combined Calculator and Impact Results - Full Width */}
+        <div className="mt-16 md:mt-24">
+          <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg">
+            <div className="flex items-start gap-4 mb-8">
+                <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full flex-shrink-0">
+                  <svg
+                    aria-hidden="true"
+                    className="w-6 h-6 md:w-7 md:h-7"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 19h16" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 15v4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 11v8" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7v12" />
+                  </svg>
+                  <span className="sr-only">Impact analysis icon</span>
+                </div>
+              <div className="flex-1">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">Impact Results</h2>
+                <p className="text-base md:text-lg text-gray-700">
+                  {simulationMode === 'planting' 
+                    ? 'Calculate planting details and see environmental benefits'
+                    : 'Calculate removal details and see environmental impacts'
+                  }
+                </p>
+              </div>
+            </div>
+            
+            {(selectedRegion || (selectedLatitude && selectedLongitude)) && selectedTrees.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Calculator Section */}
+                <div>
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">
+                    {simulationMode === 'planting' ? 'Planting Calculations' : 'Removal Configuration'}
+                  </h3>
+                  <Suspense fallback={
+                    <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  }>
+                    <TreePlantingCalculator
+                      selectedRegion={selectedRegion || (selectedLatitude && selectedLongitude ? {
+                        north: selectedLatitude + 0.01,
+                        south: selectedLatitude - 0.01,
+                        east: selectedLongitude + 0.01,
+                        west: selectedLongitude - 0.01
+                      } : null)}
+                      selectedTreeType={selectedTrees.length === 1 ? selectedTrees[0] : null}
+                      selectedTrees={selectedTrees}
+                      treePercentages={treePercentages}
+                      onDataReady={handlePlantingDataReady}
+                      simulationMode={simulationMode}
+                      years={years}
+                      onYearsChange={setYears}
+                      onCalculationModeChange={setCalculationMode}
+                      onTreeAgeChange={setAverageTreeAge}
+                      soil={soilData}
+                      climate={climateData}
+                    />
+                  </Suspense>
+                </div>
+                
+                {/* Impact Results Section */}
+                <div>
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">Impact Analysis</h3>
+                  <Suspense fallback={
+                    <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  }>
+                    <ForestImpactCalculator 
+                      latitude={selectedLatitude || (selectedRegion ? (selectedRegion.north + selectedRegion.south) / 2 : null)}
+                      longitude={selectedLongitude || (selectedRegion ? (selectedRegion.east + selectedRegion.west) / 2 : null)}
+                      years={years}
+                      selectedTreeType={selectedTrees.length === 1 ? selectedTrees[0] : null}
+                      selectedTrees={selectedTrees.length > 1 ? selectedTrees : undefined}
+                      treePercentages={treePercentages}
+                      selectedRegion={selectedRegion}
+                      plantingData={plantingData}
+                      onYearsChange={setYears}
+                      onDataReady={handleImpactDataReady}
+                      simulationMode={simulationMode}
+                      calculationMode={calculationMode}
+                      averageTreeAge={averageTreeAge}
+                      onSoilClimateDataReady={handleSoilClimateDataReady}
+                    />
+                  </Suspense>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  {simulationMode === 'planting' 
+                    ? 'Select a region and tree types to see planting calculations and environmental impact analysis.'
+                    : 'Select a region and forest type to see removal calculations and environmental impact analysis.'
+                  }
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Export and Share Results Section */}
+        <div className="mt-12 md:mt-16 bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg">
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </div>
+          }>
+            <ExportResults 
+              exportData={exportData || {
+                metadata: {
+                  timestamp: new Date().toISOString(),
+                  simulatorVersion: "1.0.0",
+                  location: {
+                    latitude: selectedLatitude,
+                    longitude: selectedLongitude,
+                    region: selectedRegion
+                  },
+                  simulation: {
+                    years,
+                    selectedTrees,
+                    treePercentages
+                  }
+                },
+                environmentalData: {},
+                impactResults: {
+                  carbonSequestration: 0,
+                  biodiversityImpact: 0,
+                  forestResilience: 0,
+                  waterRetention: 0,
+                  airQualityImprovement: 0,
+                  totalCarbon: 0,
+                  averageBiodiversity: 0,
+                  averageResilience: 0
+                }
+              }}
+              disabled={!selectedTrees.length || (!selectedLatitude && !selectedLongitude && !selectedRegion)}
+              shareableState={(selectedLatitude || selectedLongitude || selectedRegion) && selectedTrees.length > 0 ? {
+                mode: simulationMode,
+                latitude: selectedLatitude || undefined,
+                longitude: selectedLongitude || undefined,
+                region: selectedRegion || undefined,
+                years,
+                calculationMode,
+                averageTreeAge: simulationMode === 'clear-cutting' ? averageTreeAge : undefined,
+                treeIds: selectedTrees.map(t => t.id),
+                treePercentages
+              } : undefined}
+              onShareSuccess={(message) => {
+                setShareNotification(message);
+                setTimeout(() => setShareNotification(null), 3000);
+              }}
+            />
+          </Suspense>
+        </div>
+        
+
+
+        {/* FAQ Section */}
+        <div className="mt-20 md:mt-28">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-10 flex items-center justify-center gap-4 text-gray-900">
+            <span className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full text-xl md:text-2xl font-bold">
+              ?
+            </span>
+            Frequently Asked Questions
+          </h2>
+
+          {/* FAQ Search */}
+          <div className="max-w-xl mx-auto mb-6">
+            <label htmlFor="faq-search" className="sr-only">
+              Search frequently asked questions
+            </label>
+            <div className="relative">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+                <svg
+                  className="h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+                </svg>
+              </span>
+              <input
+                id="faq-search"
+                type="text"
+                value={faqSearch}
+                onChange={(e) => {
+                  setFaqSearch(e.target.value);
+                  setFaqShowAll(false);
+                }}
+                placeholder="Search questions about modes, data, exports, and more..."
+                className="w-full rounded-xl border-2 border-gray-300 bg-white py-3 md:py-4 pl-11 pr-4 text-base md:text-lg text-gray-900 placeholder:text-gray-400 shadow-md focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <p className="mt-3 text-sm md:text-base text-center text-gray-600">
+              Try searching for terms like &quot;clear-cutting&quot;, &quot;carbon&quot;, &quot;exports&quot;, or &quot;species&quot;.
+            </p>
+          </div>
+
+          {/* FAQ List */}
+          <div className="max-w-4xl mx-auto space-y-4">
+            {(() => {
+              const query = faqSearch.trim().toLowerCase();
+              const filtered = query
+                ? faqs.filter((faq) => faq.searchText.toLowerCase().includes(query) || faq.title.toLowerCase().includes(query))
+                : faqs;
+              const visible = !query && !faqShowAll ? filtered.slice(0, 5) : filtered;
+
+              if (!visible.length) {
+                return (
+                  <div className="bg-white border-2 border-dashed border-gray-300 rounded-xl p-8 md:p-10 text-center text-base md:text-lg text-gray-700">
+                    No questions match your search yet. Try a different keyword or clear the search box.
+                  </div>
+                );
+              }
+
+              return (
+                <>
+                  {visible.map((faq) => (
+                    <div key={faq.id} className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden mb-4">
+                      <button
+                        onClick={() => setFaqOpen((prev) => ({ ...prev, [faq.id]: !prev[faq.id] }))}
+                        className="w-full p-6 md:p-8 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                        aria-expanded={!!faqOpen[faq.id]}
+                      >
+                        <h3 className="text-xl md:text-2xl font-bold text-gray-900 pr-4">{faq.title}</h3>
+                        <svg
+                          className={`w-6 h-6 md:w-7 md:h-7 text-gray-500 transition-transform flex-shrink-0 ${faqOpen[faq.id] ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {faqOpen[faq.id] && <div className="px-6 md:px-8 pb-6 md:pb-8 text-base md:text-lg text-gray-700 leading-relaxed">{faq.content}</div>}
+                    </div>
+                  ))}
+
+                  {!query && filtered.length > 5 && (
+                    <div className="flex justify-center pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setFaqShowAll((prev) => !prev)}
+                        className="inline-flex items-center gap-3 rounded-full border-2 border-primary/30 bg-primary/5 px-5 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold text-primary hover:bg-primary/10 transition-colors"
+                      >
+                        <span>{faqShowAll ? 'Show fewer questions' : `Show ${filtered.length - 5} more questions`}</span>
+                        <svg
+                          className={`h-5 w-5 md:h-6 md:w-6 transition-transform ${faqShowAll ? 'rotate-180' : ''}`}
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        </div>
+
       </div>
     </main>
   );

@@ -1254,10 +1254,11 @@ const LocationMap: React.FC<LocationMapProps> = ({
 
   return (
     <div>
-      <div className="relative">
-        <div className="mb-4">
-          <LocationSearch onLocationSelect={handleSearchLocation} />
-        </div>
+      <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden"> 
+        <div className="relative p-3">
+          <div className="mb-2">
+            <LocationSearch onLocationSelect={handleSearchLocation} />
+          </div>
 
           {/* History Dropdown */}
           {showHistory && locationHistory.length > 0 && (
@@ -1314,83 +1315,84 @@ const LocationMap: React.FC<LocationMapProps> = ({
                 </div>
               </div>
             )}
-        <div 
-          ref={mapContainerRef}
-          className="relative"
-        >
-          <ClientOnlyMap>
-            <MapContainer
-              center={mapCenter}
-              zoom={mapZoom}
-              style={{ 
-                height: '384px', 
-                width: '100%',
-                position: 'relative',
-              }}
-              ref={mapRef}
-              zoomControl={true}
-            >
-              <MapController center={mapCenter} zoom={mapZoom} />
-              <ScaleControl />
-              <LayerSwitcher 
-                showForests={showForests}
-                showProtectedAreas={showProtectedAreas}
-                showVegetation={showVegetation}
-                onToggleForests={() => setShowForests(!showForests)}
-                onToggleProtectedAreas={() => setShowProtectedAreas(!showProtectedAreas)}
-                onToggleVegetation={() => setShowVegetation(!showVegetation)}
-              />
-              
-              {/* Overlay layers */}
-              <OSMOverlays showForests={showForests} showProtectedAreas={showProtectedAreas} />
-              <VegetationLayer show={showVegetation} />
-              
-              {selectedLocation && markerIcon && (
-                <Marker position={selectedLocation} icon={markerIcon} />
-              )}
-              {selectedRegion && (
-                <Rectangle 
-                  bounds={[
-                    [selectedRegion[0], selectedRegion[1]],
-                    [selectedRegion[2], selectedRegion[3]]
-                  ]}
-                  color="green"
-                  fillColor="green"
-                  fillOpacity={0.2}
-                />
-              )}
-              {selectedRegion && markerIcon && (
-                <Marker
-                  position={[
-                    (selectedRegion[0] + selectedRegion[2]) / 2,
-                    (selectedRegion[1] + selectedRegion[3]) / 2,
-                  ]}
-                  icon={markerIcon}
-                />
-              )}
-              
-              {/* Custom Region Selector - Always enabled for drag selection */}
-              <CustomRegionSelector 
-                onBoundsChange={handleBoundsChange} 
-              />
-              <MapClickHandler />
-            </MapContainer>
-          </ClientOnlyMap>
-          
-          {/* Map control buttons */}
-          <div className="absolute top-2 right-2 z-[1000] flex gap-2">
-            {/* Clear selection button */}
-            {selectedRegion && (
-              <button
-                onClick={clearSelection}
-                className="bg-white hover:bg-gray-100 text-gray-700 rounded-md p-2 shadow-md border border-gray-200 transition-colors"
-                title="Clear selection"
+          <div 
+            ref={mapContainerRef}
+            className="relative"
+          >
+            <ClientOnlyMap>
+              <MapContainer
+                center={mapCenter}
+                zoom={mapZoom}
+                style={{ 
+                  height: '384px', 
+                  width: '100%',
+                  position: 'relative',
+                }}
+                ref={mapRef}
+                zoomControl={true}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
+                <MapController center={mapCenter} zoom={mapZoom} />
+                <ScaleControl />
+                <LayerSwitcher 
+                  showForests={showForests}
+                  showProtectedAreas={showProtectedAreas}
+                  showVegetation={showVegetation}
+                  onToggleForests={() => setShowForests(!showForests)}
+                  onToggleProtectedAreas={() => setShowProtectedAreas(!showProtectedAreas)}
+                  onToggleVegetation={() => setShowVegetation(!showVegetation)}
+                />
+                
+                {/* Overlay layers */}
+                <OSMOverlays showForests={showForests} showProtectedAreas={showProtectedAreas} />
+                <VegetationLayer show={showVegetation} />
+                
+                {selectedLocation && markerIcon && (
+                  <Marker position={selectedLocation} icon={markerIcon} />
+                )}
+                {selectedRegion && (
+                  <Rectangle 
+                    bounds={[
+                      [selectedRegion[0], selectedRegion[1]],
+                      [selectedRegion[2], selectedRegion[3]]
+                    ]}
+                    color="green"
+                    fillColor="green"
+                    fillOpacity={0.2}
+                  />
+                )}
+                {selectedRegion && markerIcon && (
+                  <Marker
+                    position={[
+                      (selectedRegion[0] + selectedRegion[2]) / 2,
+                      (selectedRegion[1] + selectedRegion[3]) / 2,
+                    ]}
+                    icon={markerIcon}
+                  />
+                )}
+                
+                {/* Custom Region Selector - Always enabled for drag selection */}
+                <CustomRegionSelector 
+                  onBoundsChange={handleBoundsChange} 
+                />
+                <MapClickHandler />
+              </MapContainer>
+            </ClientOnlyMap>
+            
+            {/* Map control buttons */}
+            <div className="absolute top-2 right-2 z-[1000] flex gap-2">
+              {/* Clear selection button */}
+              {selectedRegion && (
+                <button
+                  onClick={clearSelection}
+                  className="bg-white hover:bg-gray-100 text-gray-700 rounded-md p-2 shadow-md border border-gray-200 transition-colors"
+                  title="Clear selection"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
