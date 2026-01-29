@@ -175,7 +175,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-3 md:px-4 py-2 rounded-full text-sm md:text-base font-semibold transition-colors flex-shrink-0 ${
+              className={`px-3 py-2 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${
                 selectedCategory === category
                   ? getTreeCategoryColor(category as 'deciduous' | 'coniferous' | 'tropical' | 'mediterranean' | 'boreal' | 'arid' | 'subtropical' | 'all', 'bg')
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -192,7 +192,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
       {/* Recommended species text - shown when region is selected */}
       {recommendedSpecies.length > 0 && (
         <div className="mb-4 p-3 md:p-4 bg-primary/10 border-2 border-primary/30 rounded-lg">
-          <p className="text-sm md:text-base text-primary">
+          <p className="text-xs text-primary">
             <span className="font-semibold">
               {simulationMode === 'planting' 
                 ? 'Recommended for this region:' 
@@ -212,7 +212,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
             </p>
             <button
               onClick={clearAll}
-              className="px-3 py-2 text-sm md:text-base bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold transition-colors"
+              className="px-3 py-2 text-xs bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold transition-colors"
             >
               Clear All
             </button>
@@ -221,7 +221,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
             {selectedTrees.map(tree => (
               <div
                 key={tree.id}
-                className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm md:text-base border-2"
+                className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-xs border-2"
               >
                 <span className="text-lg">🌳</span>
                 <span className="text-gray-900 font-medium">{tree.name}</span>
@@ -253,7 +253,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
                   });
                   onTreePercentagesChange(newPercentages);
                 }}
-                className="px-3 py-2 text-sm md:text-base bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold transition-colors"
+                className="px-3 py-2 text-xs bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold transition-colors"
               >
                 Equal Split
               </button>
@@ -273,7 +273,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
           <div className="space-y-3">
             {selectedTrees.map(tree => (
               <div key={tree.id} className="flex items-center gap-3">
-                <span className="text-sm md:text-base text-gray-900 font-medium w-24 md:w-32 truncate">{tree.name}</span>
+                <span className="text-xs text-gray-900 font-medium w-24 truncate">{tree.name}</span>
                 <div className="flex items-center gap-2 flex-1">
                   <input
                     type="number"
@@ -325,7 +325,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
             </div>
             
             {Object.values(treePercentages).reduce((sum, p) => sum + (p || 0), 0) !== 100 && (
-              <p className="text-sm md:text-base text-red-500 font-semibold">
+              <p className="text-xs text-red-500 font-semibold">
                 Total should equal 100% for accurate calculations
               </p>
             )}
@@ -364,30 +364,30 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
                   <div className="flex-1 mr-3">
                     <h4 className="font-bold text-gray-900 text-sm">
                       {isRecommended && <span className="text-primary mr-2 text-base">★</span>}
-                      {tree.name} <span className="font-normal text-gray-600 text-sm md:text-base">- {tree.scientificName}</span>
+                      {tree.name} <span className="font-normal text-gray-600 text-xs">- {tree.scientificName}</span>
                     </h4>
                   </div>
                   <div className="flex items-center gap-2">
                     {/* Selection Indicator */}
                     {isSelected && (
-                      <div className={`w-6 h-6 md:w-7 md:h-7 text-white rounded-full flex items-center justify-center text-sm md:text-base font-bold ${getTreeCategoryColor(tree.category, 'bg')}`}>
+                      <div className={`w-6 h-6 text-white rounded-full flex items-center justify-center text-xs font-bold ${getTreeCategoryColor(tree.category, 'bg')}`}>
                         ✓
                       </div>
                     )}
-                    <span className={`px-3 py-1.5 rounded-full text-sm md:text-base font-semibold whitespace-nowrap flex-shrink-0 ${getTreeCategoryColor(tree.category, 'bg')}`}>
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 ${getTreeCategoryColor(tree.category, 'bg')}`}>
                       {tree.category.charAt(0).toUpperCase() + tree.category.slice(1)}
                     </span>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3 mb-3">
                   <div className="text-center bg-white border-2 border-gray-300 rounded-lg p-3">
-                    <div className="text-sm md:text-base font-semibold text-gray-900">Carbon: {tree.carbonSequestration} kg</div>
+                    <div className="text-xs font-semibold text-gray-900">Carbon: {tree.carbonSequestration} kg</div>
                   </div>
                   <div className="text-center bg-white border-2 border-gray-300 rounded-lg p-3">
-                    <div className="text-sm md:text-base font-semibold text-gray-900 capitalize">Growth: {tree.growthRate}</div>
+                    <div className="text-xs font-semibold text-gray-900 capitalize">Growth: {tree.growthRate}</div>
                   </div>
                   <div className="text-center bg-white border-2 border-gray-300 rounded-lg p-3">
-                    <div className="text-sm md:text-base font-semibold text-gray-900">Bio: {tree.biodiversityValue}</div>
+                    <div className="text-xs font-semibold text-gray-900">Bio: {tree.biodiversityValue}</div>
                   </div>
                 </div>
 
@@ -401,7 +401,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
       {filteredTrees.length === 0 && (
         <div className="text-center py-8 text-gray-600">
           <p className="text-sm font-semibold">No trees found matching your criteria.</p>
-          <p className="text-sm md:text-base mt-2">Try adjusting your search or filters.</p>
+          <p className="text-xs mt-2">Try adjusting your search or filters.</p>
         </div>
       )}
     </div>

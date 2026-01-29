@@ -15,7 +15,7 @@ export const EconomicTab: React.FC<EconomicTabProps> = ({
         <h5 className="font-semibold text-green-800 mb-2 flex items-center">
           {simulationMode === 'planting' ? 'Employment Impact' : 'Economic Impact'}
         </h5>
-        <div className="space-y-3 text-sm md:text-base text-primary">
+        <div className="space-y-3 text-xs text-primary">
           <div className="flex justify-between">
             <span className="font-semibold">
               {simulationMode === 'planting' ? 'Jobs Created:' : 'Jobs Affected:'}
@@ -24,7 +24,7 @@ export const EconomicTab: React.FC<EconomicTabProps> = ({
               {jobCreation} jobs
             </span>
           </div>
-          <div className="text-sm md:text-base text-primary mt-3">
+          <div className="text-xs text-primary mt-3">
             {simulationMode === 'planting' 
               ? 'Based on typical forest project staffing needs for planting, maintenance, and monitoring.'
               : 'Based on typical forest management operations including logging, transportation, and processing activities.'
@@ -37,7 +37,7 @@ export const EconomicTab: React.FC<EconomicTabProps> = ({
         <h5 className="font-semibold text-green-800 mb-2 flex items-center">
           {simulationMode === 'planting' ? 'Conservation Benefits' : 'Economic Considerations'}
         </h5>
-        <ul className="text-sm md:text-base text-primary space-y-2">
+        <ul className="text-xs text-primary space-y-2">
           {simulationMode === 'planting' ? (
             <>
               <li>• Conservation and restoration employment opportunities</li>

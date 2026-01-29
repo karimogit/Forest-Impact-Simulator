@@ -26,7 +26,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
         aria-label={`${title}: ${value}`}
       >
         <div className="flex-1">
-          <div className="text-sm md:text-base text-gray-900 font-bold mb-2">{title}</div>
+          <div className="text-xs text-gray-900 font-bold mb-2">{title}</div>
           <div className="text-primary font-bold text-base">{value}</div>
         </div>
         <svg

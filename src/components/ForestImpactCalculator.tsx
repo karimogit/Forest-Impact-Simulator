@@ -1183,7 +1183,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
               <span className="text-primary ml-2">• {totalTrees.toLocaleString()} total trees in area</span>
             )}
           </span>
-          <ul className="space-y-3 text-sm md:text-base text-gray-700">
+          <ul className="space-y-3 text-xs text-gray-700">
             {selectedTrees.map((tree) => {
               const percentage = treePercentages?.[tree.id] || 0;
               return (
@@ -1197,7 +1197,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
               );
             })}
           </ul>
-          <p className="text-sm md:text-base text-gray-600 mt-4">
+          <p className="text-xs text-gray-600 mt-4">
             {selectedTrees.length === 0 
               ? <><span className="font-semibold">No trees selected</span></>
               : selectedTrees.length > 1 && treePercentages && Object.values(treePercentages).reduce((sum, p) => sum + (p || 0), 0) === 100 
@@ -1221,7 +1221,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
           <p className="text-sm text-primary mb-3 font-semibold">
             This forest would sequester the equivalent of:
           </p>
-          <ul className="text-sm md:text-base text-primary space-y-2">
+          <ul className="text-xs text-primary space-y-2">
             {comparisons.map((comparison, index) => {
               // Split comparison text and make numbers bold using React components (safe)
               const parts = comparison.split(/(\d+\.?\d*)/g);

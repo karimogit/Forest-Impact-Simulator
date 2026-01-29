@@ -184,11 +184,11 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
               Calculation Mode
             </label>
             {calculationMode === 'perTree' ? (
-              <p className="text-sm md:text-base text-gray-600">
+              <p className="text-xs text-gray-600">
                 Showing impact per individual tree
               </p>
             ) : (
-              <p className="text-sm md:text-base text-gray-600">
+              <p className="text-xs text-gray-600">
                 Showing impact for entire area
               </p>
             )}
@@ -196,7 +196,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setCalculationMode('perTree')}
-              className={`px-4 py-2 text-sm md:text-base font-semibold rounded-lg transition-colors ${
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
                 calculationMode === 'perTree'
                   ? 'bg-primary text-white'
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
@@ -206,7 +206,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
             </button>
             <button
               onClick={() => setCalculationMode('perArea')}
-              className={`px-4 py-2 text-sm md:text-base font-semibold rounded-lg transition-colors ${
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
                 calculationMode === 'perArea'
                   ? 'bg-primary text-white'
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
@@ -225,7 +225,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
             <span className="font-bold">Simulation Duration:</span> <span className="font-bold text-primary">{years} year{years !== 1 ? 's' : ''}</span>
           </label>
           <div className="flex items-center gap-3">
-            <span className="text-sm md:text-base text-gray-600 w-8 text-center font-medium">1</span>
+            <span className="text-xs text-gray-600 w-8 text-center font-medium">1</span>
             <input
               id="years"
               type="range"
@@ -244,7 +244,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
                 background: `linear-gradient(to right, #1B4D3E 0%, #1B4D3E ${((years - 1) / 99) * 100}%, #e5e7eb ${((years - 1) / 99) * 100}%, #e5e7eb 100%)`
               }}
             />
-            <span className="text-sm md:text-base text-gray-600 w-8 text-center font-medium">100</span>
+            <span className="text-xs text-gray-600 w-8 text-center font-medium">100</span>
           </div>
         </div>
       )}
@@ -253,13 +253,13 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
       <div className="mb-4">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm md:text-base text-gray-900 font-bold">Area size:</span>
+            <span className="text-xs text-gray-900 font-bold">Area size:</span>
             <span className="text-sm font-semibold">{formatArea(plantingConfig.area)}</span>
           </div>
           {selectedRegion && (
             <div className="flex items-center justify-between">
-              <span className="text-sm md:text-base text-gray-900 font-bold">Coordinates:</span>
-              <span className="text-sm md:text-base font-medium">
+              <span className="text-xs text-gray-900 font-bold">Coordinates:</span>
+              <span className="text-xs font-medium">
                 {selectedRegion.south.toFixed(4)}°S to {selectedRegion.north.toFixed(4)}°N<br />
                 {selectedRegion.west.toFixed(4)}°W to {selectedRegion.east.toFixed(4)}°E
               </span>
@@ -267,30 +267,30 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
           )}
           <div className="flex items-center justify-between">
             <span 
-              className="text-sm md:text-base text-gray-900 font-bold cursor-help"
+              className="text-xs text-gray-900 font-bold cursor-help"
               title="Tree spacing is optimized for healthy growth, allowing adequate sunlight, water, and root space. Denser spacing (2-3m) creates closed canopy faster, while wider spacing (4-6m) allows for understory development and easier maintenance."
             >
               Spacing:
             </span>
-            <span className="text-base md:text-lg font-semibold">{plantingConfig.spacing}m between trees</span>
+            <span className="text-sm font-semibold">{plantingConfig.spacing}m between trees</span>
           </div>
           <div className="flex items-center justify-between pb-3 border-b-2 border-gray-200">
             <span 
-              className="text-sm md:text-base text-gray-900 font-bold cursor-help"
+              className="text-xs text-gray-900 font-bold cursor-help"
               title="Trees per hectare = 10,000m² ÷ (spacing in meters)². This ensures optimal tree distribution across your area for maximum forest health and carbon sequestration potential."
             >
               Density:
             </span>
-            <span className="text-base md:text-lg font-semibold">{formatNumber(plantingConfig.density)} trees/ha</span>
+            <span className="text-sm font-semibold">{formatNumber(plantingConfig.density)} trees/ha</span>
           </div>
           <div className="flex items-center justify-between pt-2">
-            <span className="text-sm md:text-base text-gray-900 font-bold">Total Trees:</span>
-            <span className="text-base font-bold text-primary">{formatNumber(plantingConfig.totalTrees)}</span>
+            <span className="text-xs text-gray-900 font-bold">Total Trees:</span>
+            <span className="text-sm font-bold text-primary">{formatNumber(plantingConfig.totalTrees)}</span>
           </div>
         </div>
         
         {selectedTrees && selectedTrees.length > 1 && (
-          <div className="mt-3 p-3 md:p-4 bg-primary/10 border-2 border-primary/30 rounded-lg text-sm md:text-base text-primary">
+          <div className="mt-3 p-3 bg-primary/10 border-2 border-primary/30 rounded-lg text-xs text-primary">
             <strong>🌳 Multi-species spacing:</strong> Spacing calculated as weighted average based on your tree selection and percentages.
           </div>
         )}
@@ -305,7 +305,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
       {/* Custom Spacing Option */}
             <div>
         <label 
-          className="block text-base md:text-lg font-semibold text-gray-900 mb-2 cursor-help"
+          className="block text-sm font-semibold text-gray-900 mb-2 cursor-help"
           title="Adjust spacing for specific site conditions, access requirements, or management goals. Wider spacing (5-6m) for equipment access, narrower (2-3m) for rapid canopy closure. Auto uses species-specific recommendations."
         >
           Custom Spacing (meters)
@@ -319,7 +319,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
             value={customSpacing || ''}
             onChange={(e) => setCustomSpacing(e.target.value ? parseFloat(e.target.value) : undefined)}
             placeholder="Auto"
-            className="flex-1 px-4 py-2 text-base md:text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
+            className="flex-1 px-4 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
           />
           <button
             onClick={() => setCustomSpacing(undefined)}
@@ -372,10 +372,10 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
                 <h5 className="font-bold text-primary mb-3 text-sm flex items-center gap-2">
                   Soil Data
                   {soil.isEstimated && (
-                    <span className="text-sm md:text-base font-normal text-primary/80">(Estimated)</span>
+                    <span className="text-xs font-normal text-primary/80">(Estimated)</span>
                   )}
                 </h5>
-                <div className="space-y-2 text-sm md:text-base text-primary">
+                <div className="space-y-2 text-xs text-primary">
                   <div className="flex justify-between">
                     <span className="font-medium">Soil Carbon Content:</span>
                     <span className="font-bold">
@@ -390,13 +390,13 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
                   </div>
                   {soil?.carbon && (
                     <div className="mt-3 pt-3 border-t-2 border-primary/30">
-                      <div className="text-sm md:text-base text-primary">
+                      <div className="text-xs text-primary">
                         <span className="font-bold">Carbon Bonus:</span> +{(soil.carbon * 0.1).toFixed(1)} kg CO₂/year per tree
                       </div>
                     </div>
                   )}
                   {soil.isEstimated && (
-                    <div className="mt-3 pt-3 border-t-2 border-primary/30 text-sm md:text-base text-primary/80">
+                    <div className="mt-3 pt-3 border-t-2 border-primary/30 text-xs text-primary/80">
                       ℹ️ Soil data unavailable for this location. Using climate-zone estimates.
                     </div>
                   )}
@@ -409,7 +409,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
                 <h5 className="font-bold text-primary mb-3 text-sm flex items-center gap-2">
                   Climate Data
                   {climate.isEstimated && (
-                    <span className="text-sm md:text-base font-normal text-primary/80">(Estimated)</span>
+                    <span className="text-xs font-normal text-primary/80">(Estimated)</span>
                   )}
                 </h5>
                 <div className="space-y-1 text-xs text-primary">
@@ -432,13 +432,13 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
 
                   {climate?.historicalData && climate.historicalData.temperatures.length > 0 && (
                     <div className="mt-3 pt-3 border-t-2 border-primary/30">
-                      <div className="text-sm md:text-base text-primary">
+                      <div className="text-xs text-primary">
                         <span className="font-bold">Climate Trend:</span> {calculateLinearTrend(Array.from({length: climate.historicalData.temperatures.length}, (_, i) => i), climate.historicalData.temperatures).toFixed(3)}°C/year
                       </div>
                     </div>
                   )}
                   {climate.isEstimated && (
-                    <div className="mt-3 pt-3 border-t-2 border-primary/30 text-sm md:text-base text-primary/80">
+                    <div className="mt-3 pt-3 border-t-2 border-primary/30 text-xs text-primary/80">
                       ℹ️ Climate data unavailable for this location. Using climate-zone estimates.
                     </div>
                   )}

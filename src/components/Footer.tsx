@@ -5,7 +5,7 @@ const Footer: React.FC = () => {
     <footer className="bg-primary text-white p-4 md:p-6 mt-auto">
       <div className="container mx-auto">
         <div className="flex justify-between items-center mb-4">
-          <p className="text-sm md:text-base text-gray-200">
+          <p className="text-xs text-gray-200">
             © {new Date().getFullYear()} Forest Impact Simulator.
           </p>
           

@@ -27,7 +27,7 @@ export const LandUseTab: React.FC<LandUseTabProps> = ({
         <h5 className="font-semibold text-green-800 mb-2 flex items-center">
           {simulationMode === 'planting' ? 'Land Use Improvements' : 'Land Use Impact Assessment'}
         </h5>
-        <div className="space-y-3 text-sm md:text-base text-primary">
+        <div className="space-y-3 text-xs text-primary">
           {selectedRegion && (
             <div className="flex justify-between">
               <span>{simulationMode === 'planting' ? 'Erosion Reduction:' : 'Erosion Risk Increase:'}</span>
@@ -75,7 +75,7 @@ export const LandUseTab: React.FC<LandUseTabProps> = ({
         <h5 className="font-semibold text-green-800 mb-2 flex items-center">
           {simulationMode === 'planting' ? 'Land Use Benefits' : 'Land Use Impacts'}
         </h5>
-        <ul className="text-sm md:text-base text-primary space-y-2">
+        <ul className="text-xs text-primary space-y-2">
           {simulationMode === 'planting' ? (
             <>
               <li>• Soil erosion prevention and stabilization</li>
@@ -98,7 +98,7 @@ export const LandUseTab: React.FC<LandUseTabProps> = ({
         </ul>
       </div>
       
-      <div className="text-sm md:text-base text-gray-600 italic">
+      <div className="text-xs text-gray-600 italic">
         {simulationMode === 'planting' 
           ? 'Land use improvements increase over time as the forest develops and matures'
           : 'Land use impacts represent the environmental costs of forest removal and land conversion'

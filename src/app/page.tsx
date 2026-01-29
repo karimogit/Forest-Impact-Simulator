@@ -1155,7 +1155,7 @@ export default function Home() {
                   className="w-full rounded-xl border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
-            <p className="mt-3 text-sm md:text-base text-center text-gray-600">
+            <p className="mt-3 text-xs text-center text-gray-600">
               Try searching for terms like &quot;clear-cutting&quot;, &quot;carbon&quot;, &quot;exports&quot;, or &quot;species&quot;.
             </p>
           </div>
