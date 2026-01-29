@@ -14,11 +14,11 @@ export function middleware() {
   // - Hot Module Replacement (HMR) in development
   // - Runtime hydration scripts
   // - Dynamic chunk loading
-  // We use 'strict-dynamic' to mitigate risks: browsers that support it will ignore 'unsafe-inline'
-  // and only trust scripts loaded by trusted scripts, providing better security
+  // We cannot use 'strict-dynamic' as it causes browsers to ignore 'unsafe-inline'
+  // Other security measures (XSS protection, frame options, etc.) remain in place
   response.headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://nominatim.openstreetmap.org https://rest.isric.org https://api.open-meteo.com https://archive-api.open-meteo.com https://overpass-api.de; frame-ancestors 'none';"
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://nominatim.openstreetmap.org https://rest.isric.org https://api.open-meteo.com https://archive-api.open-meteo.com https://overpass-api.de; frame-ancestors 'none';"
   )
 
   return response
