@@ -57,10 +57,14 @@ export function getCachedData<T>(key: string): T | null {
       return null;
     }
 
-    console.log(`Cache hit for key: ${key}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Cache hit for key: ${key}`);
+    }
     return entry.data;
   } catch (error) {
-    console.warn('Error reading from cache:', error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Error reading from cache:', error);
+    }
     return null;
   }
 }
@@ -82,18 +86,34 @@ export function setCachedData<T>(key: string, data: T, ttl: number = DEFAULT_TTL
     };
 
     localStorage.setItem(cacheKey, JSON.stringify(entry));
-    console.log(`Cached data for key: ${key} (TTL: ${ttl / 1000 / 60} minutes)`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Cached data for key: ${key} (TTL: ${ttl / 1000 / 60} minutes)`);
+    }
   } catch (error) {
-    console.warn('Error writing to cache:', error);
-    // If quota exceeded, clear old caches and retry
-    if (error instanceof Error && error.name === 'QuotaExceededError') {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Error writing to cache:', error);
+    }
+    // If storage quota exceeded (any storage error), clear old caches and retry
+    // Note: QuotaExceededError name may vary by browser, so we catch all storage errors
+    const isStorageError = error instanceof Error && (
+      error.name === 'QuotaExceededError' ||
+      error.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      error.message?.toLowerCase().includes('quota')
+    );
+    
+    if (isStorageError) {
       clearExpiredCache();
       try {
         const cacheKey = `${CACHE_PREFIX}-${key}`;
         const entry: CacheEntry<T> = { data, timestamp: Date.now(), ttl };
         localStorage.setItem(cacheKey, JSON.stringify(entry));
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('Successfully cached after clearing expired entries');
+        }
       } catch (retryError) {
-        console.error('Failed to cache after clearing expired entries:', retryError);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Failed to cache after clearing expired entries:', retryError);
+        }
       }
     }
   }
@@ -130,9 +150,13 @@ export function clearExpiredCache(): void {
     }
 
     keysToRemove.forEach(key => localStorage.removeItem(key));
-    console.log(`Cleared ${keysToRemove.length} expired cache entries`);
+    if (process.env.NODE_ENV !== 'production' && keysToRemove.length > 0) {
+      console.log(`Cleared ${keysToRemove.length} expired cache entries`);
+    }
   } catch (error) {
-    console.warn('Error clearing expired cache:', error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Error clearing expired cache:', error);
+    }
   }
 }
 
@@ -155,9 +179,13 @@ export function clearAllCache(): void {
     }
 
     keysToRemove.forEach(key => localStorage.removeItem(key));
-    console.log(`Cleared ${keysToRemove.length} cache entries`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Cleared ${keysToRemove.length} cache entries`);
+    }
   } catch (error) {
-    console.warn('Error clearing cache:', error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Error clearing cache:', error);
+    }
   }
 }
 
@@ -184,7 +212,9 @@ export function getCacheStats(): { count: number; size: number } {
       }
     }
   } catch (error) {
-    console.warn('Error calculating cache stats:', error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Error calculating cache stats:', error);
+    }
   }
 
   return { count, size };

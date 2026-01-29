@@ -24,6 +24,7 @@ import { EnvironmentTab } from './tabs/EnvironmentTab';
 import { SocialTab } from './tabs/SocialTab';
 import { EconomicTab } from './tabs/EconomicTab';
 import { LandUseTab } from './tabs/LandUseTab';
+import { logger } from '@/utils/logger';
 
 // Simple fetch with timeout
 const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout: number = 15000): Promise<Response> => {
@@ -131,7 +132,7 @@ const estimateClimateData = (lat: number): ClimateData => {
     precipitation = 300;
   }
   
-  console.log(`Using estimated climate data for latitude ${lat}:`, { temperature, precipitation });
+  logger.log(`Using estimated climate data for latitude ${lat}:`, { temperature, precipitation });
   return { temperature, precipitation, isEstimated: true };
 };
 
@@ -161,7 +162,7 @@ const estimateSoilData = (lat: number): SoilData => {
     ph = 5.5; // Acidic
   }
   
-  console.log(`Using estimated soil data for latitude ${lat}:`, { carbon, ph });
+  logger.log(`Using estimated soil data for latitude ${lat}:`, { carbon, ph });
   return { carbon, ph, isEstimated: true };
 };
 
@@ -169,18 +170,18 @@ const fetchSoilData = async (lat: number, lon: number, retries = 2): Promise<Soi
   try {
     // Validate coordinates
     if (!validateLatitude(lat) || !validateLongitude(lon)) {
-      console.warn('Invalid coordinates for soil data:', { lat, lon });
+      logger.warn('Invalid coordinates for soil data:', { lat, lon });
       return estimateSoilData(lat);
     }
     
     // Rate limiting - be more lenient
     if (!apiRateLimiter.isAllowed('soil')) {
-      console.warn('[SOIL API] Rate limit - using estimates');
+      logger.warn('[SOIL API] Rate limit - using estimates');
       return estimateSoilData(lat);
     }
     
     const attemptNum = 3 - retries;
-    console.log(`[SOIL API] Fetching soil data for: ${lat.toFixed(4)}, ${lon.toFixed(4)} (attempt ${attemptNum} of 3)`);
+    logger.log(`[SOIL API] Fetching soil data for: ${lat.toFixed(4)}, ${lon.toFixed(4)} (attempt ${attemptNum} of 3)`);
     
     // Use progressively longer timeouts on retries
     const timeout = 15000 + (attemptNum * 10000); // 15s, 25s, 35s
@@ -200,7 +201,7 @@ const fetchSoilData = async (lat: number, lon: number, retries = 2): Promise<Soi
     if (!res.ok) {
       // For 404 or 400, the location might not have data - use estimates without retrying
       if (res.status === 404 || res.status === 400) {
-        console.log(`[SOIL API] No data available for this location (${res.status}). Using estimates.`);
+        logger.log(`[SOIL API] No data available for this location (${res.status}). Using estimates.`);
         return estimateSoilData(lat);
       }
       throw new Error(`Soil API error: ${res.status} ${res.statusText}`);
@@ -229,7 +230,7 @@ const fetchSoilData = async (lat: number, lon: number, retries = 2): Promise<Soi
     
     // If API returns null values (no data available for this location), use estimates
     if (carbon === null && ph === null) {
-      console.log('[SOIL API] API returned null values. Using climate-based estimates.');
+      logger.log('[SOIL API] API returned null values. Using climate-based estimates.');
       return estimateSoilData(lat);
     }
     
@@ -240,27 +241,27 @@ const fetchSoilData = async (lat: number, lon: number, retries = 2): Promise<Soi
       isEstimated: carbon === null || ph === null
     };
     
-    console.log('[SOIL API] Success:', { carbon: result.carbon, ph: result.ph, partial: result.isEstimated });
+    logger.log('[SOIL API] Success:', { carbon: result.carbon, ph: result.ph, partial: result.isEstimated });
     return result;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     // Don't retry for certain errors
     if (errorMessage.includes('aborted') || errorMessage.includes('timeout')) {
-      console.warn(`[SOIL API] Request timed out (attempt ${3 - retries})`);
+      logger.warn(`[SOIL API] Request timed out (attempt ${3 - retries})`);
     } else {
-      console.warn(`[SOIL API] Error: ${errorMessage}`);
+      logger.warn(`[SOIL API] Error: ${errorMessage}`);
     }
     
     // Retry logic with exponential backoff
     if (retries > 0) {
       const waitTime = (3 - retries) * 2000; // Progressive backoff: 2s, 4s
-      console.log(`[SOIL API] Retrying in ${waitTime/1000}s...`);
+      logger.log(`[SOIL API] Retrying in ${waitTime/1000}s...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
       return fetchSoilData(lat, lon, retries - 1);
     }
     
-    console.log('[SOIL API] All attempts exhausted. Using climate-based estimates.');
+    logger.log('[SOIL API] All attempts exhausted. Using climate-based estimates.');
     return estimateSoilData(lat);
   }
 };
@@ -300,18 +301,18 @@ const fetchClimateData = async (lat: number, lon: number, retries = 2): Promise<
   try {
     // Validate coordinates
     if (!validateLatitude(lat) || !validateLongitude(lon)) {
-      console.warn('Invalid coordinates for climate data:', { lat, lon });
+      logger.warn('Invalid coordinates for climate data:', { lat, lon });
       return estimateClimateData(lat);
     }
     
     // Rate limiting - be more lenient
     if (!apiRateLimiter.isAllowed('climate')) {
-      console.warn('[CLIMATE API] Rate limit - using estimates');
+      logger.warn('[CLIMATE API] Rate limit - using estimates');
       return estimateClimateData(lat);
     }
     
     const attemptNum = 3 - retries;
-    console.log(`[CLIMATE API] Fetching for: ${lat.toFixed(4)}, ${lon.toFixed(4)} (attempt ${attemptNum} of 3)`);
+    logger.log(`[CLIMATE API] Fetching for: ${lat.toFixed(4)}, ${lon.toFixed(4)} (attempt ${attemptNum} of 3)`);
     
     // Use progressively longer timeouts on retries
     const timeout = 10000 + (attemptNum * 5000); // 10s, 15s, 20s
@@ -334,7 +335,7 @@ const fetchClimateData = async (lat: number, lon: number, retries = 2): Promise<
     
     // If current data is missing, use estimates
     if (currentTemp == null) {
-      console.log('[CLIMATE API] No temperature data. Using estimates.');
+      logger.log('[CLIMATE API] No temperature data. Using estimates.');
       return estimateClimateData(lat);
     }
     
@@ -372,10 +373,10 @@ const fetchClimateData = async (lat: number, lon: number, retries = 2): Promise<
       }
     } catch (histError) {
       // Historical data fetch failed - continue without it
-      console.log('[CLIMATE API] Historical data unavailable, continuing with current data only');
+      logger.log('[CLIMATE API] Historical data unavailable, continuing with current data only');
     }
     
-    console.log('[CLIMATE API] Success:', { 
+    logger.log('[CLIMATE API] Success:', { 
       temperature: currentTemp, 
       precipitation: currentPrecip ?? 0,
       hasHistorical: !!historicalData 
@@ -404,7 +405,7 @@ const fetchClimateData = async (lat: number, lon: number, retries = 2): Promise<
       return fetchClimateData(lat, lon, retries - 1);
     }
     
-    console.log('[CLIMATE API] All attempts exhausted. Using climate-based estimates.');
+    logger.log('[CLIMATE API] All attempts exhausted. Using climate-based estimates.');
     return estimateClimateData(lat);
   }
 };
@@ -568,7 +569,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
       const cachedData = getCachedData<{ soil: SoilData; climate: ClimateData }>(cacheKey);
       
       if (cachedData) {
-        console.log('Using cached environmental data from localStorage');
+        logger.log('Using cached environmental data from localStorage');
         setSoil(cachedData.soil);
         setClimate(cachedData.climate);
         setLoading(false);
@@ -584,7 +585,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
       setLoading(true);
       setError(null);
       
-      console.log('Fetching environmental data for:', latitude, longitude);
+      logger.log('Fetching environmental data for:', latitude, longitude);
       
       Promise.allSettled([
         fetchSoilData(latitude, longitude),
@@ -600,7 +601,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
             soilData = soilResult.value;
             setSoil(soilData);
           } else {
-            console.log('Soil data failed:', soilResult.reason);
+            logger.log('Soil data failed:', soilResult.reason);
             setSoil(soilData);
           }
           
@@ -608,7 +609,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
             climateData = climateResult.value;
             setClimate(climateData);
           } else {
-            console.log('Climate data fetch failed:', climateResult.reason);
+            logger.log('Climate data fetch failed:', climateResult.reason);
             setClimate(climateData);
             setError('Weather API temporarily unavailable - using regional climate estimates based on latitude');
           }
@@ -621,7 +622,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
             onSoilClimateDataReady(soilData, climateData);
           }
           
-          console.log('Environmental data cached in localStorage for:', cacheKey);
+          logger.log('Environmental data cached in localStorage for:', cacheKey);
         })
         .catch((error) => {
           console.error('Unexpected error fetching environmental data:', error);
@@ -1064,20 +1065,20 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
   }
 
   return (
-    <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-md">
+    <div className="p-6 md:p-8 bg-white border-2 border-gray-200 rounded-xl shadow-lg">
 
 
-      <div className="mb-4">
-        <h4 className="font-semibold mb-2">Impact Analysis</h4>
+      <div className="mb-6">
+        <h4 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">Impact Analysis</h4>
         
         {/* Tab Navigation */}
-        <div className="flex border-b border-gray-200 mb-3 overflow-x-auto" role="tablist" aria-label="Impact analysis categories">
+        <div className="flex border-b-2 border-gray-200 mb-4 overflow-x-auto" role="tablist" aria-label="Impact analysis categories">
           <button
             onClick={() => setActiveEnvTab('environment')}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+            className={`px-4 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeEnvTab === 'environment'
                 ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
             }`}
             role="tab"
             aria-selected={activeEnvTab === 'environment'}
@@ -1087,10 +1088,10 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
           </button>
           <button
             onClick={() => setActiveEnvTab('economic')}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+            className={`px-4 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeEnvTab === 'economic'
                 ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
             }`}
             role="tab"
             aria-selected={activeEnvTab === 'economic'}
@@ -1100,10 +1101,10 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
           </button>
           <button
             onClick={() => setActiveEnvTab('social')}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+            className={`px-4 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeEnvTab === 'social'
                 ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
             }`}
             role="tab"
             aria-selected={activeEnvTab === 'social'}
@@ -1113,10 +1114,10 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
           </button>
           <button
             onClick={() => setActiveEnvTab('landuse')}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+            className={`px-4 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeEnvTab === 'landuse'
                 ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
             }`}
             role="tab"
             aria-selected={activeEnvTab === 'landuse'}
@@ -1175,14 +1176,14 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
       </div>
 
       {selectedTrees && selectedTrees.length > 0 && (
-        <div className="mb-4 flex flex-col bg-white rounded shadow p-4 max-w-3xl w-full">
-          <span className="text-xs font-bold text-gray-700 mb-2">
+        <div className="mb-6 flex flex-col bg-white rounded-xl shadow-md p-5 md:p-6 max-w-3xl w-full border border-gray-200">
+          <span className="text-base md:text-lg font-bold text-gray-900 mb-3">
             Selected Trees: {selectedTrees.length} species
             {calculationMode === 'perArea' && selectedRegion && (
               <span className="text-primary ml-2">• {totalTrees.toLocaleString()} total trees in area</span>
             )}
           </span>
-          <ul className="space-y-2 text-xs text-gray-700">
+          <ul className="space-y-3 text-sm md:text-base text-gray-700">
             {selectedTrees.map((tree) => {
               const percentage = treePercentages?.[tree.id] || 0;
               return (
@@ -1196,7 +1197,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
               );
             })}
           </ul>
-          <p className="text-xs text-gray-600 mt-3">
+          <p className="text-sm md:text-base text-gray-600 mt-4">
             {selectedTrees.length === 0 
               ? <><span className="font-semibold">No trees selected</span></>
               : selectedTrees.length > 1 && treePercentages && Object.values(treePercentages).reduce((sum, p) => sum + (p || 0), 0) === 100 
@@ -1215,12 +1216,12 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
       {/* Impact boxes moved to Environment tab */}
 
       {comparisons.length > 0 && (
-        <div className="mb-4 p-4 bg-primary/10 border border-primary/30 rounded-lg">
-          <h4 className="font-semibold text-primary mb-2">Real-world Impact Comparison</h4>
-          <p className="text-xs text-primary mb-2 font-bold">
+        <div className="mb-6 p-5 md:p-6 bg-primary/10 border-2 border-primary/30 rounded-xl">
+          <h4 className="text-lg md:text-xl font-bold text-primary mb-3">Real-world Impact Comparison</h4>
+          <p className="text-base md:text-lg text-primary mb-3 font-semibold">
             This forest would sequester the equivalent of:
           </p>
-          <ul className="text-xs text-primary space-y-1">
+          <ul className="text-sm md:text-base text-primary space-y-2">
             {comparisons.map((comparison, index) => {
               // Split comparison text and make numbers bold using React components (safe)
               const parts = comparison.split(/(\d+\.?\d*)/g);

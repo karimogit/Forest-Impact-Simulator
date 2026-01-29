@@ -132,12 +132,17 @@ export class RateLimiter {
 }
 
 // Create a global rate limiter instance - generous limits for better UX
+// NOTE: This is CLIENT-SIDE rate limiting only. It improves UX by preventing excessive
+// API calls from a single browser session, but does NOT provide security protection.
+// For production security, implement server-side rate limiting with proper enforcement.
 export const apiRateLimiter = new RateLimiter(60, 60000); // 60 requests per minute
 
-// Clean up rate limiter periodically
-setInterval(() => {
-  apiRateLimiter.cleanup();
-}, 60000); // Clean up every minute
+// Clean up rate limiter periodically (only in browser environment)
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    apiRateLimiter.cleanup();
+  }, 60000); // Clean up every minute
+}
 
 // URL validation
 export const isValidUrl = (url: string): boolean => {
@@ -159,7 +164,17 @@ export const safeJsonParse = <T>(json: string, fallback: T): T => {
 };
 
 // XSS prevention for user input
+// Note: This function is browser-only and should only be called in client components
 export const escapeHtml = (text: string): string => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    // Server-side fallback: basic HTML entity encoding
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  }
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;

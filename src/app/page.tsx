@@ -774,31 +774,33 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <div className="container mx-auto max-w-7xl">
-        <section className="text-center mb-8" aria-labelledby="main-heading">
-          <h1 id="main-heading" className="text-4xl font-bold text-center mb-2">
+    <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-8 lg:p-12">
+      <div className="container mx-auto max-w-7xl w-full">
+        <section className="text-center mb-12 space-y-section" aria-labelledby="main-heading">
+          <h1 id="main-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold text-center mb-4 text-gray-900">
             Simulate the Impact of Forest Management
           </h1>
-          <p className="text-lg text-gray-600 mb-8 max-w-3xl mx-auto text-center">
+          <p className="text-lg md:text-xl text-gray-700 mb-8 max-w-4xl mx-auto text-center leading-relaxed">
             Use real-time environmental data to analyze the impacts of forest planting and clear-cutting on carbon storage, biodiversity, economic value, social outcomes, and land use.
           </p>
         </section>
         
         {/* Simulation Mode Selector and Reset Button */}
-        <div className="mb-8">
-          <div className="flex justify-center items-center gap-4 flex-wrap">
-            <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-2xl p-2 shadow-lg">
+        <div className="mb-10 md:mb-12">
+          <div className="flex justify-center items-center gap-4 md:gap-6 flex-wrap">
+            <div className="bg-gradient-to-r from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-2 shadow-xl">
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setSimulationMode('planting')}
-                  className={`relative px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                  aria-label="Switch to planting mode"
+                  aria-pressed={simulationMode === 'planting'}
+                  className={`relative px-6 md:px-8 py-3 md:py-4 rounded-xl text-base md:text-lg font-semibold transition-all duration-300 flex items-center gap-2 md:gap-3 ${
                     simulationMode === 'planting'
                       ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-green-500/30 scale-[1.02]'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }`}
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m-8-9H3m18 0h-1M5.636 5.636l.707.707m11.314 11.314l.707.707M5.636 18.364l.707-.707m11.314-11.314l.707-.707" />
                     <circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.3" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v8M8 12h8" />
@@ -808,16 +810,18 @@ export default function Home() {
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
                   )}
                 </button>
-                <div className="w-px h-8 bg-gray-200 mx-1" />
+                <div className="w-px h-10 bg-gray-200 mx-1" />
                 <button
                   onClick={() => setSimulationMode('clear-cutting')}
-                  className={`relative px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                  aria-label="Switch to clear-cutting mode"
+                  aria-pressed={simulationMode === 'clear-cutting'}
+                  className={`relative px-6 md:px-8 py-3 md:py-4 rounded-xl text-base md:text-lg font-semibold transition-all duration-300 flex items-center gap-2 md:gap-3 ${
                     simulationMode === 'clear-cutting'
                       ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30 scale-[1.02]'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }`}
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                   </svg>
                   <span>Clear-cutting</span>
@@ -831,10 +835,11 @@ export default function Home() {
             {(selectedLatitude || selectedLongitude || selectedRegion || selectedTrees.length > 0) && (
               <button
                 onClick={handleReset}
-                className="bg-white border border-red-300 text-red-700 hover:bg-red-50 px-4 py-3 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
+                className="bg-white border-2 border-red-300 text-red-700 hover:bg-red-50 px-5 md:px-6 py-3 md:py-4 rounded-xl text-base md:text-lg font-semibold transition-colors shadow-md hover:shadow-lg flex items-center gap-2 md:gap-3"
                 title="Reset all selections"
+                aria-label="Reset all selections"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 Reset
@@ -853,13 +858,13 @@ export default function Home() {
           </div>
         )}
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div className="bg-white border border-primary/20 rounded-xl p-6 shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center justify-center w-10 h-10 bg-primary text-white rounded-full text-lg">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 mb-12">
+            <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full flex-shrink-0">
                   <svg
                     aria-hidden="true"
-                    className="w-5 h-5"
+                    className="w-6 h-6 md:w-7 md:h-7"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -874,10 +879,11 @@ export default function Home() {
                   </svg>
                   <span className="sr-only">Location step icon</span>
                 </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800">Select Location</h2>
-                <div className="text-sm text-gray-600">
-                  <ul className="list-disc pl-5 space-y-1">
+              <div className="flex-1">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Select Location</h2>
+                <div className="text-base md:text-lg text-gray-700 space-y-2">
+                  <p className="font-semibold">How to select:</p>
+                  <ul className="list-disc pl-6 space-y-2">
                     <li><strong>Desktop:</strong> Press CTRL + mouse click and drag.</li>
                     <li><strong>Mobile:</strong> Tap to create a selection square, then drag to resize.</li>
                   </ul>
@@ -900,12 +906,12 @@ export default function Home() {
             </Suspense>
           </div>
           
-          <div className="bg-white border border-primary/20 rounded-xl p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center justify-center w-10 h-10 bg-primary text-white rounded-full text-lg">
+          <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex items-start gap-4 mb-6">
+                <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full flex-shrink-0">
                   <svg
                     aria-hidden="true"
-                    className="w-5 h-5"
+                    className="w-6 h-6 md:w-7 md:h-7"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -917,11 +923,11 @@ export default function Home() {
                   </svg>
                   <span className="sr-only">Tree selection icon</span>
                 </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800">
+              <div className="flex-1">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                   {simulationMode === 'planting' ? 'Select Tree Species' : 'Select Tree Species'}
                 </h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-base md:text-lg text-gray-700">
                   {simulationMode === 'planting' 
                     ? 'Select one or multiple tree types and set their distribution'
                     : 'Select the tree species to be removed and their composition'
@@ -950,13 +956,13 @@ export default function Home() {
         </div>
         
         {/* Combined Calculator and Impact Results - Full Width */}
-        <div className="mt-24">
-          <div className="bg-white border border-primary/20 rounded-xl p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="flex items-center justify-center w-10 h-10 bg-primary text-white rounded-full text-lg">
+        <div className="mt-16 md:mt-24">
+          <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg">
+            <div className="flex items-start gap-4 mb-8">
+                <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full flex-shrink-0">
                   <svg
                     aria-hidden="true"
-                    className="w-5 h-5"
+                    className="w-6 h-6 md:w-7 md:h-7"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -969,9 +975,9 @@ export default function Home() {
                   </svg>
                   <span className="sr-only">Impact analysis icon</span>
                 </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800">Impact Results</h2>
-                <p className="text-sm text-gray-600">
+              <div className="flex-1">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Impact Results</h2>
+                <p className="text-base md:text-lg text-gray-700">
                   {simulationMode === 'planting' 
                     ? 'Calculate planting details and see environmental benefits'
                     : 'Calculate removal details and see environmental impacts'
@@ -984,7 +990,7 @@ export default function Home() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Calculator Section */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">
                     {simulationMode === 'planting' ? 'Planting Calculations' : 'Removal Configuration'}
                   </h3>
                   <Suspense fallback={
@@ -1016,7 +1022,7 @@ export default function Home() {
                 
                 {/* Impact Results Section */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Impact Analysis</h3>
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">Impact Analysis</h3>
                   <Suspense fallback={
                     <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
@@ -1055,7 +1061,7 @@ export default function Home() {
         </div>
         
         {/* Export and Share Results Section */}
-        <div className="mt-12 bg-white border border-primary/20 rounded-xl p-6 shadow-sm">
+        <div className="mt-12 md:mt-16 bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg">
           <Suspense fallback={
             <div className="flex items-center justify-center h-32">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
@@ -1112,9 +1118,9 @@ export default function Home() {
 
 
         {/* FAQ Section */}
-        <div className="mt-24">
-          <h2 className="text-2xl font-bold text-center mb-6 flex items-center justify-center gap-3">
-            <span className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full text-lg font-semibold">
+        <div className="mt-20 md:mt-28">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-10 flex items-center justify-center gap-4 text-gray-900">
+            <span className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full text-xl md:text-2xl font-bold">
               ?
             </span>
             Frequently Asked Questions
@@ -1146,10 +1152,10 @@ export default function Home() {
                   setFaqShowAll(false);
                 }}
                 placeholder="Search questions about modes, data, exports, and more..."
-                className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-xl border-2 border-gray-300 bg-white py-3 md:py-4 pl-11 pr-4 text-base md:text-lg text-gray-900 placeholder:text-gray-400 shadow-md focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
-            <p className="mt-2 text-xs text-center text-gray-500">
+            <p className="mt-3 text-sm md:text-base text-center text-gray-600">
               Try searching for terms like &quot;clear-cutting&quot;, &quot;carbon&quot;, &quot;exports&quot;, or &quot;species&quot;.
             </p>
           </div>
@@ -1165,7 +1171,7 @@ export default function Home() {
 
               if (!visible.length) {
                 return (
-                  <div className="bg-white border border-dashed border-gray-300 rounded-lg p-6 text-center text-sm text-gray-600">
+                  <div className="bg-white border-2 border-dashed border-gray-300 rounded-xl p-8 md:p-10 text-center text-base md:text-lg text-gray-700">
                     No questions match your search yet. Try a different keyword or clear the search box.
                   </div>
                 );
@@ -1174,15 +1180,15 @@ export default function Home() {
               return (
                 <>
                   {visible.map((faq) => (
-                    <div key={faq.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div key={faq.id} className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden mb-4">
                       <button
                         onClick={() => setFaqOpen((prev) => ({ ...prev, [faq.id]: !prev[faq.id] }))}
-                        className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                        className="w-full p-6 md:p-8 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
                         aria-expanded={!!faqOpen[faq.id]}
                       >
-                        <h3 className="text-lg font-semibold text-gray-800">{faq.title}</h3>
+                        <h3 className="text-xl md:text-2xl font-bold text-gray-900 pr-4">{faq.title}</h3>
                         <svg
-                          className={`w-5 h-5 text-gray-500 transition-transform ${faqOpen[faq.id] ? 'rotate-180' : ''}`}
+                          className={`w-6 h-6 md:w-7 md:h-7 text-gray-500 transition-transform flex-shrink-0 ${faqOpen[faq.id] ? 'rotate-180' : ''}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -1190,7 +1196,7 @@ export default function Home() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </button>
-                      {faqOpen[faq.id] && <div className="px-6 pb-6">{faq.content}</div>}
+                      {faqOpen[faq.id] && <div className="px-6 md:px-8 pb-6 md:pb-8 text-base md:text-lg text-gray-700 leading-relaxed">{faq.content}</div>}
                     </div>
                   ))}
 
@@ -1199,11 +1205,11 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => setFaqShowAll((prev) => !prev)}
-                        className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                        className="inline-flex items-center gap-3 rounded-full border-2 border-primary/30 bg-primary/5 px-5 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold text-primary hover:bg-primary/10 transition-colors"
                       >
                         <span>{faqShowAll ? 'Show fewer questions' : `Show ${filtered.length - 5} more questions`}</span>
                         <svg
-                          className={`h-3.5 w-3.5 transition-transform ${faqShowAll ? 'rotate-180' : ''}`}
+                          className={`h-5 w-5 md:h-6 md:w-6 transition-transform ${faqShowAll ? 'rotate-180' : ''}`}
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
                           viewBox="0 0 24 24"

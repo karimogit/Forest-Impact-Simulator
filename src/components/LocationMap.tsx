@@ -7,6 +7,7 @@ import type * as L from 'leaflet';
 import LocationSearch from './LocationSearch';
 import { calculateRegionArea, formatArea } from '@/utils/treePlanting';
 import { getLocationHistory, addToLocationHistory, removeFromLocationHistory, formatLocationName, getRelativeTime, type LocationHistoryItem } from '@/utils/locationHistory';
+import { logger } from '@/utils/logger';
 
 // Dynamically import Leaflet components to avoid SSR issues
 const MapContainer = dynamic(
@@ -105,7 +106,7 @@ const fetchOSMData = async (bounds: L.LatLngBounds): Promise<{ forests: OSMEleme
   const latDiff = north - south;
   const lngDiff = east - west;
   if (latDiff > 1 || lngDiff > 1) {
-    console.log('Area too large for OSM query, skipping');
+    logger.log('Area too large for OSM query, skipping');
     return { forests: [], protectedAreas: [] };
   }
   
@@ -128,13 +129,20 @@ const fetchOSMData = async (bounds: L.LatLngBounds): Promise<{ forests: OSMEleme
   `;
   
   try {
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+    
     const response = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       body: query,
       headers: {
         'Content-Type': 'text/plain',
       },
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       throw new Error(`Overpass API error: ${response.status}`);
@@ -156,10 +164,10 @@ const fetchOSMData = async (bounds: L.LatLngBounds): Promise<{ forests: OSMEleme
       }
     }
     
-    console.log(`Found ${forests.length} forests, ${protectedAreas.length} protected areas`);
+    logger.log(`Found ${forests.length} forests, ${protectedAreas.length} protected areas`);
     return { forests, protectedAreas };
   } catch (error) {
-    console.error('Error fetching OSM data:', error);
+    logger.error('Error fetching OSM data:', error);
     return { forests: [], protectedAreas: [] };
   }
 };
@@ -182,7 +190,7 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
     let forestPane = map.getPane('forestOverlayPane');
     if (!forestPane) {
       forestPane = map.createPane('forestOverlayPane');
-      console.log('[OSM Overlays] Created forestOverlayPane');
+      logger.log('[OSM Overlays] Created forestOverlayPane');
     }
     // Ensure proper CSS for the pane - z-index above tiles (200) but below markers (600)
     forestPane.style.zIndex = '450';
@@ -191,7 +199,7 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
     let protectedPane = map.getPane('protectedOverlayPane');
     if (!protectedPane) {
       protectedPane = map.createPane('protectedOverlayPane');
-      console.log('[OSM Overlays] Created protectedOverlayPane');
+      logger.log('[OSM Overlays] Created protectedOverlayPane');
     }
     // Slightly above forest pane
     protectedPane.style.zIndex = '455';
@@ -210,7 +218,7 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
     
     // Ensure panes are created before loading data
     if (!paneCreatedRef.current) {
-      console.log('[OSM Overlays] Panes not ready, skipping load');
+      logger.log('[OSM Overlays] Panes not ready, skipping load');
       return;
     }
     
@@ -219,7 +227,7 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
     
     // Only load data when zoomed in enough (zoom >= 10)
     if (zoom < 10) {
-      console.log('[OSM Overlays] Zoom level too low, need >= 10 (current:', zoom, ')');
+      logger.log('[OSM Overlays] Zoom level too low, need >= 10 (current:', zoom, ')');
       return;
     }
     
@@ -230,7 +238,7 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
     }
     lastBoundsRef.current = boundsKey;
     
-    console.log('[OSM Overlays] Loading data for bounds:', boundsKey);
+    logger.log('[OSM Overlays] Loading data for bounds:', boundsKey);
     setIsLoading(true);
     
     try {
@@ -254,14 +262,14 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
       let protectedPane = map.getPane('protectedOverlayPane');
       
       if (!forestPane) {
-        console.warn('[OSM Overlays] forestOverlayPane not found, creating...');
+        logger.warn('[OSM Overlays] forestOverlayPane not found, creating...');
         forestPane = map.createPane('forestOverlayPane');
         forestPane.style.zIndex = '450';
         forestPane.style.pointerEvents = 'auto';
       }
       
       if (!protectedPane) {
-        console.warn('[OSM Overlays] protectedOverlayPane not found, creating...');
+        logger.warn('[OSM Overlays] protectedOverlayPane not found, creating...');
         protectedPane = map.createPane('protectedOverlayPane');
         protectedPane.style.zIndex = '455';
         protectedPane.style.pointerEvents = 'auto';
@@ -309,7 +317,7 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
         
         forestGroup.addTo(map);
         forestLayerRef.current = forestGroup;
-        console.log('[OSM Overlays] Added', forests.length, 'forest polygons to map');
+        logger.log('[OSM Overlays] Added', forests.length, 'forest polygons to map');
       }
       
       // Create protected areas layer with custom pane for proper z-index
@@ -335,10 +343,10 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
         
         protectedGroup.addTo(map);
         protectedLayerRef.current = protectedGroup;
-        console.log('[OSM Overlays] Added', protectedAreas.length, 'protected area polygons to map');
+        logger.log('[OSM Overlays] Added', protectedAreas.length, 'protected area polygons to map');
       }
     } catch (error) {
-      console.error('Error loading OSM overlays:', error);
+      logger.error('Error loading OSM overlays:', error);
     } finally {
       setIsLoading(false);
     }
@@ -508,7 +516,7 @@ const LocateControl = ({ onLocate }: { onLocate?: (lat: number, lng: number) => 
         setLocating(false);
       },
       (error) => {
-        console.error('Geolocation error:', error);
+        logger.error('Geolocation error:', error);
         setError('Unable to get your location');
         setTimeout(() => setError(null), 3000);
         setLocating(false);
@@ -753,13 +761,13 @@ const MapController = ({ center, zoom }: { center: [number, number]; zoom: numbe
               map.setView(center, zoom, { animate: true });
             }
           } catch (error) {
-            console.warn('Map still not ready for setView:', error);
+            logger.warn('Map still not ready for setView:', error);
           }
         }, 100);
         return () => clearTimeout(timer);
       }
     } catch (error) {
-      console.warn('Map not ready for setView:', error);
+      logger.warn('Map not ready for setView:', error);
     }
   }, [map, center, zoom]);
   
@@ -833,7 +841,7 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
         return; // Allow normal map panning
       }
       
-      console.log('CTRL+Mouse start:', e.latlng);
+      logger.log('CTRL+Mouse start:', e.latlng);
       e.originalEvent.preventDefault();
       e.originalEvent.stopPropagation();
       setIsSelecting(true);
@@ -844,7 +852,7 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
 
     const handleTouchStart = (e: LeafletMouseEvent) => {
       // For mobile devices, use click-to-create-square approach
-      console.log('Touch start:', e.latlng);
+      logger.log('Touch start:', e.latlng);
       
       // Create a small initial selection square (0.01 degrees in each direction)
       const initialSize = 0.01;
@@ -858,7 +866,7 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
         getEast: () => centerLng + initialSize,
       };
       
-      console.log('Created initial selection square');
+      logger.log('Created initial selection square');
       setIsSelecting(true);
       setStartPoint([centerLat, centerLng]);
       setCurrentBounds(bounds);
@@ -947,18 +955,18 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
     };
 
     const handleMouseEnd = (e: LeafletMouseEvent) => {
-      console.log('Mouse end:', e.latlng, 'isSelecting:', isSelecting, 'currentBounds:', currentBounds);
+      logger.log('Mouse end:', e.latlng, 'isSelecting:', isSelecting, 'currentBounds:', currentBounds);
       if (isSelecting && currentBounds) {
         const dragDistance = Math.sqrt(
           Math.pow(e.latlng.lat - startPoint![0], 2) + 
           Math.pow(e.latlng.lng - startPoint![1], 2)
         );
-        console.log('Drag distance:', dragDistance);
+        logger.log('Drag distance:', dragDistance);
         if (dragDistance > 0.0001) {
-          console.log('Calling onBoundsChange');
+          logger.log('Calling onBoundsChange');
           onBoundsChange(currentBounds);
         } else {
-          console.log('Drag distance too small, not selecting region');
+          logger.log('Drag distance too small, not selecting region');
           e.originalEvent.preventDefault();
           e.originalEvent.stopPropagation();
         }
@@ -975,11 +983,11 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
     };
 
     const handleTouchEnd = (e: LeafletMouseEvent) => {
-      console.log('Touch end:', e.latlng, 'isSelecting:', isSelecting, 'currentBounds:', currentBounds);
+      logger.log('Touch end:', e.latlng, 'isSelecting:', isSelecting, 'currentBounds:', currentBounds);
       
       if (isSelecting && currentBounds) {
         // For mobile, always confirm the selection since we created it with a tap
-        console.log('Confirming mobile selection');
+        logger.log('Confirming mobile selection');
         onBoundsChange(currentBounds);
       }
       
@@ -1008,7 +1016,7 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
     map.on('click', (e: LeafletMouseEvent) => {
       // Only handle clicks on mobile devices (no CTRL key)
       if (!('ctrlKey' in e.originalEvent && (e.originalEvent as MouseEvent).ctrlKey) && 'ontouchstart' in window) {
-        console.log('Mobile click detected:', e.latlng);
+        logger.log('Mobile click detected:', e.latlng);
         handleTouchStart(e);
       }
     });
@@ -1168,7 +1176,7 @@ const LocationMap: React.FC<LocationMapProps> = ({
   };
 
   const handleBoundsChange = (bounds: MapBounds) => {
-    console.log('Region selected:', bounds);
+    logger.log('Region selected:', bounds);
     const region = [
       bounds.getNorth(),
       bounds.getWest(),

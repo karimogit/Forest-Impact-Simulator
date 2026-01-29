@@ -37,7 +37,7 @@ export const SocialTab: React.FC<SocialTabProps> = ({
         <h5 className="font-semibold text-green-800 mb-2 flex items-center">
           {simulationMode === 'planting' ? 'Community Benefits' : 'Social Impact Assessment'}
         </h5>
-        <div className="space-y-2 text-xs text-primary">
+        <div className="space-y-3 text-sm md:text-base text-primary">
           <div className="flex justify-between">
             <span>Social Impact Score:</span>
             <span className="font-medium">
@@ -71,7 +71,7 @@ export const SocialTab: React.FC<SocialTabProps> = ({
         <h5 className="font-semibold text-green-800 mb-2 flex items-center">
           {simulationMode === 'planting' ? 'Social Benefits' : 'Social Considerations'}
         </h5>
-        <ul className="text-xs text-primary space-y-1">
+        <ul className="text-sm md:text-base text-primary space-y-2">
           {simulationMode === 'planting' ? (
             <>
               <li>• Recreational opportunities and outdoor activities</li>
@@ -94,7 +94,7 @@ export const SocialTab: React.FC<SocialTabProps> = ({
         </ul>
       </div>
       
-      <div className="text-xs text-gray-500 italic">
+      <div className="text-sm md:text-base text-gray-600 italic">
         {simulationMode === 'planting' 
           ? 'Social impact increases with tree diversity, time investment, and project scale'
           : 'Social impact assessment considers community concerns, cultural values, and long-term environmental awareness'

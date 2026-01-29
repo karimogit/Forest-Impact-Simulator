@@ -156,26 +156,26 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
 
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 min-h-[450px]">
+    <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 p-5 md:p-6 min-h-[450px]">
       
       {/* Search and Filter */}
-      <div className="mb-3 space-y-2">
+      <div className="mb-4 md:mb-5 space-y-3">
         <input
           type="text"
           placeholder="Search trees..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base md:text-lg"
           aria-label="Search tree species"
           role="searchbox"
         />
         
-        <div className="flex gap-1 overflow-x-auto whitespace-nowrap pb-1" role="group" aria-label="Filter trees by category">
+        <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-2" role="group" aria-label="Filter trees by category">
           {categories.map(category => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-2 py-1 rounded-full text-xs font-medium transition-colors flex-shrink-0 ${
+              className={`px-3 md:px-4 py-2 rounded-full text-sm md:text-base font-semibold transition-colors flex-shrink-0 ${
                 selectedCategory === category
                   ? getTreeCategoryColor(category as 'deciduous' | 'coniferous' | 'tropical' | 'mediterranean' | 'boreal' | 'arid' | 'subtropical' | 'all', 'bg')
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -191,9 +191,9 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
 
       {/* Recommended species text - shown when region is selected */}
       {recommendedSpecies.length > 0 && (
-        <div className="mb-3 p-2 bg-primary/10 border border-primary/30 rounded">
-          <p className="text-xs text-primary">
-            <span className="font-medium">
+        <div className="mb-4 p-3 md:p-4 bg-primary/10 border-2 border-primary/30 rounded-lg">
+          <p className="text-sm md:text-base text-primary">
+            <span className="font-semibold">
               {simulationMode === 'planting' 
                 ? 'Recommended for this region:' 
                 : 'Forest types present in this region:'
@@ -205,29 +205,30 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
 
       {/* Selected Trees Summary */}
       {selectedTrees.length > 0 && (
-        <div className="mb-3 p-2 bg-gray-100 border border-gray-200 rounded">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm text-gray-700">
-              <span className="font-medium">{selectedTrees.length}</span> tree type{selectedTrees.length !== 1 ? 's' : ''} selected
+        <div className="mb-4 p-3 md:p-4 bg-gray-100 border-2 border-gray-200 rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-base md:text-lg text-gray-900">
+              <span className="font-bold">{selectedTrees.length}</span> tree type{selectedTrees.length !== 1 ? 's' : ''} selected
             </p>
             <button
               onClick={clearAll}
-              className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+              className="px-3 py-2 text-sm md:text-base bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold transition-colors"
             >
               Clear All
             </button>
           </div>
-          <div className="flex flex-wrap gap-1 mt-1">
+          <div className="flex flex-wrap gap-2 mt-2">
             {selectedTrees.map(tree => (
               <div
                 key={tree.id}
-                className="flex items-center gap-1 bg-white rounded px-2 py-1 text-xs border"
+                className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm md:text-base border-2"
               >
-                <span>🌳</span>
-                <span className="text-gray-700">{tree.name}</span>
+                <span className="text-lg">🌳</span>
+                <span className="text-gray-900 font-medium">{tree.name}</span>
                 <button
                   onClick={() => handleTreeToggle(tree)}
-                  className="text-red-500 hover:text-red-700 ml-1"
+                  className="text-red-500 hover:text-red-700 ml-1 text-lg font-bold"
+                  aria-label={`Remove ${tree.name}`}
                 >
                   ×
                 </button>
@@ -239,9 +240,9 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
 
       {/* Percentage Distribution */}
       {selectedTrees.length > 1 && (
-        <div className="mb-3 p-3 bg-gray-100 border border-gray-200 rounded">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-gray-700">Tree Distribution</h4>
+        <div className="mb-4 p-4 md:p-5 bg-gray-100 border-2 border-gray-200 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-base md:text-lg font-bold text-gray-900">Tree Distribution</h4>
             <div className="flex gap-2">
               <button
                 onClick={() => {
@@ -252,7 +253,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
                   });
                   onTreePercentagesChange(newPercentages);
                 }}
-                className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+                className="px-3 py-2 text-sm md:text-base bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold transition-colors"
               >
                 Equal Split
               </button>
@@ -262,18 +263,18 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
                   onTreePercentagesChange({});
                   onTreeSelectionChange([]);
                 }}
-                className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                className="px-3 py-2 text-sm md:text-base bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold transition-colors"
               >
                 Clear
               </button>
             </div>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-3">
             {selectedTrees.map(tree => (
-              <div key={tree.id} className="flex items-center gap-2">
-                <span className="text-xs text-gray-700 w-16 truncate">{tree.name}</span>
-                <div className="flex items-center gap-1 flex-1">
+              <div key={tree.id} className="flex items-center gap-3">
+                <span className="text-sm md:text-base text-gray-900 font-medium w-24 md:w-32 truncate">{tree.name}</span>
+                <div className="flex items-center gap-2 flex-1">
                   <input
                     type="number"
                     min="0"
@@ -298,12 +299,12 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
                       
                       onTreePercentagesChange(newPercentages);
                     }}
-                    className="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-20 md:w-24 px-3 py-2 text-base md:text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
                     aria-label={`Percentage for ${tree.name}`}
                   />
-                  <span className="text-xs text-gray-700">%</span>
+                  <span className="text-base md:text-lg text-gray-900 font-semibold">%</span>
                 </div>
-                <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="w-24 md:w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
                   <div 
                     className={`h-full transition-all duration-200 ${getTreeCategoryColor(tree.category, 'bg')}`}
                     style={{ width: `${treePercentages[tree.id] || 0}%` }}
@@ -312,21 +313,21 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
               </div>
             ))}
             
-            <div className="flex items-center justify-between pt-2 border-t border-gray-300">
-              <span className="text-xs text-gray-700">Total:</span>
-              <span className={`text-xs font-medium ${
+            <div className="flex items-center justify-between pt-3 border-t-2 border-gray-300">
+              <span className="text-base md:text-lg text-gray-900 font-bold">Total:</span>
+              <span className={`text-base md:text-lg font-bold ${
                 Object.values(treePercentages).reduce((sum, p) => sum + (p || 0), 0) === 100 
                   ? 'text-primary' 
-                  : 'text-red-400'
+                  : 'text-red-500'
               }`}>
                 {Object.values(treePercentages).reduce((sum, p) => sum + (p || 0), 0)}%
               </span>
             </div>
             
             {Object.values(treePercentages).reduce((sum, p) => sum + (p || 0), 0) !== 100 && (
-                          <p className="text-xs text-red-400">
-              Total should equal 100% for accurate calculations
-            </p>
+              <p className="text-sm md:text-base text-red-500 font-semibold">
+                Total should equal 100% for accurate calculations
+              </p>
             )}
           </div>
         </div>
@@ -341,9 +342,9 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
             <div
               key={tree.id}
               onClick={() => handleTreeToggle(tree)}
-              className={`p-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
+              className={`p-4 md:p-5 border-2 rounded-xl cursor-pointer transition-all hover:shadow-lg ${
                 isSelected
-                  ? `${getTreeCategoryColor(tree.category, 'bg-light')}`
+                  ? `${getTreeCategoryColor(tree.category, 'bg-light')} border-primary`
                   : 'border-gray-200 hover:border-primary/50'
               }`}
               role="checkbox"
@@ -359,34 +360,34 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
             >
               {/* Tree Info */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1 mr-2">
-                    <h4 className="font-semibold text-gray-900 text-sm">
-                      {isRecommended && <span className="text-primary mr-1">★</span>}
-                      {tree.name} <span className="font-normal text-gray-500">- {tree.scientificName}</span>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 mr-3">
+                    <h4 className="font-bold text-gray-900 text-base md:text-lg">
+                      {isRecommended && <span className="text-primary mr-2 text-lg md:text-xl">★</span>}
+                      {tree.name} <span className="font-normal text-gray-600 text-sm md:text-base">- {tree.scientificName}</span>
                     </h4>
                   </div>
                   <div className="flex items-center gap-2">
                     {/* Selection Indicator */}
                     {isSelected && (
-                      <div className={`w-5 h-5 text-white rounded-full flex items-center justify-center text-xs font-bold ${getTreeCategoryColor(tree.category, 'bg')}`}>
+                      <div className={`w-6 h-6 md:w-7 md:h-7 text-white rounded-full flex items-center justify-center text-sm md:text-base font-bold ${getTreeCategoryColor(tree.category, 'bg')}`}>
                         ✓
                       </div>
                     )}
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 ${getTreeCategoryColor(tree.category, 'bg')}`}>
+                    <span className={`px-3 py-1.5 rounded-full text-sm md:text-base font-semibold whitespace-nowrap flex-shrink-0 ${getTreeCategoryColor(tree.category, 'bg')}`}>
                       {tree.category.charAt(0).toUpperCase() + tree.category.slice(1)}
                     </span>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  <div className="text-center bg-white border border-gray-300 rounded p-2">
-                    <div className="text-xs font-medium">Carbon: {tree.carbonSequestration} kg</div>
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div className="text-center bg-white border-2 border-gray-300 rounded-lg p-3">
+                    <div className="text-sm md:text-base font-semibold text-gray-900">Carbon: {tree.carbonSequestration} kg</div>
                   </div>
-                  <div className="text-center bg-white border border-gray-300 rounded p-2">
-                    <div className="text-xs font-medium capitalize">Growth: {tree.growthRate}</div>
+                  <div className="text-center bg-white border-2 border-gray-300 rounded-lg p-3">
+                    <div className="text-sm md:text-base font-semibold text-gray-900 capitalize">Growth: {tree.growthRate}</div>
                   </div>
-                  <div className="text-center bg-white border border-gray-300 rounded p-2">
-                    <div className="text-xs font-medium">Bio: {tree.biodiversityValue}</div>
+                  <div className="text-center bg-white border-2 border-gray-300 rounded-lg p-3">
+                    <div className="text-sm md:text-base font-semibold text-gray-900">Bio: {tree.biodiversityValue}</div>
                   </div>
                 </div>
 
@@ -398,9 +399,9 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
       </div>
 
       {filteredTrees.length === 0 && (
-        <div className="text-center py-4 text-gray-500">
-          <p className="text-sm">No trees found matching your criteria.</p>
-          <p className="text-xs mt-1">Try adjusting your search or filters.</p>
+        <div className="text-center py-8 text-gray-600">
+          <p className="text-base md:text-lg font-semibold">No trees found matching your criteria.</p>
+          <p className="text-sm md:text-base mt-2">Try adjusting your search or filters.</p>
         </div>
       )}
     </div>

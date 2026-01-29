@@ -2,10 +2,10 @@ import React from 'react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-primary text-white p-3 mt-auto">
+    <footer className="bg-primary text-white p-4 md:p-6 mt-auto">
       <div className="container mx-auto">
         <div className="flex justify-between items-center mb-4">
-          <p className="text-xs text-gray-300">
+          <p className="text-sm md:text-base text-gray-200">
             © {new Date().getFullYear()} Forest Impact Simulator.
           </p>
           
@@ -17,7 +17,7 @@ const Footer: React.FC = () => {
             aria-label="GitHub Repository"
           >
             <svg 
-              className="w-6 h-6" 
+              className="w-7 h-7 md:w-8 md:h-8" 
               fill="currentColor" 
               viewBox="0 0 24 24"
             >
@@ -31,10 +31,6 @@ const Footer: React.FC = () => {
             {/* Removed title and description */}
           </div>
         </div>
-        
-        {process.env.NEXT_PUBLIC_SECRET_MESSAGE && (
-          <p className="text-xs mt-2">{process.env.NEXT_PUBLIC_SECRET_MESSAGE}</p>
-        )}
       </div>
     </footer>
   );

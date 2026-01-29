@@ -7,6 +7,7 @@ import {
   sanitizeDisplayName, 
   apiRateLimiter 
 } from '@/utils/security';
+import { logger } from '@/utils/logger';
 
 interface LocationSearchProps {
   onLocationSelect: (lat: number, lng: number, name: string) => void;
@@ -56,7 +57,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect }) => 
 
     // Validate and sanitize input
     if (!validateSearchQuery(searchQuery)) {
-      console.warn('Invalid search query:', searchQuery);
+      logger.warn('Invalid search query:', searchQuery);
       setResults([]);
       return;
     }
@@ -65,16 +66,23 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect }) => 
     
     // Rate limiting
     if (!apiRateLimiter.isAllowed('search')) {
-      console.warn('Rate limit exceeded for search');
+      logger.warn('Rate limit exceeded for search');
       setResults([]);
       return;
     }
 
     setIsLoading(true);
     try {
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(sanitizedQuery)}&limit=5&addressdetails=1`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(sanitizedQuery)}&limit=5&addressdetails=1`,
+        { signal: controller.signal }
       );
+      
+      clearTimeout(timeoutId);
       
       if (response.ok) {
         const data = await response.json();
@@ -88,7 +96,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect }) => 
         setResults([]);
       }
     } catch (error) {
-      console.error('Search error:', error);
+      logger.error('Search error:', error);
       setResults([]);
     } finally {
       setIsLoading(false);
@@ -122,7 +130,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect }) => 
     
     // Validate coordinates
     if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      console.error('Invalid coordinates:', result);
+      logger.error('Invalid coordinates:', result);
       return;
     }
     

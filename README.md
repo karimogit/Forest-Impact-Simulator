@@ -2,17 +2,26 @@
 
 A comprehensive tool to simulate and analyze the environmental, economic, social, and land use impact of forest planting and clear-cutting operations.
 
+🌐 **Live Application**: [forest-impact-simulator.vercel.app](https://forest-impact-simulator.vercel.app)
+
 ## 🌟 Key Features
 
-- **Global Map Interface**: Desktop: CTRL+click and drag, Mobile: Tap to create selection square
-- **Real-time Environmental Data**: Live soil, climate, and biodiversity information with intelligent fallbacks and performance optimizations
-- **Available as [TypeScript](https://github.com/KarimOsmanGH/forest-impact-simulator), [Python](https://github.com/KarimOsmanGH/forest-impact-simulator-python), [R](https://github.com/KarimOsmanGH/forest-impact-simulator-r)**: Multiple deployment options for different use cases
-- **Dual Simulation Modes**: Analyze both forest planting benefits and clear-cutting impacts
-- **Advanced Impact Simulation**: Realistic tree growth curves and climate prediction
-- **Dynamic Time Analysis**: Simulate forest development over 1-100 years
-- **Comprehensive Impact Analysis**: Four detailed tabs covering Environment, Economic, Social, and Land Use impacts
-- **Professional Planning Tools**: Realistic planting/removal configurations and project scale analysis
-- **Export Functionality**: Download results in GeoJSON, JSON, and R/Python-compatible CSV formats
+- **🌍 Global Map Interface**: Interactive map with region selection (Desktop: CTRL+click and drag, Mobile: Tap to create selection square)
+- **📊 Real-time Environmental Data**: Live soil, climate, and biodiversity information with intelligent fallbacks and performance optimizations
+- **🌱 Dual Simulation Modes**: Analyze both forest planting benefits and clear-cutting impacts
+- **📈 Advanced Impact Simulation**: Realistic tree growth curves and climate prediction over time
+- **⏱️ Dynamic Time Analysis**: Simulate forest development over 1-100 years with year-by-year projections
+- **📑 Comprehensive Impact Analysis**: Four detailed tabs covering Environment, Economic, Social, and Land Use impacts
+- **🌳 Extensive Tree Database**: 80+ tree species across 7 climate zones with auto-recommendations
+- **💼 Professional Planning Tools**: Realistic planting/removal configurations and project scale analysis
+- **📥 Export Functionality**: Download results in GeoJSON (GIS), JSON (data), CSV (R/Python), and PDF formats
+- **🔗 Shareable Links**: Generate shareable URLs to share your analysis with others
+- **📱 Responsive Design**: Optimized for desktop and mobile devices with improved typography and accessibility
+
+**Available Implementations**: 
+- [TypeScript/Next.js (Web)](https://github.com/KarimOsmanGH/forest-impact-simulator) - This repository
+- [Python Notebook](https://github.com/KarimOsmanGH/forest-impact-simulator-python)
+- [R Notebook](https://github.com/KarimOsmanGH/forest-impact-simulator-r)
 
 ## 🚀 Quick Start
 
@@ -98,13 +107,16 @@ This simulator is for educational and planning purposes only. Use at your own ri
 
 This application implements comprehensive security measures to protect users and data:
 
-- **Input Validation**: All user inputs are validated and sanitized
-- **Rate Limiting**: API calls are limited to prevent abuse
+- **Input Validation**: All user inputs are validated and sanitized using strict patterns
+- **Rate Limiting**: Client-side rate limiting for UX (note: server-side enforcement recommended for production)
 - **Performance Optimizations**: Caching, timeouts, and reduced data fetching for faster loading
-- **Content Security Policy**: XSS protection and resource restrictions
-- **No Data Collection**: All processing is done client-side
+- **Content Security Policy**: Enhanced CSP with `base-uri 'none'`, `object-src 'none'`, `form-action 'self'`, and upgrade-insecure-requests
+- **XSS Protection**: Multiple layers including input sanitization, HTML escaping, and CSP headers
+- **No Data Collection**: All processing is done client-side - no user data is sent to servers
+- **API Timeouts**: All external API calls have timeouts to prevent hanging requests
+- **Error Handling**: Comprehensive error boundaries and graceful degradation
 
-For detailed security information, see [SECURITY.md](SECURITY.md).
+For detailed security information, see [`doc/SECURITY.md`](doc/SECURITY.md). For recent security improvements, see [`doc/FINAL_REVIEW_AFTER_FIXES.md`](doc/FINAL_REVIEW_AFTER_FIXES.md).
 
 ## 🌍 Environmental Impact
 
@@ -323,18 +335,21 @@ Air Quality = max(-80, -(Immediate Impact + (Years × 1.0)))
 - Default value of 25 kg CO₂/year per mature tree based on [IPCC Fourth Assessment Report](https://www.ipcc.ch/report/ar4/wg1/)
 - Rates vary by species, age, and local conditions
 - Peer-reviewed studies support these estimates
+- Realistic growth curves account for tree age (young trees sequester less than mature ones)
 
 ### **Environmental Data**
-- **[ISRIC SoilGrids](https://soilgrids.org/)**: Global soil information
-- **[Open-Meteo](https://open-meteo.com/)**: Climate and weather data
-- **[OpenStreetMap](https://www.openstreetmap.org/)**: Map tiles and geographic data
+- **[ISRIC SoilGrids](https://soilgrids.org/)**: Global soil information (carbon content, pH)
+- **[Open-Meteo](https://open-meteo.com/)**: Climate and weather data (temperature, precipitation, historical trends)
+- **[OpenStreetMap](https://www.openstreetmap.org/)**: Map tiles, geocoding, and forest/protected area overlays
+- **[Overpass API](https://overpass-api.de/)**: Forest and protected area boundary data
 - **Scientific Literature**: Biodiversity values based on peer-reviewed research
 
 ### **Acknowledgments**
 We thank the following organizations for providing the data and services that make this simulator possible:
 - **[ISRIC SoilGrids](https://soilgrids.org/)** for global soil data
 - **[Open-Meteo](https://open-meteo.com/)** for climate information
-- **[OpenStreetMap](https://www.openstreetmap.org/)** for map tiles
+- **[OpenStreetMap](https://www.openstreetmap.org/)** for map tiles and geographic data
+- **[Overpass API](https://overpass-api.de/)** for forest and protected area data
 
 ## 🤝 Contributing
 
@@ -361,33 +376,46 @@ We welcome contributions! This project is open source because environmental know
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-- **[Leaflet](https://leafletjs.com/)** for interactive mapping
+## 📖 Documentation
+
+Additional documentation is available in the [`doc/`](doc/) directory:
+
+- **[SECURITY.md](doc/SECURITY.md)**: Detailed security measures and implementation
+- **[TYPOGRAPHY_DESIGN_IMPROVEMENTS.md](doc/TYPOGRAPHY_DESIGN_IMPROVEMENTS.md)**: Design and typography enhancements
+- **[IMPROVEMENTS_SUGGESTIONS.md](doc/IMPROVEMENTS_SUGGESTIONS.md)**: Future improvement suggestions
+- **[DEPLOYMENT_CHECKLIST.md](doc/DEPLOYMENT_CHECKLIST.md)**: Deployment guidelines
+- **[DATA_FETCHING_ANALYSIS.md](doc/DATA_FETCHING_ANALYSIS.md)**: API integration details
+- **[examples/csv_usage_examples.md](doc/examples/csv_usage_examples.md)**: CSV export usage examples
 
 ## 📞 Contact
 
 - **Developer**: [Karim Osman](https://kar.im)
-- **Project**: [Forest Impact Simulator](https://github.com/KarimOsmanGH/forest-impact-simulator)
+- **Live Application**: [forest-impact-simulator.vercel.app](https://forest-impact-simulator.vercel.app)
+- **Project**: [Forest Impact Simulator (GitHub)](https://github.com/KarimOsmanGH/forest-impact-simulator)
 - **Issues**: [GitHub Issues](https://github.com/KarimOsmanGH/forest-impact-simulator/issues)
 
 ---
 
 ## ❓ FAQ
 
-### **Q: Why does air quality show negative values in clear-cutting mode?**
-A: When trees are cut down, air quality immediately degrades because you're removing the air-cleaning benefits of trees. The negative values (-10% to -80%) represent air quality deterioration.
+For comprehensive answers to frequently asked questions, please visit the [live application](https://forest-impact-simulator.vercel.app) and scroll to the FAQ section at the bottom of the page. The FAQ includes detailed information about:
 
-### **Q: How do I import CSV data into R or Python?**
-A: The CSV export is now in standard tabular format. Use `read.csv()` in R or `pd.read_csv()` in Python. See `examples/csv_usage_examples.md` for detailed examples.
+- **Planting and Clear-cutting Modes**: How each mode works and when to use them
+- **Impact Analysis Tabs**: What each tab (Environment, Economic, Social, Land Use) shows
+- **Carbon Sequestration Accuracy**: How estimates are calculated and their scientific basis
+- **Tree Selection**: Single vs. multiple species analysis
+- **Data Export**: How to use exported CSV, JSON, and GeoJSON files
+- **Environmental Data**: Sources and accuracy of soil, climate, and biodiversity data
+- **Contributing**: How to contribute to the project
 
-### **Q: Why is immediate carbon release sometimes larger than total emissions?**
-A: This was a display formatting bug that has been fixed. Total emissions should always be larger than immediate release (immediate + lost future sequestration). Note: Immediate release now represents the total carbon stored in the tree over its lifetime, which can be substantial for mature trees.
+### Quick Answers
 
-### **Q: Can I analyze multiple tree species at once?**
-A: Yes! Select multiple tree types and specify percentage distributions. The simulator will calculate weighted averages for all impact metrics.
+**Q: How do I import CSV data into R or Python?**  
+A: The CSV export is in standard tabular format. Use `read.csv()` in R or `pd.read_csv()` in Python. See [`doc/examples/csv_usage_examples.md`](doc/examples/csv_usage_examples.md) for detailed examples.
 
-### **Q: How accurate are the carbon sequestration rates?**
+**Q: Can I analyze multiple tree species at once?**  
+A: Yes! Select multiple tree types and specify percentage distributions. The simulator calculates weighted averages for all impact metrics.
+
+**Q: How accurate are the carbon sequestration rates?**  
 A: Based on IPCC data with species-specific adjustments. Rates vary by tree age, climate, and local conditions. Always consult local forestry experts for project-specific planning.
-
-### **Q: How is immediate carbon release calculated in clear-cutting mode?**
-A: Immediate carbon release represents the total carbon stored in the tree over its entire lifetime (sum of all annual sequestration from year 1 to current age). This is the carbon that gets released when the tree is cut down, which can be substantial for mature trees (hundreds of kg CO₂).
 

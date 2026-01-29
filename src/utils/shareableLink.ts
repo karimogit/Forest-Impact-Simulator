@@ -2,6 +2,8 @@
  * Utilities for creating shareable links with encoded analysis parameters
  */
 
+import { logger } from './logger';
+
 export interface ShareableState {
   mode: 'planting' | 'clear-cutting';
   latitude?: number;
@@ -78,36 +80,56 @@ function fromUltraCompactString(compact: string): ShareableState {
   
   const state: ShareableState = {
     mode: parts[0] === 'p' ? 'planting' : 'clear-cutting',
-    years: parseInt(parts[1]),
+    years: parseInt(parts[1], 10),
     calculationMode: parts[2] === 't' ? 'perTree' : 'perArea',
     treeIds: [],
     treePercentages: {}
   };
   
-  // Location
+  // Validate years is a valid number
+  if (!Number.isFinite(state.years) || state.years <= 0) {
+    throw new Error('Invalid years value');
+  }
+  
+  // Location - validate coordinates are finite numbers
   if (parts[3]) {
-    const [lat, lon] = parts[3].split(',').map(parseFloat);
-    state.latitude = lat;
-    state.longitude = lon;
+    const lat = parseFloat(parts[3].split(',')[0]);
+    const lon = parseFloat(parts[3].split(',')[1]);
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      state.latitude = lat;
+      state.longitude = lon;
+    }
   }
   
-  // Region
+  // Region - validate all coordinates are finite numbers
   if (parts[4]) {
-    const [n, s, e, w] = parts[4].split(',').map(parseFloat);
-    state.region = { north: n, south: s, east: e, west: w };
+    const coords = parts[4].split(',').map(parseFloat);
+    if (coords.length === 4 && coords.every(Number.isFinite)) {
+      state.region = { north: coords[0], south: coords[1], east: coords[2], west: coords[3] };
+    }
   }
   
-  // Average tree age
+  // Average tree age - validate is finite number
   if (parts[5]) {
-    state.averageTreeAge = parseInt(parts[5]);
+    const age = parseInt(parts[5], 10);
+    if (Number.isFinite(age) && age > 0) {
+      state.averageTreeAge = age;
+    }
   }
   
-  // Trees with percentages
+  // Trees with percentages - validate percentages are finite numbers
   if (parts[6]) {
     parts[6].split(',').forEach(treePct => {
       const [id, pct] = treePct.split(':');
-      state.treeIds.push(id);
-      state.treePercentages[id] = parseFloat(pct);
+      if (id) {
+        state.treeIds.push(id);
+        const percentage = parseFloat(pct);
+        if (Number.isFinite(percentage)) {
+          state.treePercentages[id] = percentage;
+        } else {
+          state.treePercentages[id] = 0;
+        }
+      }
     });
   }
   
@@ -130,7 +152,7 @@ export function encodeStateToUrl(state: ShareableState): string {
     // Make URL-safe by replacing characters
     return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
   } catch (error) {
-    console.error('Error encoding state:', error);
+    logger.error('Error encoding state:', error);
     return '';
   }
 }
@@ -156,13 +178,13 @@ export function decodeUrlToState(encoded: string): ShareableState | null {
     
     // Validate required fields
     if (!state.mode || !state.years || !state.calculationMode) {
-      console.error('Invalid state: missing required fields');
+      logger.error('Invalid state: missing required fields');
       return null;
     }
     
     return state;
   } catch (error) {
-    console.error('Error decoding state:', error);
+    logger.error('Error decoding state:', error);
     return null;
   }
 }
@@ -227,7 +249,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
       }
     }
   } catch (error) {
-    console.error('Error copying to clipboard:', error);
+    logger.error('Error copying to clipboard:', error);
     return false;
   }
 }
@@ -241,7 +263,7 @@ export function validateState(state: ShareableState): boolean {
     return false;
   }
   
-  if (!state.years || state.years <= 0 || state.years > 200) {
+  if (!Number.isFinite(state.years) || state.years <= 0 || state.years > 100) {
     return false;
   }
   
@@ -249,23 +271,30 @@ export function validateState(state: ShareableState): boolean {
     return false;
   }
   
-  // Check location
-  if (!state.latitude && !state.longitude && !state.region) {
+  // Check location - use explicit undefined check to handle 0 coordinates correctly
+  if (state.latitude === undefined && state.longitude === undefined && !state.region) {
     return false;
   }
   
-  // Validate coordinates if present
-  if (state.latitude !== undefined && (state.latitude < -90 || state.latitude > 90)) {
-    return false;
+  // Validate coordinates if present - check for finite numbers
+  if (state.latitude !== undefined) {
+    if (!Number.isFinite(state.latitude) || state.latitude < -90 || state.latitude > 90) {
+      return false;
+    }
   }
   
-  if (state.longitude !== undefined && (state.longitude < -180 || state.longitude > 180)) {
-    return false;
+  if (state.longitude !== undefined) {
+    if (!Number.isFinite(state.longitude) || state.longitude < -180 || state.longitude > 180) {
+      return false;
+    }
   }
   
-  // Validate region bounds if present
+  // Validate region bounds if present - check for finite numbers
   if (state.region) {
     const { north, south, east, west } = state.region;
+    if (!Number.isFinite(north) || !Number.isFinite(south) || !Number.isFinite(east) || !Number.isFinite(west)) {
+      return false;
+    }
     if (north < -90 || north > 90 || south < -90 || south > 90) {
       return false;
     }
@@ -277,9 +306,13 @@ export function validateState(state: ShareableState): boolean {
     }
   }
   
-  // Validate tree percentages
+  // Validate tree percentages - ensure all values are finite numbers
   if (state.treePercentages) {
-    const total = Object.values(state.treePercentages).reduce((sum, val) => sum + val, 0);
+    const values = Object.values(state.treePercentages);
+    if (!values.every(val => Number.isFinite(val))) {
+      return false;
+    }
+    const total = values.reduce((sum, val) => sum + val, 0);
     if (total < 0 || total > 100) {
       return false;
     }
