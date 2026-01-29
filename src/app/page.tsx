@@ -1118,7 +1118,7 @@ export default function Home() {
 
         {/* FAQ Section */}
         <div className="mt-20 md:mt-28">
-          <h2 className="text-lg font-bold text-center mb-4 flex items-center justify-center gap-2 text-gray-900">
+          <h2 className="text-xl font-bold text-center mb-4 flex items-center justify-center gap-2 text-gray-900">
             <span className="flex items-center justify-center w-6 h-6 bg-primary text-white rounded-full text-xs font-semibold">
               ?
             </span>
@@ -1151,10 +1151,10 @@ export default function Home() {
                   setFaqShowAll(false);
                 }}
                 placeholder="Search questions about modes, data, exports, and more..."
-                  className="w-full rounded-xl border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-10 pr-4 text-base text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
-            <p className="mt-3 text-xs text-center text-gray-600">
+            <p className="mt-3 text-sm text-center text-gray-600">
               Try searching for terms like &quot;clear-cutting&quot;, &quot;carbon&quot;, &quot;exports&quot;, or &quot;species&quot;.
             </p>
           </div>
