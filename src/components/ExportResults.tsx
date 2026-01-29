@@ -71,7 +71,7 @@ const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = fa
   if (disabled) {
     return (
       <div className="p-5 md:p-6 bg-gray-50 border-2 border-gray-200 rounded-xl">
-        <p className="text-base md:text-lg text-gray-700 font-medium">Complete your analysis to enable exports</p>
+        <p className="text-sm text-gray-700 font-medium">Complete your analysis to enable exports</p>
       </div>
     );
   }
@@ -99,7 +99,7 @@ const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = fa
 
   return (
     <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 p-5 md:p-6">
-      <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">Export and Share Results</h3>
+      <h3 className="text-lg font-bold text-gray-900 mb-4">Export and Share Results</h3>
       
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 md:gap-4">
         <button
@@ -107,7 +107,7 @@ const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = fa
           disabled={isExporting}
           className="flex flex-col items-center p-4 md:p-5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-primary transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <div className="text-2xl md:text-3xl mb-2">📋</div>
+          <div className="text-xl mb-2">📋</div>
           <span className="text-sm md:text-base font-semibold">PDF Report</span>
           <span className="text-xs md:text-sm text-gray-600 hidden sm:block mt-1">Formatted</span>
         </button>
@@ -117,7 +117,7 @@ const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = fa
           disabled={isExporting}
           className="flex flex-col items-center p-4 md:p-5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-primary transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <div className="text-2xl md:text-3xl mb-2">🗺️</div>
+          <div className="text-xl mb-2">🗺️</div>
           <span className="text-sm md:text-base font-semibold">GeoJSON</span>
           <span className="text-xs md:text-sm text-gray-600 hidden sm:block mt-1">GIS tools</span>
         </button>
@@ -127,7 +127,7 @@ const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = fa
           disabled={isExporting}
           className="flex flex-col items-center p-4 md:p-5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-primary transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <div className="text-2xl md:text-3xl mb-2">📄</div>
+          <div className="text-xl mb-2">📄</div>
           <span className="text-sm md:text-base font-semibold">JSON</span>
           <span className="text-xs md:text-sm text-gray-600 hidden sm:block mt-1">Complete</span>
         </button>
@@ -137,7 +137,7 @@ const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = fa
           disabled={isExporting}
           className="flex flex-col items-center p-4 md:p-5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-primary transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <div className="text-2xl md:text-3xl mb-2">📊</div>
+          <div className="text-xl mb-2">📊</div>
           <span className="text-sm md:text-base font-semibold">CSV</span>
           <span className="text-xs md:text-sm text-gray-600 hidden sm:block mt-1">R/Python</span>
         </button>
@@ -148,7 +148,7 @@ const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = fa
             disabled={disabled || isSharing}
             className="flex flex-col items-center p-4 md:p-5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-primary transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <div className="text-2xl md:text-3xl mb-2">🔗</div>
+            <div className="text-xl mb-2">🔗</div>
             <span className="text-sm md:text-base font-semibold">Share Link</span>
             <span className="text-xs md:text-sm text-gray-600 hidden sm:block mt-1">Copy URL</span>
           </button>
@@ -157,7 +157,7 @@ const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = fa
       
       {(isExporting || isSharing) && (
         <div className="mt-4 text-center">
-          <div className="inline-flex items-center text-base md:text-lg text-gray-700">
+          <div className="inline-flex items-center text-sm text-gray-700">
             <div className="animate-spin rounded-full h-5 w-5 md:h-6 md:w-6 border-b-2 border-primary mr-3"></div>
             {isSharing ? 'Generating share link...' : 'Preparing export...'}
           </div>
@@ -165,7 +165,7 @@ const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = fa
       )}
       
       <div className="mt-6 p-4 md:p-5 bg-primary/10 border-2 border-primary/30 rounded-xl">
-        <h4 className="text-base md:text-lg font-bold text-primary mb-3">Export Includes:</h4>
+        <h4 className="text-sm font-bold text-primary mb-3">Export Includes:</h4>
         <ul className="text-sm md:text-base text-primary space-y-2">
           <li>• Location coordinates and region boundaries</li>
           <li>• Selected tree species/forest types and percentages</li>

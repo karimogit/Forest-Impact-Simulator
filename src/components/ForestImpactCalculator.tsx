@@ -1069,13 +1069,13 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
 
 
       <div className="mb-6">
-        <h4 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">Impact Analysis</h4>
+        <h4 className="text-lg font-bold text-gray-900 mb-4">Impact Analysis</h4>
         
         {/* Tab Navigation */}
         <div className="flex border-b-2 border-gray-200 mb-4 overflow-x-auto" role="tablist" aria-label="Impact analysis categories">
           <button
             onClick={() => setActiveEnvTab('environment')}
-            className={`px-4 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold border-b-2 transition-colors whitespace-nowrap ${
+            className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeEnvTab === 'environment'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
@@ -1088,7 +1088,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
           </button>
           <button
             onClick={() => setActiveEnvTab('economic')}
-            className={`px-4 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold border-b-2 transition-colors whitespace-nowrap ${
+            className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeEnvTab === 'economic'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
@@ -1101,7 +1101,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
           </button>
           <button
             onClick={() => setActiveEnvTab('social')}
-            className={`px-4 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold border-b-2 transition-colors whitespace-nowrap ${
+            className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeEnvTab === 'social'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
@@ -1114,7 +1114,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
           </button>
           <button
             onClick={() => setActiveEnvTab('landuse')}
-            className={`px-4 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold border-b-2 transition-colors whitespace-nowrap ${
+            className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeEnvTab === 'landuse'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
@@ -1177,7 +1177,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
 
       {selectedTrees && selectedTrees.length > 0 && (
         <div className="mb-6 flex flex-col bg-white rounded-xl shadow-md p-5 md:p-6 max-w-3xl w-full border border-gray-200">
-          <span className="text-base md:text-lg font-bold text-gray-900 mb-3">
+          <span className="text-sm font-bold text-gray-900 mb-3">
             Selected Trees: {selectedTrees.length} species
             {calculationMode === 'perArea' && selectedRegion && (
               <span className="text-primary ml-2">• {totalTrees.toLocaleString()} total trees in area</span>
@@ -1217,8 +1217,8 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
 
       {comparisons.length > 0 && (
         <div className="mb-6 p-5 md:p-6 bg-primary/10 border-2 border-primary/30 rounded-xl">
-          <h4 className="text-lg md:text-xl font-bold text-primary mb-3">Real-world Impact Comparison</h4>
-          <p className="text-base md:text-lg text-primary mb-3 font-semibold">
+          <h4 className="text-base font-bold text-primary mb-3">Real-world Impact Comparison</h4>
+          <p className="text-sm text-primary mb-3 font-semibold">
             This forest would sequester the equivalent of:
           </p>
           <ul className="text-sm md:text-base text-primary space-y-2">

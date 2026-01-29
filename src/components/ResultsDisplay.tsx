@@ -18,7 +18,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
       <h3 className="text-lg font-semibold">Forest Performance Metrics</h3>
       <div>
         <h4 className="font-semibold">Carbon Sequestration</h4>
-        <p className="text-primary font-bold text-xl">{carbonSequestration.toFixed(2)} kg CO2</p>
+        <p className="text-primary font-bold text-base">{carbonSequestration.toFixed(2)} kg CO2</p>
       </div>
       <div>
         <h4 className="font-semibold">Biodiversity Impact</h4>

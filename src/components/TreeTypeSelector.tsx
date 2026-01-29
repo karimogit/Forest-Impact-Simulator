@@ -165,7 +165,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
           placeholder="Search trees..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base md:text-lg"
+          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
           aria-label="Search tree species"
           role="searchbox"
         />
@@ -207,7 +207,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
       {selectedTrees.length > 0 && (
         <div className="mb-4 p-3 md:p-4 bg-gray-100 border-2 border-gray-200 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-base md:text-lg text-gray-900">
+            <p className="text-sm text-gray-900">
               <span className="font-bold">{selectedTrees.length}</span> tree type{selectedTrees.length !== 1 ? 's' : ''} selected
             </p>
             <button
@@ -242,7 +242,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
       {selectedTrees.length > 1 && (
         <div className="mb-4 p-4 md:p-5 bg-gray-100 border-2 border-gray-200 rounded-lg">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-base md:text-lg font-bold text-gray-900">Tree Distribution</h4>
+            <h4 className="text-sm font-bold text-gray-900">Tree Distribution</h4>
             <div className="flex gap-2">
               <button
                 onClick={() => {
@@ -299,10 +299,10 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
                       
                       onTreePercentagesChange(newPercentages);
                     }}
-                    className="w-20 md:w-24 px-3 py-2 text-base md:text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
+                    className="w-20 px-3 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
                     aria-label={`Percentage for ${tree.name}`}
                   />
-                  <span className="text-base md:text-lg text-gray-900 font-semibold">%</span>
+                  <span className="text-sm text-gray-900 font-semibold">%</span>
                 </div>
                 <div className="w-24 md:w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
                   <div 
@@ -314,8 +314,8 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
             ))}
             
             <div className="flex items-center justify-between pt-3 border-t-2 border-gray-300">
-              <span className="text-base md:text-lg text-gray-900 font-bold">Total:</span>
-              <span className={`text-base md:text-lg font-bold ${
+              <span className="text-sm text-gray-900 font-bold">Total:</span>
+              <span className={`text-sm font-bold ${
                 Object.values(treePercentages).reduce((sum, p) => sum + (p || 0), 0) === 100 
                   ? 'text-primary' 
                   : 'text-red-500'
@@ -362,8 +362,8 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 mr-3">
-                    <h4 className="font-bold text-gray-900 text-base md:text-lg">
-                      {isRecommended && <span className="text-primary mr-2 text-lg md:text-xl">★</span>}
+                    <h4 className="font-bold text-gray-900 text-sm">
+                      {isRecommended && <span className="text-primary mr-2 text-base">★</span>}
                       {tree.name} <span className="font-normal text-gray-600 text-sm md:text-base">- {tree.scientificName}</span>
                     </h4>
                   </div>
@@ -400,7 +400,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
 
       {filteredTrees.length === 0 && (
         <div className="text-center py-8 text-gray-600">
-          <p className="text-base md:text-lg font-semibold">No trees found matching your criteria.</p>
+          <p className="text-sm font-semibold">No trees found matching your criteria.</p>
           <p className="text-sm md:text-base mt-2">Try adjusting your search or filters.</p>
         </div>
       )}

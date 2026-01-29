@@ -180,7 +180,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
       <div className="mb-4">
         <div className="flex items-center justify-between p-4 md:p-5 bg-gray-50 border-2 border-gray-200 rounded-xl">
           <div>
-            <label className="block text-base md:text-lg font-semibold text-gray-900 mb-2">
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
               Calculation Mode
             </label>
             {calculationMode === 'perTree' ? (
@@ -221,7 +221,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
       {/* Simulation Duration - Right below Calculation Mode */}
       {onYearsChange && (
         <div className="mb-4">
-          <label htmlFor="years" className="block text-base md:text-lg font-semibold text-gray-900 mb-3">
+          <label htmlFor="years" className="block text-sm font-semibold text-gray-900 mb-3">
             <span className="font-bold">Simulation Duration:</span> <span className="font-bold text-primary">{years} year{years !== 1 ? 's' : ''}</span>
           </label>
           <div className="flex items-center gap-3">
@@ -254,7 +254,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm md:text-base text-gray-900 font-bold">Area size:</span>
-            <span className="text-base md:text-lg font-semibold">{formatArea(plantingConfig.area)}</span>
+            <span className="text-sm font-semibold">{formatArea(plantingConfig.area)}</span>
           </div>
           {selectedRegion && (
             <div className="flex items-center justify-between">
@@ -285,7 +285,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
           </div>
           <div className="flex items-center justify-between pt-2">
             <span className="text-sm md:text-base text-gray-900 font-bold">Total Trees:</span>
-            <span className="text-lg md:text-xl font-bold text-primary">{formatNumber(plantingConfig.totalTrees)}</span>
+            <span className="text-base font-bold text-primary">{formatNumber(plantingConfig.totalTrees)}</span>
           </div>
         </div>
         
@@ -323,7 +323,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
           />
           <button
             onClick={() => setCustomSpacing(undefined)}
-            className="px-4 py-2 text-base md:text-lg bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold transition-colors"
+              className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold transition-colors"
           >
             Auto
           </button>
@@ -336,7 +336,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
         {simulationMode === 'clear-cutting' && (
           <div>
             <label 
-              className="block text-base md:text-lg font-semibold text-gray-900 mb-2 cursor-help"
+              className="block text-sm font-semibold text-gray-900 mb-2 cursor-help"
               title="Enter the average age of trees in this forest area. Young forests: 5-15 years, Mature forests: 20-50 years, Old-growth: 50+ years. This affects carbon emission calculations."
             >
               Average Tree Age (years)
@@ -349,9 +349,9 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
               step="1"
               value={averageTreeAge || ''}
               onChange={(e) => setAverageTreeAge(e.target.value ? parseInt(e.target.value) : 20)}
-              className="flex-1 px-4 py-2 text-base md:text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
+              className="flex-1 px-4 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
             />
-              <div className="text-base md:text-lg text-gray-700 flex items-center font-semibold whitespace-nowrap">
+              <div className="text-sm text-gray-700 flex items-center font-semibold whitespace-nowrap">
                 {averageTreeAge < 10 && "Young"}
                 {averageTreeAge >= 10 && averageTreeAge < 30 && "Mature"}
                 {averageTreeAge >= 30 && averageTreeAge < 60 && "Mature"}
@@ -365,11 +365,11 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
         {/* Soil and Climate Data */}
         {(soil || climate) && (
           <div className="mt-4 space-y-3">
-            <h4 className="font-bold text-gray-900 text-lg md:text-xl mb-3">Environmental Data</h4>
+            <h4 className="font-bold text-gray-900 text-base mb-3">Environmental Data</h4>
             
             {soil && (
               <div className="bg-primary/10 border-2 border-primary/30 rounded-xl p-4 md:p-5">
-                <h5 className="font-bold text-primary mb-3 text-base md:text-lg flex items-center gap-2">
+                <h5 className="font-bold text-primary mb-3 text-sm flex items-center gap-2">
                   Soil Data
                   {soil.isEstimated && (
                     <span className="text-sm md:text-base font-normal text-primary/80">(Estimated)</span>
@@ -406,7 +406,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
 
             {climate && (
               <div className="bg-primary/10 border-2 border-primary/30 rounded-xl p-4 md:p-5">
-                <h5 className="font-bold text-primary mb-3 text-base md:text-lg flex items-center gap-2">
+                <h5 className="font-bold text-primary mb-3 text-sm flex items-center gap-2">
                   Climate Data
                   {climate.isEstimated && (
                     <span className="text-sm md:text-base font-normal text-primary/80">(Estimated)</span>

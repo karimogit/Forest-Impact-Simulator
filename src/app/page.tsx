@@ -1119,7 +1119,7 @@ export default function Home() {
 
         {/* FAQ Section */}
         <div className="mt-20 md:mt-28">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-10 flex items-center justify-center gap-4 text-gray-900">
+          <h2 className="text-xl font-bold text-center mb-6 flex items-center justify-center gap-3 text-gray-900">
             <span className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full text-lg font-semibold">
               ?
             </span>
