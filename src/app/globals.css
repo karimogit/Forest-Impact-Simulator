@@ -18,7 +18,7 @@ body {
   background: #FFFFFF !important;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 16px; /* Base font size - increased from default 14px */
+  font-size: 15px; /* Base font size - slightly increased from default 14px */
   line-height: 1.6; /* Better readability */
 }
 
@@ -26,44 +26,44 @@ main {
   background: #FFFFFF !important;
 }
 
-/* Improved typography scale - Override Tailwind defaults with !important */
+/* Improved typography scale - Moderate increase for better readability */
 .text-xs {
-  font-size: 0.875rem !important; /* 14px - was 0.75rem/12px */
+  font-size: 0.8125rem !important; /* 13px - was 0.75rem/12px */
   line-height: 1.5 !important;
 }
 
 .text-sm {
-  font-size: 1rem !important; /* 16px - was 0.875rem/14px */
+  font-size: 0.9375rem !important; /* 15px - was 0.875rem/14px */
   line-height: 1.5 !important;
 }
 
 .text-base {
-  font-size: 1.125rem !important; /* 18px - was 1rem/16px */
+  font-size: 1rem !important; /* 16px - same as body, was 1rem/16px */
   line-height: 1.6 !important;
 }
 
 .text-lg {
-  font-size: 1.25rem !important; /* 20px - was 1.125rem/18px */
+  font-size: 1.125rem !important; /* 18px - was 1.125rem/18px */
   line-height: 1.6 !important;
 }
 
 .text-xl {
-  font-size: 1.5rem !important; /* 24px */
+  font-size: 1.375rem !important; /* 22px - was 1.25rem/20px */
   line-height: 1.5 !important;
 }
 
 .text-2xl {
-  font-size: 1.875rem !important; /* 30px */
+  font-size: 1.75rem !important; /* 28px - was 1.875rem/30px */
   line-height: 1.4 !important;
 }
 
 .text-3xl {
-  font-size: 2.25rem !important; /* 36px */
+  font-size: 2.125rem !important; /* 34px - was 2.25rem/36px */
   line-height: 1.3 !important;
 }
 
 .text-4xl {
-  font-size: 3rem !important; /* 48px - was 2.25rem/36px */
+  font-size: 2.5rem !important; /* 40px - was 3rem/48px, more reasonable */
   line-height: 1.2 !important;
 }
 

@@ -1069,7 +1069,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
 
 
       <div className="mb-6">
-        <h4 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">Impact Analysis</h4>
+        <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-4">Impact Analysis</h4>
         
         {/* Tab Navigation */}
         <div className="flex border-b-2 border-gray-200 mb-4 overflow-x-auto" role="tablist" aria-label="Impact analysis categories">
