@@ -18,20 +18,10 @@ body {
   background: #FFFFFF !important;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  line-height: 1.6; /* Better readability */
 }
 
 main {
   background: #FFFFFF !important;
-}
-
-/* Improved spacing scale */
-.space-y-section > * + * {
-  margin-top: 2rem; /* 32px - better section separation */
-}
-
-.space-y-card > * + * {
-  margin-top: 1.5rem; /* 24px - better card spacing */
 }
 
 @keyframes fade-in {
