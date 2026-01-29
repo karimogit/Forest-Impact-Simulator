@@ -13,7 +13,7 @@ const Header = () => {
               <text x="16" y="20" textAnchor="middle" fill="#1B4D3E" fontSize="14" fontWeight="bold" fontFamily="Arial, sans-serif">FIS</text>
             </svg>
           </span>
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold">Forest Impact Simulator</h1>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">Forest Impact Simulator</h1>
         </Link>
         
         {/* GitHub Logo and Link */}

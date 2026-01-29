@@ -18,7 +18,7 @@ body {
   background: #FFFFFF !important;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 15px; /* Base font size - slightly increased from default 14px */
+  font-size: 16px; /* Base font size - increased from default 14px */
   line-height: 1.6; /* Better readability */
 }
 
@@ -26,45 +26,45 @@ main {
   background: #FFFFFF !important;
 }
 
-/* Improved typography scale - Moderate increase for better readability */
+/* Improved typography scale */
 .text-xs {
-  font-size: 0.8125rem !important; /* 13px - was 0.75rem/12px */
-  line-height: 1.5 !important;
+  font-size: 0.875rem; /* 14px - was 0.75rem/12px */
+  line-height: 1.5;
 }
 
 .text-sm {
-  font-size: 0.9375rem !important; /* 15px - was 0.875rem/14px */
-  line-height: 1.5 !important;
+  font-size: 1rem; /* 16px - was 0.875rem/14px */
+  line-height: 1.5;
 }
 
 .text-base {
-  font-size: 1rem !important; /* 16px - same as body, was 1rem/16px */
-  line-height: 1.6 !important;
+  font-size: 1.125rem; /* 18px - was 1rem/16px */
+  line-height: 1.6;
 }
 
 .text-lg {
-  font-size: 1.125rem !important; /* 18px - was 1.125rem/18px */
-  line-height: 1.6 !important;
+  font-size: 1.25rem; /* 20px - was 1.125rem/18px */
+  line-height: 1.6;
 }
 
 .text-xl {
-  font-size: 1.375rem !important; /* 22px - was 1.25rem/20px */
-  line-height: 1.5 !important;
+  font-size: 1.5rem; /* 24px */
+  line-height: 1.5;
 }
 
 .text-2xl {
-  font-size: 1.75rem !important; /* 28px - was 1.875rem/30px */
-  line-height: 1.4 !important;
+  font-size: 1.875rem; /* 30px */
+  line-height: 1.4;
 }
 
 .text-3xl {
-  font-size: 2.125rem !important; /* 34px - was 2.25rem/36px */
-  line-height: 1.3 !important;
+  font-size: 2.25rem; /* 36px */
+  line-height: 1.3;
 }
 
 .text-4xl {
-  font-size: 2.5rem !important; /* 40px - was 3rem/48px, more reasonable */
-  line-height: 1.2 !important;
+  font-size: 3rem; /* 48px - was 2.25rem/36px */
+  line-height: 1.2;
 }
 
 /* Improved spacing scale */

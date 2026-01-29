@@ -777,7 +777,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-8 lg:p-12">
       <div className="container mx-auto max-w-7xl w-full">
         <section className="text-center mb-12 space-y-section" aria-labelledby="main-heading">
-          <h1 id="main-heading" className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-4 text-gray-900">
+          <h1 id="main-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold text-center mb-4 text-gray-900">
             Simulate the Impact of Forest Management
           </h1>
           <p className="text-lg md:text-xl text-gray-700 mb-8 max-w-4xl mx-auto text-center leading-relaxed">
@@ -880,7 +880,7 @@ export default function Home() {
                   <span className="sr-only">Location step icon</span>
                 </div>
               <div className="flex-1">
-                <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">Select Location</h2>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Select Location</h2>
                 <div className="text-base md:text-lg text-gray-700 space-y-2">
                   <p className="font-semibold">How to select:</p>
                   <ul className="list-disc pl-6 space-y-2">
@@ -924,7 +924,7 @@ export default function Home() {
                   <span className="sr-only">Tree selection icon</span>
                 </div>
               <div className="flex-1">
-                <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                   {simulationMode === 'planting' ? 'Select Tree Species' : 'Select Tree Species'}
                 </h2>
                 <p className="text-base md:text-lg text-gray-700">
@@ -976,7 +976,7 @@ export default function Home() {
                   <span className="sr-only">Impact analysis icon</span>
                 </div>
               <div className="flex-1">
-                <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">Impact Results</h2>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Impact Results</h2>
                 <p className="text-base md:text-lg text-gray-700">
                   {simulationMode === 'planting' 
                     ? 'Calculate planting details and see environmental benefits'
@@ -1119,7 +1119,7 @@ export default function Home() {
 
         {/* FAQ Section */}
         <div className="mt-20 md:mt-28">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-10 flex items-center justify-center gap-4 text-gray-900">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-10 flex items-center justify-center gap-4 text-gray-900">
             <span className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-primary text-white rounded-full text-xl md:text-2xl font-bold">
               ?
             </span>
