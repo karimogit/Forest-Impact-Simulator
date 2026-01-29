@@ -880,9 +880,8 @@ export default function Home() {
                   <span className="sr-only">Location step icon</span>
                 </div>
               <div className="flex-1">
-                <h2 className="text-base font-semibold text-gray-800">Select Location</h2>
-                <div className="text-sm text-gray-600">
-                  <p className="text-xs font-semibold">How to select:</p>
+                <h2 className="text-lg font-semibold text-gray-800">Select Location</h2>
+                <div className="text-base text-gray-600">
                   <ul className="list-disc pl-6 space-y-2">
                     <li><strong>Desktop:</strong> Press CTRL + mouse click and drag.</li>
                     <li><strong>Mobile:</strong> Tap to create a selection square, then drag to resize.</li>
@@ -924,10 +923,10 @@ export default function Home() {
                   <span className="sr-only">Tree selection icon</span>
                 </div>
               <div className="flex-1">
-                <h2 className="text-base font-semibold text-gray-800">
+                <h2 className="text-lg font-semibold text-gray-800">
                   {simulationMode === 'planting' ? 'Select Tree Species' : 'Select Tree Species'}
                 </h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-base text-gray-600">
                   {simulationMode === 'planting' 
                     ? 'Select one or multiple tree types and set their distribution'
                     : 'Select the tree species to be removed and their composition'
@@ -976,8 +975,8 @@ export default function Home() {
                   <span className="sr-only">Impact analysis icon</span>
                 </div>
               <div className="flex-1">
-                <h2 className="text-base font-semibold text-gray-800">Impact Results</h2>
-                <p className="text-sm text-gray-600">
+                <h2 className="text-lg font-semibold text-gray-800">Impact Results</h2>
+                <p className="text-base text-gray-600">
                   {simulationMode === 'planting' 
                     ? 'Calculate planting details and see environmental benefits'
                     : 'Calculate removal details and see environmental impacts'
@@ -990,7 +989,7 @@ export default function Home() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Calculator Section */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-800 mb-4">
+                  <h3 className="text-base font-semibold text-gray-800 mb-4">
                     {simulationMode === 'planting' ? 'Planting Calculations' : 'Removal Configuration'}
                   </h3>
                   <Suspense fallback={
@@ -1022,7 +1021,7 @@ export default function Home() {
                 
                 {/* Impact Results Section */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-800 mb-4">Impact Analysis</h3>
+                  <h3 className="text-base font-semibold text-gray-800 mb-4">Impact Analysis</h3>
                   <Suspense fallback={
                     <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
@@ -1119,7 +1118,7 @@ export default function Home() {
 
         {/* FAQ Section */}
         <div className="mt-20 md:mt-28">
-          <h2 className="text-base font-bold text-center mb-4 flex items-center justify-center gap-2 text-gray-900">
+          <h2 className="text-lg font-bold text-center mb-4 flex items-center justify-center gap-2 text-gray-900">
             <span className="flex items-center justify-center w-6 h-6 bg-primary text-white rounded-full text-xs font-semibold">
               ?
             </span>
@@ -1186,7 +1185,7 @@ export default function Home() {
                         className="w-full p-6 md:p-8 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
                         aria-expanded={!!faqOpen[faq.id]}
                       >
-                        <h3 className="text-sm font-semibold text-gray-800 pr-4">{faq.title}</h3>
+                        <h3 className="text-base font-semibold text-gray-800 pr-4">{faq.title}</h3>
                         <svg
                           className={`w-6 h-6 md:w-7 md:h-7 text-gray-500 transition-transform flex-shrink-0 ${faqOpen[faq.id] ? 'rotate-180' : ''}`}
                           fill="none"
@@ -1196,7 +1195,7 @@ export default function Home() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </button>
-                      {faqOpen[faq.id] && <div className="px-6 pb-6 text-sm text-gray-700">{faq.content}</div>}
+                      {faqOpen[faq.id] && <div className="px-6 pb-6 text-gray-700">{faq.content}</div>}
                     </div>
                   ))}
 
