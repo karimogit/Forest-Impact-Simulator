@@ -3,7 +3,8 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { TreeType, TREE_TYPES } from '@/types/treeTypes';
 import { ExportData } from '@/utils/exportUtils';
-import { generateShareableUrl, getShareParameterFromUrl, decodeUrlToState, copyToClipboard, ShareableState } from '@/utils/shareableLink';
+import { getShareParameterFromUrl, decodeUrlToState } from '@/utils/shareableLink';
+import { calculateRegionArea } from '@/utils/treePlanting';
 
 // Lazy load components for better performance
 const LocationMap = lazy(() => import('@/components/LocationMap'));
@@ -132,6 +133,29 @@ export default function Home() {
     jobsCreated: number;
     areaSize: number;
   } | null>(null);
+
+  // Helper function to calculate job creation based on area and simulation mode
+  const calculateJobCreation = (areaHectares: number, mode: 'planting' | 'clear-cutting'): number => {
+    if (mode === 'planting') {
+      if (areaHectares < 0.1) return 2;
+      if (areaHectares < 0.5) return 2;
+      if (areaHectares < 1) return 3;
+      if (areaHectares < 5) return 4;
+      if (areaHectares < 20) return 6;
+      if (areaHectares < 50) return 10;
+      if (areaHectares < 100) return 15;
+      return Math.floor(areaHectares / 10);
+    } else {
+      if (areaHectares < 0.1) return 3;
+      if (areaHectares < 0.5) return 4;
+      if (areaHectares < 1) return 5;
+      if (areaHectares < 5) return 8;
+      if (areaHectares < 20) return 15;
+      if (areaHectares < 50) return 30;
+      if (areaHectares < 100) return 50;
+      return Math.floor(areaHectares / 2);
+    }
+  };
 
   // Determine current step for progressive disclosure
   const currentStep = !selectedRegion && !selectedLatitude ? 1 
@@ -683,13 +707,17 @@ export default function Home() {
       
       // Extract summary metrics
       if (data.impactResults) {
+        // Calculate area in hectares
+        const areaHectares = plantingData?.area || (selectedRegion ? calculateRegionArea(selectedRegion) : 0);
+        const jobsCreated = calculateJobCreation(areaHectares, simulationMode);
+        
         setResultsSummary({
           totalCarbon: data.impactResults.totalCarbon || 0,
           biodiversityScore: data.impactResults.averageBiodiversity || 0,
           waterRetention: data.impactResults.waterRetention || 0,
           airQuality: data.impactResults.airQualityImprovement || 0,
-          jobsCreated: data.impactResults.jobsCreated || 0,
-          areaSize: plantingData?.area || 0,
+          jobsCreated,
+          areaSize: plantingData?.area || (selectedRegion ? calculateRegionArea(selectedRegion) * 1000000 : 0), // Convert to m²
         });
       }
     } catch (error) {
@@ -734,34 +762,8 @@ export default function Home() {
     }
   };
 
-  const handleShare = async () => {
-    const state: ShareableState = {
-      mode: simulationMode,
-      latitude: selectedLatitude || undefined,
-      longitude: selectedLongitude || undefined,
-      region: selectedRegion || undefined,
-      years,
-      calculationMode,
-      averageTreeAge: simulationMode === 'clear-cutting' ? averageTreeAge : undefined,
-      treeIds: selectedTrees.map(t => t.id),
-      treePercentages
-    };
-
-    const url = generateShareableUrl(state);
-    const success = await copyToClipboard(url);
-    
-    if (success) {
-      setShareNotification('Link copied to clipboard!');
-      setTimeout(() => setShareNotification(null), 3000);
-    } else {
-      setShareNotification('Failed to copy link. Please try again.');
-      setTimeout(() => setShareNotification(null), 3000);
-    }
-  };
-
   const hasLocation = selectedRegion || (selectedLatitude && selectedLongitude);
   const hasTrees = selectedTrees.length > 0;
-  const hasResults = resultsSummary !== null;
 
   return (
     <main className="min-h-screen bg-white">
