@@ -3,6 +3,7 @@
  */
 
 import { logger } from './logger';
+import { validateLatitude, validateLongitude, validateYears, validateTreeTypeId } from './security';
 
 export interface ShareableState {
   mode: 'planting' | 'clear-cutting';
@@ -78,6 +79,13 @@ function toUltraCompactString(state: ShareableState): string {
 function fromUltraCompactString(compact: string): ShareableState {
   const parts = compact.split('|');
   
+  if (parts[0] !== 'p' && parts[0] !== 'c') {
+    throw new Error('Invalid mode value');
+  }
+  if (parts[2] !== 't' && parts[2] !== 'a') {
+    throw new Error('Invalid calculation mode');
+  }
+
   const state: ShareableState = {
     mode: parts[0] === 'p' ? 'planting' : 'clear-cutting',
     years: parseInt(parts[1], 10),
@@ -86,8 +94,7 @@ function fromUltraCompactString(compact: string): ShareableState {
     treePercentages: {}
   };
   
-  // Validate years is a valid number
-  if (!Number.isFinite(state.years) || state.years <= 0) {
+  if (!validateYears(state.years)) {
     throw new Error('Invalid years value');
   }
   
@@ -95,7 +102,7 @@ function fromUltraCompactString(compact: string): ShareableState {
   if (parts[3]) {
     const lat = parseFloat(parts[3].split(',')[0]);
     const lon = parseFloat(parts[3].split(',')[1]);
-    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+    if (validateLatitude(lat) && validateLongitude(lon)) {
       state.latitude = lat;
       state.longitude = lon;
     }
@@ -121,10 +128,10 @@ function fromUltraCompactString(compact: string): ShareableState {
   if (parts[6]) {
     parts[6].split(',').forEach(treePct => {
       const [id, pct] = treePct.split(':');
-      if (id) {
+      if (id && validateTreeTypeId(id)) {
         state.treeIds.push(id);
         const percentage = parseFloat(pct);
-        if (Number.isFinite(percentage)) {
+        if (Number.isFinite(percentage) && percentage >= 0 && percentage <= 100) {
           state.treePercentages[id] = percentage;
         } else {
           state.treePercentages[id] = 0;
@@ -176,9 +183,8 @@ export function decodeUrlToState(encoded: string): ShareableState | null {
     // Convert from ultra-compact string format
     const state = fromUltraCompactString(compactStr);
     
-    // Validate required fields
-    if (!state.mode || !state.years || !state.calculationMode) {
-      logger.error('Invalid state: missing required fields');
+    if (!validateState(state)) {
+      logger.error('Invalid state: failed validation');
       return null;
     }
     

@@ -12,6 +12,7 @@ import {
   getRecommendedSpacing
 } from '@/utils/treePlanting';
 import { ExportData } from '@/utils/exportUtils';
+import { formatLatitude, formatLongitude } from '@/utils/geo';
 
 // Types for soil and climate data
 interface SoilData {
@@ -128,7 +129,7 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
         config = calculateTreePlanting(
           selectedRegion,
           'mixed', // Use 'mixed' to trigger custom spacing
-          avgSpacing
+          customSpacing ?? avgSpacing
         );
       } else {
         // Single tree or no percentages - use normal calculation
@@ -260,8 +261,8 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-xs text-gray-900 font-bold">Coordinates:</span>
               <span className="text-xs font-medium">
-                {selectedRegion.south.toFixed(4)}°S to {selectedRegion.north.toFixed(4)}°N<br />
-                {selectedRegion.west.toFixed(4)}°W to {selectedRegion.east.toFixed(4)}°E
+                {formatLatitude(selectedRegion.south)} to {formatLatitude(selectedRegion.north)}<br />
+                {formatLongitude(selectedRegion.west)} to {formatLongitude(selectedRegion.east)}
               </span>
             </div>
           )}

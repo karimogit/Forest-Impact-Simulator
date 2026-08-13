@@ -8,6 +8,8 @@ import LocationSearch from './LocationSearch';
 import { calculateRegionArea, formatArea } from '@/utils/treePlanting';
 import { getLocationHistory, addToLocationHistory, removeFromLocationHistory, formatLocationName, getRelativeTime, type LocationHistoryItem } from '@/utils/locationHistory';
 import { logger } from '@/utils/logger';
+import { escapeHtml } from '@/utils/security';
+import { formatLatitude, formatLongitude, hasCoordinates } from '@/utils/geo';
 
 // Dynamically import Leaflet components to avoid SSR issues
 const MapContainer = dynamic(
@@ -243,6 +245,9 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
     
     try {
       const { forests, protectedAreas } = await fetchOSMData(bounds);
+      if (lastBoundsRef.current !== boundsKey) {
+        return;
+      }
       
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const L = require('leaflet');
@@ -336,7 +341,8 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
               dashArray: '5, 5',
               pane: 'protectedOverlayPane', // Use custom pane with higher z-index
             });
-            polygon.bindPopup(`<strong>🛡️ ${name}</strong><br/>Type: ${element.tags?.boundary || element.tags?.leisure || 'Nature Reserve'}<br/>OSM ID: ${element.id}`);
+            const areaType = escapeHtml(element.tags?.boundary || element.tags?.leisure || 'Nature Reserve');
+            polygon.bindPopup(`<strong>🛡️ ${escapeHtml(name)}</strong><br/>Type: ${areaType}<br/>OSM ID: ${element.id}`);
             protectedGroup.addLayer(polygon);
           }
         }
@@ -538,13 +544,21 @@ const LocateControl = ({ onLocate }: { onLocate?: (lat: number, lng: number) => 
             disabled={locating}
             className="bg-white hover:bg-gray-50 w-[30px] h-[30px] flex items-center justify-center border-none cursor-pointer disabled:cursor-wait disabled:opacity-60"
             title="Locate me"
+            aria-label="Locate me"
             style={{
               fontSize: '18px',
               lineHeight: '30px',
               color: '#333',
             }}
           >
-            {locating ? '?' : '?'}
+            {locating ? (
+              <span aria-hidden="true" className="text-xs">...</span>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+              </svg>
+            )}
           </button>
         </div>
       </div>
@@ -801,6 +815,9 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
   const [startPoint, setStartPoint] = useState<[number, number] | null>(null);
   const [currentBounds, setCurrentBounds] = useState<MapBounds | null>(null);
   const tempRectangleRef = useRef<L.Rectangle | null>(null);
+  const isSelectingRef = useRef(false);
+  const startPointRef = useRef<[number, number] | null>(null);
+  const currentBoundsRef = useRef<MapBounds | null>(null);
   
   // Add visual feedback for dragging state and notify parent
   useEffect(() => {
@@ -845,7 +862,10 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
       e.originalEvent.preventDefault();
       e.originalEvent.stopPropagation();
       setIsSelecting(true);
-      setStartPoint([e.latlng.lat, e.latlng.lng]);
+      isSelectingRef.current = true;
+      const start: [number, number] = [e.latlng.lat, e.latlng.lng];
+      setStartPoint(start);
+      startPointRef.current = start;
       map.dragging.disable();
       e.originalEvent.stopImmediatePropagation();
     };
@@ -868,8 +888,12 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
       
       logger.log('Created initial selection square');
       setIsSelecting(true);
-      setStartPoint([centerLat, centerLng]);
+      isSelectingRef.current = true;
+      const start: [number, number] = [centerLat, centerLng];
+      setStartPoint(start);
+      startPointRef.current = start;
       setCurrentBounds(bounds);
+      currentBoundsRef.current = bounds;
       map.dragging.disable();
       
       // Create visual rectangle immediately
@@ -889,17 +913,19 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
     };
 
     const handleMouseMove = (e: LeafletMouseEvent) => {
-      if (!isSelecting || !startPoint) return;
+      if (!isSelectingRef.current || !startPointRef.current) return;
       e.originalEvent.preventDefault();
       e.originalEvent.stopPropagation();
       
+      const start = startPointRef.current;
       const bounds = {
-        getSouth: () => Math.min(startPoint[0], e.latlng.lat),
-        getNorth: () => Math.max(startPoint[0], e.latlng.lat),
-        getWest: () => Math.min(startPoint[1], e.latlng.lng),
-        getEast: () => Math.max(startPoint[1], e.latlng.lng),
+        getSouth: () => Math.min(start[0], e.latlng.lat),
+        getNorth: () => Math.max(start[0], e.latlng.lat),
+        getWest: () => Math.min(start[1], e.latlng.lng),
+        getEast: () => Math.max(start[1], e.latlng.lng),
       };
       setCurrentBounds(bounds);
+      currentBoundsRef.current = bounds;
       
       // Update temporary rectangle for visual feedback
       if (tempRectangleRef.current) {
@@ -921,19 +947,21 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
     };
 
     const handleTouchMove = (e: LeafletMouseEvent) => {
-      if (!isSelecting || !startPoint) return;
+      if (!isSelectingRef.current || !startPointRef.current) return;
       
       // Prevent default touch behavior during selection
       e.originalEvent.preventDefault();
       e.originalEvent.stopPropagation();
       
+      const start = startPointRef.current;
       const bounds = {
-        getSouth: () => Math.min(startPoint[0], e.latlng.lat),
-        getNorth: () => Math.max(startPoint[0], e.latlng.lat),
-        getWest: () => Math.min(startPoint[1], e.latlng.lng),
-        getEast: () => Math.max(startPoint[1], e.latlng.lng),
+        getSouth: () => Math.min(start[0], e.latlng.lat),
+        getNorth: () => Math.max(start[0], e.latlng.lat),
+        getWest: () => Math.min(start[1], e.latlng.lng),
+        getEast: () => Math.max(start[1], e.latlng.lng),
       };
       setCurrentBounds(bounds);
+      currentBoundsRef.current = bounds;
       
       // Update temporary rectangle for visual feedback
       if (tempRectangleRef.current) {
@@ -955,16 +983,19 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
     };
 
     const handleMouseEnd = (e: LeafletMouseEvent) => {
-      logger.log('Mouse end:', e.latlng, 'isSelecting:', isSelecting, 'currentBounds:', currentBounds);
-      if (isSelecting && currentBounds) {
+      const selecting = isSelectingRef.current;
+      const bounds = currentBoundsRef.current;
+      const start = startPointRef.current;
+      logger.log('Mouse end:', e.latlng, 'isSelecting:', selecting, 'currentBounds:', bounds);
+      if (selecting && bounds && start) {
         const dragDistance = Math.sqrt(
-          Math.pow(e.latlng.lat - startPoint![0], 2) + 
-          Math.pow(e.latlng.lng - startPoint![1], 2)
+          Math.pow(e.latlng.lat - start[0], 2) + 
+          Math.pow(e.latlng.lng - start[1], 2)
         );
         logger.log('Drag distance:', dragDistance);
         if (dragDistance > 0.0001) {
           logger.log('Calling onBoundsChange');
-          onBoundsChange(currentBounds);
+          onBoundsChange(bounds);
         } else {
           logger.log('Drag distance too small, not selecting region');
           e.originalEvent.preventDefault();
@@ -978,17 +1009,22 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
       }
       map.dragging.enable();
       setIsSelecting(false);
+      isSelectingRef.current = false;
       setStartPoint(null);
+      startPointRef.current = null;
       setCurrentBounds(null);
+      currentBoundsRef.current = null;
     };
 
     const handleTouchEnd = (e: LeafletMouseEvent) => {
-      logger.log('Touch end:', e.latlng, 'isSelecting:', isSelecting, 'currentBounds:', currentBounds);
+      const selecting = isSelectingRef.current;
+      const bounds = currentBoundsRef.current;
+      logger.log('Touch end:', e.latlng, 'isSelecting:', selecting, 'currentBounds:', bounds);
       
-      if (isSelecting && currentBounds) {
+      if (selecting && bounds) {
         // For mobile, always confirm the selection since we created it with a tap
         logger.log('Confirming mobile selection');
-        onBoundsChange(currentBounds);
+        onBoundsChange(bounds);
       }
       
       // Remove temporary rectangle
@@ -998,8 +1034,11 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
       }
       map.dragging.enable();
       setIsSelecting(false);
+      isSelectingRef.current = false;
       setStartPoint(null);
+      startPointRef.current = null;
       setCurrentBounds(null);
+      currentBoundsRef.current = null;
     };
 
     // Add mouse events for desktop
@@ -1034,7 +1073,7 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
       }
       map.dragging.enable();
     };
-  }, [map, onBoundsChange, isSelecting, startPoint, currentBounds]);
+  }, [map, onBoundsChange]);
 
   return null;
 };
@@ -1043,6 +1082,7 @@ interface LocationMapProps {
   onLocationSelect: (lat: number, lng: number) => void;
   onRegionSelect: (bounds: { north: number; south: number; east: number; west: number }) => void;
   onSearchLocation?: (lat: number, lng: number, name: string) => void;
+  onClearSelection?: () => void;
   initialRegion?: { north: number; south: number; east: number; west: number } | null;
   initialLatitude?: number | null;
   initialLongitude?: number | null;
@@ -1052,12 +1092,13 @@ const LocationMap: React.FC<LocationMapProps> = ({
   onLocationSelect, 
   onRegionSelect, 
   onSearchLocation,
+  onClearSelection,
   initialRegion,
   initialLatitude,
   initialLongitude
 }) => {
   const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(
-    initialLatitude && initialLongitude ? [initialLatitude, initialLongitude] : null
+    hasCoordinates(initialLatitude, initialLongitude) ? [initialLatitude!, initialLongitude!] : null
   );
   const [selectedRegion, setSelectedRegion] = useState<[number, number, number, number] | null>(
     initialRegion ? [initialRegion.north, initialRegion.west, initialRegion.south, initialRegion.east] : null
@@ -1065,18 +1106,18 @@ const LocationMap: React.FC<LocationMapProps> = ({
   const [mapCenter, setMapCenter] = useState<[number, number]>(
     initialRegion 
       ? [(initialRegion.north + initialRegion.south) / 2, (initialRegion.east + initialRegion.west) / 2]
-      : initialLatitude && initialLongitude
-      ? [initialLatitude, initialLongitude]
+      : hasCoordinates(initialLatitude, initialLongitude)
+      ? [initialLatitude!, initialLongitude!]
       : [54.0, 15.0]
   );
   const [mapZoom, setMapZoom] = useState<number>(
-    initialRegion || (initialLatitude && initialLongitude) ? 10 : 4
+    initialRegion || hasCoordinates(initialLatitude, initialLongitude) ? 10 : 4
   );
   
   // Update map center/zoom when initial props change (e.g., from shared links)
   useEffect(() => {
     // Skip if no initial props or already processed in this render cycle
-    if (!initialRegion && !initialLatitude && !initialLongitude) {
+    if (!initialRegion && !hasCoordinates(initialLatitude, initialLongitude)) {
       return;
     }
     
@@ -1107,7 +1148,7 @@ const LocationMap: React.FC<LocationMapProps> = ({
       // Update selected region state
       setSelectedRegion([initialRegion.north, initialRegion.west, initialRegion.south, initialRegion.east]);
       setSelectedLocation(null);
-    } else if (initialLatitude && initialLongitude) {
+    } else if (hasCoordinates(initialLatitude, initialLongitude)) {
       newCenter = [initialLatitude, initialLongitude];
       newZoom = 12; // Zoom in closer for point locations
       setSelectedLocation([initialLatitude, initialLongitude]);
@@ -1118,7 +1159,7 @@ const LocationMap: React.FC<LocationMapProps> = ({
     
     // Only update if different from current state
     if (newCenter[0] !== mapCenter[0] || newCenter[1] !== mapCenter[1] || newZoom !== mapZoom) {
-      console.log('[LocationMap] Updating map from initial props:', { newCenter, newZoom });
+      logger.log('[LocationMap] Updating map from initial props:', { newCenter, newZoom });
       setMapCenter(newCenter);
       setMapZoom(newZoom);
     }
@@ -1247,9 +1288,9 @@ const LocationMap: React.FC<LocationMapProps> = ({
   const clearSelection = () => {
     setSelectedLocation(null);
     setSelectedRegion(null);
-    // Use coordinates that are clearly invalid/out of bounds to indicate no selection
-    onLocationSelect(0, 0);
-    onRegionSelect({ north: 0, south: 0, east: 0, west: 0 });
+    if (onClearSelection) {
+      onClearSelection();
+    }
   };
 
   return (
@@ -1276,12 +1317,15 @@ const LocationMap: React.FC<LocationMapProps> = ({
                   </button>
                 </div>
                 {locationHistory.map((item) => (
-                  <button
+                  <div
                     key={item.id}
-                    onClick={() => handleHistoryItemClick(item)}
                     className="w-full text-left px-2 py-2 hover:bg-gray-50 rounded-lg flex items-start justify-between gap-2 group"
                   >
-                    <div className="flex-1 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => handleHistoryItemClick(item)}
+                      className="flex-1 min-w-0 text-left"
+                    >
                       <div className="flex items-center gap-2">
                         {item.type === 'region' ? (
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1300,18 +1344,20 @@ const LocationMap: React.FC<LocationMapProps> = ({
                       <div className="text-xs text-gray-500 mt-0.5">
                         {getRelativeTime(item.timestamp)}
                       </div>
-                    </div>
+                    </button>
                     <button
+                      type="button"
                       onClick={(e) => handleRemoveHistoryItem(item.id, e)}
                       className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-opacity p-1"
                       title="Remove from history"
+                      aria-label={`Remove ${formatLocationName(item)} from history`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                      </button>
                     </button>
-                  ))}
+                  </div>
+                ))}
                 </div>
               </div>
             )}
@@ -1401,7 +1447,7 @@ const LocationMap: React.FC<LocationMapProps> = ({
       {selectedRegion && (
         <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
           <div className="text-sm text-gray-600 space-y-1">
-            <p><strong>Selected region:</strong> {selectedRegion[0].toFixed(4)}?N to {selectedRegion[2].toFixed(4)}?N, {selectedRegion[1].toFixed(4)}?E to {selectedRegion[3].toFixed(4)}?E</p>
+            <p><strong>Selected region:</strong> {formatLatitude(selectedRegion[2])} to {formatLatitude(selectedRegion[0])}, {formatLongitude(selectedRegion[1])} to {formatLongitude(selectedRegion[3])}</p>
             <p><strong>Area size:</strong> {formatArea(calculateRegionArea({
               north: selectedRegion[0],
               south: selectedRegion[2], 

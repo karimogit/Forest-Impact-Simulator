@@ -47,8 +47,10 @@ export const TREE_SPACING_CONFIGS = {
 
 // Calculate area in hectares from region bounds
 export const calculateRegionArea = (bounds: RegionBounds): number => {
-  const latDiff = bounds.north - bounds.south;
-  const lngDiff = bounds.east - bounds.west;
+  const latDiff = Math.abs(bounds.north - bounds.south);
+  // Handle antimeridian crossing (west > east, e.g. 170°E to 170°W)
+  const rawLngDiff = bounds.east - bounds.west;
+  const lngDiff = rawLngDiff < 0 ? rawLngDiff + 360 : rawLngDiff;
   
   // Convert to meters (approximate)
   const latMeters = latDiff * 111000; // 1 degree latitude ≈ 111km

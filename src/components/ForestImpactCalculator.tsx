@@ -19,12 +19,12 @@ import {
   ENVIRONMENTAL_MODIFIERS,
   CARBON_CONVERSION
 } from '@/utils/constants';
-import { calculateAnnualCarbonWithGrowth, calculateClearCuttingCarbon } from '@/utils/treeCalculations';
 import { EnvironmentTab } from './tabs/EnvironmentTab';
 import { SocialTab } from './tabs/SocialTab';
 import { EconomicTab } from './tabs/EconomicTab';
 import { LandUseTab } from './tabs/LandUseTab';
 import { logger } from '@/utils/logger';
+import { hasCoordinates, percentagesSumTo100 } from '@/utils/geo';
 
 // Simple fetch with timeout
 const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout: number = 15000): Promise<Response> => {
@@ -376,31 +376,39 @@ const fetchClimateData = async (lat: number, lon: number, retries = 2): Promise<
       logger.log('[CLIMATE API] Historical data unavailable, continuing with current data only');
     }
     
+    // Open-Meteo current.precipitation is instantaneous (mm), not annual.
+    // Prefer historical yearly totals when available; otherwise fall back to latitude estimates.
+    const historicalAnnualPrecip = historicalData && historicalData.precipitations.length > 0
+      ? historicalData.precipitations.reduce((sum, value) => sum + value, 0) / historicalData.precipitations.length
+      : null;
+    const annualPrecipitation = historicalAnnualPrecip ?? estimateClimateData(lat).precipitation;
+
     logger.log('[CLIMATE API] Success:', { 
       temperature: currentTemp, 
-      precipitation: currentPrecip ?? 0,
+      precipitation: annualPrecipitation,
+      currentIntervalPrecip: currentPrecip ?? 0,
       hasHistorical: !!historicalData 
     });
     
     return {
       temperature: currentTemp,
-      precipitation: currentPrecip ?? 0, // Default to 0 if no precipitation data
+      precipitation: annualPrecipitation,
       historicalData,
-      isEstimated: false
+      isEstimated: historicalAnnualPrecip == null
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     if (errorMessage.includes('aborted') || errorMessage.includes('timeout')) {
-      console.warn(`[CLIMATE API] Request timed out (attempt ${3 - retries})`);
+      logger.warn(`[CLIMATE API] Request timed out (attempt ${3 - retries})`);
     } else {
-      console.warn(`[CLIMATE API] Error: ${errorMessage}`);
+      logger.warn(`[CLIMATE API] Error: ${errorMessage}`);
     }
     
     // Retry logic with shorter backoff for climate API (usually more reliable)
     if (retries > 0) {
       const waitTime = (3 - retries) * 1500; // Progressive backoff: 1.5s, 3s
-      console.log(`[CLIMATE API] Retrying in ${waitTime/1000}s...`);
+      logger.log(`[CLIMATE API] Retrying in ${waitTime/1000}s...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
       return fetchClimateData(lat, lon, retries - 1);
     }
@@ -557,15 +565,17 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
 
   // Fetch soil and climate data for the selected location with caching
   useEffect(() => {
-    if (latitude && longitude) {
+    let cancelled = false;
+
+    if (hasCoordinates(latitude, longitude)) {
       // Validate inputs
-      if (!validateLatitude(latitude) || !validateLongitude(longitude)) {
+      if (!validateLatitude(latitude!) || !validateLongitude(longitude!)) {
         setError('Invalid coordinates provided.');
         return;
       }
       
       // Check persistent cache first (localStorage)
-      const cacheKey = `env-${generateLocationKey(latitude, longitude)}`;
+      const cacheKey = `env-${generateLocationKey(latitude!, longitude!)}`;
       const cachedData = getCachedData<{ soil: SoilData; climate: ClimateData }>(cacheKey);
       
       if (cachedData) {
@@ -588,10 +598,12 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
       logger.log('Fetching environmental data for:', latitude, longitude);
       
       Promise.allSettled([
-        fetchSoilData(latitude, longitude),
-        fetchClimateData(latitude, longitude)
+        fetchSoilData(latitude!, longitude!),
+        fetchClimateData(latitude!, longitude!)
       ])
         .then((results) => {
+          if (cancelled) return;
+
           const [soilResult, climateResult] = results;
           
           let soilData: SoilData = { carbon: null, ph: null };
@@ -625,10 +637,13 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
           logger.log('Environmental data cached in localStorage for:', cacheKey);
         })
         .catch((error) => {
-          console.error('Unexpected error fetching environmental data:', error);
+          if (cancelled) return;
+          logger.error('Unexpected error fetching environmental data:', error);
           setError('Failed to load environmental data. Please try again.');
         })
-        .finally(() => setLoading(false));
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
     } else {
       setSoil(null);
       setClimate(null);
@@ -636,8 +651,12 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
       // Notify parent component that no data is available
       if (onSoilClimateDataReady) {
         onSoilClimateDataReady(null, null);
+      }
     }
-    }
+
+    return () => {
+      cancelled = true;
+    };
   }, [latitude, longitude, onSoilClimateDataReady]);
 
   const calculateImpact = useCallback((
@@ -654,7 +673,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
     let resilienceBase = 0;
     
     if (treeTypes && treeTypes.length > 0) {
-      if (treePercentages && Object.values(treePercentages).reduce((sum, p) => sum + (p || 0), 0) === 100) {
+      if (percentagesSumTo100(treePercentages)) {
         // Use percentage distribution
         treeTypes.forEach(tree => {
           const percentage = treePercentages[tree.id] || 0;
@@ -705,7 +724,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
       // Clear-cutting mode: degrade over time and scale with forest size (more trees = more damage)
       biodiversityTimeBonus = Math.max(-1, -years * IMPACT_CAPS.BIODIVERSITY_TIME_BONUS);
       resilienceTimeBonus = Math.max(-1, -years * IMPACT_CAPS.RESILIENCE_TIME_BONUS);
-      forestSizeBonus = calculationMode === 'perArea' ? Math.min(1, Math.log10(totalTrees) * 0.2) : 0; // More trees = more damage
+      forestSizeBonus = calculationMode === 'perArea' ? -Math.min(1, Math.log10(totalTrees) * 0.2) : 0;
     }
     
     const biodiversityImpact = Math.min(IMPACT_CAPS.MAX_BIODIVERSITY, Math.max(IMPACT_CAPS.MIN_BIODIVERSITY, biodiversityBase + biodiversityTimeBonus + forestSizeBonus));
@@ -735,7 +754,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
     } else {
       // Clear-cutting mode: degrade over time and scale with forest size (more trees = more damage)
       waterTimeBonus = -years * WATER_RETENTION.ANNUAL_DEGRADATION;
-      waterSizeBonus = calculationMode === 'perArea' ? Math.min(15, Math.log10(totalTrees) * 3) : 0; // More trees = more damage
+      waterSizeBonus = calculationMode === 'perArea' ? -Math.min(15, Math.log10(totalTrees) * 3) : 0;
     }
     
     const waterRetention = Math.min(WATER_RETENTION.MAX_RETENTION, Math.max(0, waterBase + waterTimeBonus + waterSizeBonus));
@@ -783,7 +802,10 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
       biodiversityImpact: Math.max(0, biodiversityImpact),
       forestResilience: Math.max(0, forestResilience),
       waterRetention: Math.max(0, waterRetention),
-      airQualityImprovement: Math.max(0, airQualityImprovement)
+      // Clear-cutting air quality is intentionally negative (down to MAX_DEGRADATION)
+      airQualityImprovement: simulationMode === 'planting'
+        ? Math.max(0, airQualityImprovement)
+        : airQualityImprovement
     };
   }, [treePercentages, calculationMode, totalTrees, years, simulationMode]);
 
@@ -1002,7 +1024,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
 
   // Call onDataReady when data is ready - wrapped in useEffect to avoid render-time state updates
   useEffect(() => {
-    if (onDataReady && latitude && longitude && !loading && !error) {
+    if (onDataReady && hasCoordinates(latitude, longitude) && !loading && !error) {
       onDataReady({
         metadata: {
           timestamp: new Date().toISOString(),
@@ -1037,7 +1059,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
   }, [onDataReady, latitude, longitude, loading, error, selectedRegion, years, selectedTrees, selectedTreeType, treePercentages, soil, climate, impact, totalCarbon, averageBiodiversity, averageResilience]);
 
   // Early return checks - must be after all hooks and calculations
-  if (!latitude || !longitude) {
+  if (!hasCoordinates(latitude, longitude)) {
     return (
       <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
         <p className="text-gray-600">Select a location on the map to see the potential impact of planting a forest there.</p>
@@ -1056,16 +1078,13 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
     );
   }
 
-  if (error) {
-    return (
-      <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
-        <p className="text-red-600">{error}</p>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 md:p-8 bg-white border-2 border-gray-200 rounded-xl shadow-lg">
+      {error && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800" role="status">
+          {error}
+        </div>
+      )}
 
 
       <div className="mb-6">
@@ -1074,6 +1093,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
         {/* Tab Navigation */}
         <div className="flex border-b-2 border-gray-200 mb-4 overflow-x-auto" role="tablist" aria-label="Impact analysis categories">
           <button
+            id="environment-tab"
             onClick={() => setActiveEnvTab('environment')}
             className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeEnvTab === 'environment'
@@ -1083,10 +1103,12 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
             role="tab"
             aria-selected={activeEnvTab === 'environment'}
             aria-controls="environment-panel"
+            tabIndex={activeEnvTab === 'environment' ? 0 : -1}
           >
             Environment
           </button>
           <button
+            id="economic-tab"
             onClick={() => setActiveEnvTab('economic')}
             className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeEnvTab === 'economic'
@@ -1096,10 +1118,12 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
             role="tab"
             aria-selected={activeEnvTab === 'economic'}
             aria-controls="economic-panel"
+            tabIndex={activeEnvTab === 'economic' ? 0 : -1}
           >
             Economic
           </button>
           <button
+            id="social-tab"
             onClick={() => setActiveEnvTab('social')}
             className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeEnvTab === 'social'
@@ -1109,10 +1133,12 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
             role="tab"
             aria-selected={activeEnvTab === 'social'}
             aria-controls="social-panel"
+            tabIndex={activeEnvTab === 'social' ? 0 : -1}
           >
             Social
           </button>
           <button
+            id="landuse-tab"
             onClick={() => setActiveEnvTab('landuse')}
             className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeEnvTab === 'landuse'
@@ -1122,6 +1148,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
             role="tab"
             aria-selected={activeEnvTab === 'landuse'}
             aria-controls="landuse-panel"
+            tabIndex={activeEnvTab === 'landuse' ? 0 : -1}
           >
             Land Use
           </button>
@@ -1200,7 +1227,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
           <p className="text-xs text-gray-600 mt-4">
             {selectedTrees.length === 0 
               ? <><span className="font-semibold">No trees selected</span></>
-              : selectedTrees.length > 1 && treePercentages && Object.values(treePercentages).reduce((sum, p) => sum + (p || 0), 0) === 100 
+              : selectedTrees.length > 1 && percentagesSumTo100(treePercentages) 
                 ? <><span className="font-semibold">Weighted avg:</span> {calculationMode === 'perTree' ? `${impact.carbonSequestration.toFixed(1)} kg CO₂/year` : `${(impact.carbonSequestration / totalTrees).toFixed(1)} kg CO₂/year per tree`}</>
                 : <><span className="font-semibold">Average:</span> {calculationMode === 'perTree' ? `${(selectedTrees.reduce((sum, tree) => sum + tree.carbonSequestration, 0) / selectedTrees.length).toFixed(1)} kg CO₂/year per tree` : `${(selectedTrees.reduce((sum, tree) => sum + tree.carbonSequestration, 0) / selectedTrees.length).toFixed(1)} kg CO₂/year per tree`}</>
             }
@@ -1219,7 +1246,9 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
         <div className="mb-6 p-5 md:p-6 bg-primary/10 border-2 border-primary/30 rounded-xl">
           <h4 className="text-base font-bold text-primary mb-3">Real-world Impact Comparison</h4>
           <p className="text-sm text-primary mb-3 font-semibold">
-            This forest would sequester the equivalent of:
+            {simulationMode === 'planting'
+              ? 'This forest would sequester the equivalent of:'
+              : 'Clear-cutting this forest would release the equivalent of:'}
           </p>
           <ul className="text-xs text-primary space-y-2">
             {comparisons.map((comparison, index) => {

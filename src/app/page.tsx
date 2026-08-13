@@ -4,6 +4,8 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { TreeType, TREE_TYPES } from '@/types/treeTypes';
 import { ExportData } from '@/utils/exportUtils';
 import { generateShareableUrl, getShareParameterFromUrl, decodeUrlToState, copyToClipboard, ShareableState } from '@/utils/shareableLink';
+import { logger } from '@/utils/logger';
+import { equalSplitPercentages, hasCoordinates } from '@/utils/geo';
 
 // Lazy load components for better performance
 const LocationMap = lazy(() => import('@/components/LocationMap'));
@@ -631,14 +633,14 @@ export default function Home() {
     if (shareParam) {
       const state = decodeUrlToState(shareParam);
       if (state) {
-        console.log('Loading shared analysis:', state);
+        logger.log('Loading shared analysis:', state);
         setSimulationMode(state.mode);
         setYears(state.years);
         setCalculationMode(state.calculationMode);
         if (state.averageTreeAge) setAverageTreeAge(state.averageTreeAge);
-        if (state.latitude && state.longitude) {
-          setSelectedLatitude(state.latitude);
-          setSelectedLongitude(state.longitude);
+        if (hasCoordinates(state.latitude, state.longitude)) {
+          setSelectedLatitude(state.latitude!);
+          setSelectedLongitude(state.longitude!);
         }
         if (state.region) {
           setSelectedRegion(state.region);
@@ -666,7 +668,7 @@ export default function Home() {
     // Clear any existing region selection when location is searched
     setSelectedRegion(null);
     // You could add a toast notification here to show the searched location
-    console.log(`Searched for: ${name} at ${lat}, ${lng}`);
+    logger.log(`Searched for: ${name} at ${lat}, ${lng}`);
   };
 
   const handleRegionSelect = (bounds: {
@@ -685,12 +687,26 @@ export default function Home() {
 
   const handleTreeSelectionChange = (trees: TreeType[]) => {
     setSelectedTrees(trees);
-    // Clear percentages when trees change
-    const newPercentages: { [key: string]: number } = {};
-    trees.forEach(tree => {
-      newPercentages[tree.id] = 0;
+    setTreePercentages(prev => {
+      const next: { [key: string]: number } = {};
+      trees.forEach(tree => {
+        if (prev[tree.id] != null) {
+          next[tree.id] = prev[tree.id];
+        }
+      });
+
+      const allUnset = trees.length > 0 && trees.every(tree => !next[tree.id]);
+      if (allUnset) {
+        return equalSplitPercentages(trees.map(tree => tree.id));
+      }
+
+      trees.forEach(tree => {
+        if (next[tree.id] == null) {
+          next[tree.id] = 0;
+        }
+      });
+      return next;
     });
-    setTreePercentages(newPercentages);
     // Clear planting data as it needs to be recalculated
     setPlantingData(null);
   };
@@ -705,7 +721,7 @@ export default function Home() {
     try {
       setExportData(prev => prev ? { ...prev, ...data } : data as ExportData);
     } catch (error) {
-      console.warn('Error updating impact data:', error);
+      logger.warn('Error updating impact data:', error);
     }
   };
 
@@ -717,13 +733,20 @@ export default function Home() {
         setPlantingData(data.plantingData);
       }
     } catch (error) {
-      console.warn('Error updating planting data:', error);
+      logger.warn('Error updating planting data:', error);
     }
   };
 
   const handleSoilClimateDataReady = (soil: { carbon: number | null; ph: number | null } | null, climate: { temperature: number | null; precipitation: number | null; historicalData?: { temperatures: number[]; precipitations: number[] } } | null) => {
     setSoilData(soil);
     setClimateData(climate);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedLatitude(null);
+    setSelectedLongitude(null);
+    setSelectedRegion(null);
+    setPlantingData(null);
   };
 
   const handleReset = () => {
@@ -751,8 +774,8 @@ export default function Home() {
   const handleShare = async () => {
     const state: ShareableState = {
       mode: simulationMode,
-      latitude: selectedLatitude || undefined,
-      longitude: selectedLongitude || undefined,
+      latitude: selectedLatitude ?? undefined,
+      longitude: selectedLongitude ?? undefined,
       region: selectedRegion || undefined,
       years,
       calculationMode,
@@ -774,7 +797,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-8 lg:p-12">
+    <div className="flex min-h-screen flex-col items-center justify-center p-6 md:p-8 lg:p-12">
       <div className="container mx-auto max-w-7xl w-full">
         <section className="text-center mb-8" aria-labelledby="main-heading">
           <h1 id="main-heading" className="text-3xl font-bold text-center mb-2">
@@ -898,6 +921,7 @@ export default function Home() {
                 onLocationSelect={handleLocationSelect}
                 onRegionSelect={handleRegionSelect}
                 onSearchLocation={handleSearchLocation}
+                onClearSelection={handleClearSelection}
                 initialRegion={selectedRegion}
                 initialLatitude={selectedLatitude}
                 initialLongitude={selectedLongitude}
@@ -985,7 +1009,7 @@ export default function Home() {
               </div>
             </div>
             
-            {(selectedRegion || (selectedLatitude && selectedLongitude)) && selectedTrees.length > 0 ? (
+            {(selectedRegion || hasCoordinates(selectedLatitude, selectedLongitude)) && selectedTrees.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Calculator Section */}
                 <div>
@@ -998,7 +1022,7 @@ export default function Home() {
                     </div>
                   }>
                     <TreePlantingCalculator
-                      selectedRegion={selectedRegion || (selectedLatitude && selectedLongitude ? {
+                      selectedRegion={selectedRegion || (hasCoordinates(selectedLatitude, selectedLongitude) ? {
                         north: selectedLatitude + 0.01,
                         south: selectedLatitude - 0.01,
                         east: selectedLongitude + 0.01,
@@ -1226,6 +1250,6 @@ export default function Home() {
         </div>
 
       </div>
-    </main>
+    </div>
   );
 }

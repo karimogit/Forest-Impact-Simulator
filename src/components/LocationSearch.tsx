@@ -151,11 +151,14 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect }) => 
     <div className="relative mb-4" ref={searchRef}>
       <form onSubmit={handleSubmit}>
         <div className="relative">
+          <label htmlFor="location-search" className="sr-only">Search for a location</label>
           <input
+            id="location-search"
             type="text"
             value={query}
             onChange={handleSearch}
             placeholder="Search for a location..."
+            aria-label="Search for a location"
             className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

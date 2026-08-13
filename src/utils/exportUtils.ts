@@ -72,8 +72,13 @@ export const generateGeoJSON = (data: ExportData): string => {
     properties: Record<string, string | number | null>;
   }> = [];
   
-  // Add point feature for the selected location
-  if (data.metadata.location.latitude && data.metadata.location.longitude) {
+  // Add point feature for the selected location (0° lat/lon are valid)
+  if (
+    data.metadata.location.latitude != null &&
+    data.metadata.location.longitude != null &&
+    Number.isFinite(data.metadata.location.latitude) &&
+    Number.isFinite(data.metadata.location.longitude)
+  ) {
     features.push({
       type: "Feature",
       geometry: {
@@ -213,7 +218,7 @@ export const generateCSV = (data: ExportData): string => {
   
   // Escape values that contain commas or quotes
   const escapeValue = (value: string): string => {
-    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    if (value.includes(',') || value.includes(';') || value.includes('"') || value.includes('\n')) {
       return `"${value.replace(/"/g, '""')}"`;
     }
     return value;

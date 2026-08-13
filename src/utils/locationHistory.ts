@@ -2,6 +2,8 @@
  * Location search history and recent selections
  */
 
+import { logger } from './logger';
+
 export interface LocationHistoryItem {
   id: string;
   name: string;
@@ -37,7 +39,7 @@ export function getLocationHistory(): LocationHistoryItem[] {
     const history = JSON.parse(stored) as LocationHistoryItem[];
     return history.sort((a, b) => b.timestamp - a.timestamp);
   } catch (error) {
-    console.error('Error reading location history:', error);
+    logger.error('Error reading location history:', error);
     return [];
   }
 }
@@ -81,7 +83,7 @@ export function addToLocationHistory(item: Omit<LocationHistoryItem, 'id' | 'tim
     
     localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
   } catch (error) {
-    console.error('Error adding to location history:', error);
+    logger.error('Error adding to location history:', error);
   }
 }
 
@@ -96,7 +98,7 @@ export function clearLocationHistory(): void {
   try {
     localStorage.removeItem(HISTORY_KEY);
   } catch (error) {
-    console.error('Error clearing location history:', error);
+    logger.error('Error clearing location history:', error);
   }
 }
 
@@ -113,7 +115,7 @@ export function removeFromLocationHistory(id: string): void {
     const filtered = history.filter(item => item.id !== id);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(filtered));
   } catch (error) {
-    console.error('Error removing from location history:', error);
+    logger.error('Error removing from location history:', error);
   }
 }
 
