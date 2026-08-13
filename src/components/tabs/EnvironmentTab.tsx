@@ -1,5 +1,4 @@
 import React from 'react';
-import { TreeType } from '@/types/treeTypes';
 import { calculateAnnualCarbonWithGrowth, calculateClearCuttingCarbon } from '@/utils/treeCalculations';
 import { CollapsibleSection } from './CollapsibleSection';
 
@@ -45,7 +44,11 @@ export const EnvironmentTab: React.FC<EnvironmentTabProps> = ({
   formatTotalCarbon,
   getTotalCarbonUnit
 }) => {
-  const carbonCalc = calculateClearCuttingCarbon(impact.carbonSequestration, averageTreeAge, years);
+  const perTreeRate = calculationMode === 'perArea' && totalTrees > 0
+    ? impact.carbonSequestration / totalTrees
+    : impact.carbonSequestration;
+  const carbonCalc = calculateClearCuttingCarbon(perTreeRate, averageTreeAge, years);
+  const areaScale = calculationMode === 'perArea' ? totalTrees : 1;
   
   return (
     <div className="space-y-3" role="tabpanel" id="environment-panel" aria-labelledby="environment-tab">
@@ -59,15 +62,15 @@ export const EnvironmentTab: React.FC<EnvironmentTabProps> = ({
                 : `${carbonCalc.immediate.toFixed(1)} kg CO₂`
               : simulationMode === 'planting'
                 ? `+${(calculateAnnualCarbonWithGrowth(impact.carbonSequestration, years) / 1000).toFixed(1)} metric ton CO₂/yr`
-                : `${formatTotalCarbon(carbonCalc.immediate * totalTrees)} metric tons CO₂`
+                : `${formatTotalCarbon(carbonCalc.immediate * areaScale)} metric tons CO₂`
             }
             description={calculationMode === 'perTree' 
               ? simulationMode === 'planting' 
                 ? "Current year's carbon sequestration per tree based on growth stage. Trees start with low sequestration and increase as they mature over 20+ years."
-                : `Carbon released immediately when cutting a ${averageTreeAge}-year-old tree. This represents the tree's current annual carbon sequestration rate.`
+                : `Carbon stored over the tree's ${averageTreeAge}-year lifetime, released when it is cut.`
               : simulationMode === 'planting'
                 ? `Current year's carbon sequestration for all ${totalTrees.toLocaleString()} trees in the selected area, based on tree growth stage. This is the yearly rate, not cumulative.`
-                : `Carbon released immediately when cutting all ${totalTrees.toLocaleString()} trees at age ${averageTreeAge} years. This represents the current annual sequestration rate.`
+                : `Carbon stored in all ${totalTrees.toLocaleString()} trees over ${averageTreeAge} years, released when they are cut.`
             }
             isExpanded={expandedSections['annual-carbon'] || false}
             onToggle={() => onToggleSection('annual-carbon')}
@@ -79,7 +82,7 @@ export const EnvironmentTab: React.FC<EnvironmentTabProps> = ({
               ? `+${formatTotalCarbon(totalCarbon)} ${getTotalCarbonUnit().replace('metric tons', 't').replace('kg CO₂', 'kg CO₂')}`
               : calculationMode === 'perTree'
                 ? `${formatTotalCarbon(carbonCalc.total)} kg CO₂`
-                : `${formatTotalCarbon(carbonCalc.total)} metric tons CO₂`
+                : `${formatTotalCarbon(carbonCalc.total * areaScale)} metric tons CO₂`
             }
             description={calculationMode === 'perTree' 
               ? simulationMode === 'planting'

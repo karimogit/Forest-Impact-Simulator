@@ -91,22 +91,6 @@ export const TREE_TYPES: TreeType[] = [
     fireResistance: 2
   },
   {
-    id: 'maple',
-    name: 'Maple',
-    scientificName: 'Acer saccharum',
-    category: 'deciduous',
-    carbonSequestration: 20,
-    growthRate: 'medium',
-    maxHeight: 20,
-    lifespan: 200,
-    climateZones: ['temperate'],
-    soilPreferences: ['moist', 'well-drained'],
-    waterNeeds: 'medium',
-    biodiversityValue: 4,
-    resilienceScore: 3,
-    description: 'Beautiful deciduous trees with distinctive leaves. Excellent for urban environments and wildlife.'
-  },
-  {
     id: 'eucalyptus',
     name: 'Eucalyptus',
     scientificName: 'Eucalyptus globulus',
@@ -310,12 +294,12 @@ export const TREE_TYPES: TreeType[] = [
     growthRate: 'fast',
     maxHeight: 35,
     lifespan: 300,
-    climateZones: ['temperate'],
-    soilPreferences: ['moist', 'well-drained'],
+    climateZones: ['temperate', 'subtropical'],
+    soilPreferences: ['deep', 'moist', 'well-drained'],
     waterNeeds: 'medium',
     biodiversityValue: 4,
     resilienceScore: 3,
-    description: 'Fast-growing eastern US native. Beautiful flowers and excellent timber. Great for urban planting.'
+    description: 'Fast-growing eastern US native (Liriodendron tulipifera). Distinctive flowers, high carbon storage, and excellent timber.'
   },
   {
     id: 'sugar_maple',
@@ -1291,22 +1275,6 @@ export const TREE_TYPES: TreeType[] = [
     description: 'Adaptable urban tree. Disease-resistant elm. Good for urban forestry and climate adaptation projects.'
   },
   {
-    id: 'tulip-tree',
-    name: 'Tulip Tree',
-    scientificName: 'Liriodendron tulipifera',
-    category: 'subtropical',
-    carbonSequestration: 32,
-    growthRate: 'fast',
-    maxHeight: 40,
-    lifespan: 200,
-    climateZones: ['subtropical', 'temperate'],
-    soilPreferences: ['deep', 'moist', 'well-drained'],
-    waterNeeds: 'medium',
-    biodiversityValue: 4,
-    resilienceScore: 3,
-    description: 'Tall fast-growing tree with distinctive flowers. High carbon storage and important for timber and wildlife.'
-  },
-  {
     id: 'jacaranda',
     name: 'Jacaranda',
     scientificName: 'Jacaranda mimosifolia',
@@ -1324,8 +1292,14 @@ export const TREE_TYPES: TreeType[] = [
   }
 ];
 
+const TREE_ID_ALIASES: Record<string, string> = {
+  maple: 'sugar_maple',
+  'tulip-tree': 'tulip_poplar',
+};
+
 export const getTreeTypeById = (id: string): TreeType | undefined => {
-  return TREE_TYPES.find(tree => tree.id === id);
+  const canonicalId = TREE_ID_ALIASES[id] || id;
+  return TREE_TYPES.find(tree => tree.id === canonicalId);
 };
 
 export const getTreeTypesByClimate = (climate: string): TreeType[] => {

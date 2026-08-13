@@ -19,6 +19,11 @@ body {
   color: var(--foreground);
 }
 
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 main {
   background: #FFFFFF !important;
 }

@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { TreeType, TREE_TYPES } from '@/types/treeTypes';
+import { TreeType, getTreeTypeById } from '@/types/treeTypes';
 import { ExportData } from '@/utils/exportUtils';
-import { generateShareableUrl, getShareParameterFromUrl, decodeUrlToState, copyToClipboard, ShareableState } from '@/utils/shareableLink';
+import { getShareParameterFromUrl, decodeUrlToState } from '@/utils/shareableLink';
+import { logger } from '@/utils/logger';
+import { equalSplitPercentages, hasCoordinates } from '@/utils/geo';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Lazy load components for better performance
 const LocationMap = lazy(() => import('@/components/LocationMap'));
@@ -631,23 +634,34 @@ export default function Home() {
     if (shareParam) {
       const state = decodeUrlToState(shareParam);
       if (state) {
-        console.log('Loading shared analysis:', state);
+        logger.log('Loading shared analysis:', state);
         setSimulationMode(state.mode);
         setYears(state.years);
         setCalculationMode(state.calculationMode);
         if (state.averageTreeAge) setAverageTreeAge(state.averageTreeAge);
-        if (state.latitude && state.longitude) {
-          setSelectedLatitude(state.latitude);
-          setSelectedLongitude(state.longitude);
+        if (hasCoordinates(state.latitude, state.longitude)) {
+          setSelectedLatitude(state.latitude!);
+          setSelectedLongitude(state.longitude!);
         }
         if (state.region) {
           setSelectedRegion(state.region);
         }
         // Load selected trees
         if (state.treeIds.length > 0) {
-          const trees = TREE_TYPES.filter(t => state.treeIds.includes(t.id));
-          setSelectedTrees(trees);
-          setTreePercentages(state.treePercentages || {});
+          const resolved = state.treeIds
+            .map(id => getTreeTypeById(id))
+            .filter((tree): tree is TreeType => tree != null);
+          const uniqueTrees = resolved.filter(
+            (tree, index) => resolved.findIndex(candidate => candidate.id === tree.id) === index
+          );
+          const remappedPercentages: { [key: string]: number } = {};
+          state.treeIds.forEach(id => {
+            const tree = getTreeTypeById(id);
+            if (!tree) return;
+            remappedPercentages[tree.id] = (remappedPercentages[tree.id] || 0) + (state.treePercentages?.[id] || 0);
+          });
+          setSelectedTrees(uniqueTrees);
+          setTreePercentages(remappedPercentages);
         }
       }
     }
@@ -666,7 +680,7 @@ export default function Home() {
     // Clear any existing region selection when location is searched
     setSelectedRegion(null);
     // You could add a toast notification here to show the searched location
-    console.log(`Searched for: ${name} at ${lat}, ${lng}`);
+    logger.log(`Searched for: ${name} at ${lat}, ${lng}`);
   };
 
   const handleRegionSelect = (bounds: {
@@ -685,12 +699,26 @@ export default function Home() {
 
   const handleTreeSelectionChange = (trees: TreeType[]) => {
     setSelectedTrees(trees);
-    // Clear percentages when trees change
-    const newPercentages: { [key: string]: number } = {};
-    trees.forEach(tree => {
-      newPercentages[tree.id] = 0;
+    setTreePercentages(prev => {
+      const next: { [key: string]: number } = {};
+      trees.forEach(tree => {
+        if (prev[tree.id] != null) {
+          next[tree.id] = prev[tree.id];
+        }
+      });
+
+      const allUnset = trees.length > 0 && trees.every(tree => !next[tree.id]);
+      if (allUnset) {
+        return equalSplitPercentages(trees.map(tree => tree.id));
+      }
+
+      trees.forEach(tree => {
+        if (next[tree.id] == null) {
+          next[tree.id] = 0;
+        }
+      });
+      return next;
     });
-    setTreePercentages(newPercentages);
     // Clear planting data as it needs to be recalculated
     setPlantingData(null);
   };
@@ -705,7 +733,7 @@ export default function Home() {
     try {
       setExportData(prev => prev ? { ...prev, ...data } : data as ExportData);
     } catch (error) {
-      console.warn('Error updating impact data:', error);
+      logger.warn('Error updating impact data:', error);
     }
   };
 
@@ -717,13 +745,20 @@ export default function Home() {
         setPlantingData(data.plantingData);
       }
     } catch (error) {
-      console.warn('Error updating planting data:', error);
+      logger.warn('Error updating planting data:', error);
     }
   };
 
   const handleSoilClimateDataReady = (soil: { carbon: number | null; ph: number | null } | null, climate: { temperature: number | null; precipitation: number | null; historicalData?: { temperatures: number[]; precipitations: number[] } } | null) => {
     setSoilData(soil);
     setClimateData(climate);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedLatitude(null);
+    setSelectedLongitude(null);
+    setSelectedRegion(null);
+    setPlantingData(null);
   };
 
   const handleReset = () => {
@@ -748,33 +783,8 @@ export default function Home() {
     }
   };
 
-  const handleShare = async () => {
-    const state: ShareableState = {
-      mode: simulationMode,
-      latitude: selectedLatitude || undefined,
-      longitude: selectedLongitude || undefined,
-      region: selectedRegion || undefined,
-      years,
-      calculationMode,
-      averageTreeAge: simulationMode === 'clear-cutting' ? averageTreeAge : undefined,
-      treeIds: selectedTrees.map(t => t.id),
-      treePercentages
-    };
-
-    const url = generateShareableUrl(state);
-    const success = await copyToClipboard(url);
-    
-    if (success) {
-      setShareNotification('Link copied to clipboard!');
-      setTimeout(() => setShareNotification(null), 3000);
-    } else {
-      setShareNotification('Failed to copy link. Please try again.');
-      setTimeout(() => setShareNotification(null), 3000);
-    }
-  };
-
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-8 lg:p-12">
+    <div className="flex min-h-screen flex-col items-center justify-center p-6 md:p-8 lg:p-12">
       <div className="container mx-auto max-w-7xl w-full">
         <section className="text-center mb-8" aria-labelledby="main-heading">
           <h1 id="main-heading" className="text-3xl font-bold text-center mb-2">
@@ -832,7 +842,7 @@ export default function Home() {
               </div>
             </div>
             {/* Reset Button */}
-            {(selectedLatitude || selectedLongitude || selectedRegion || selectedTrees.length > 0) && (
+            {(hasCoordinates(selectedLatitude, selectedLongitude) || selectedRegion || selectedTrees.length > 0) && (
               <button
                 onClick={handleReset}
                 className="bg-white border border-red-300 text-red-700 hover:bg-red-50 px-4 py-3 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
@@ -884,25 +894,32 @@ export default function Home() {
                 <div className="text-base text-gray-600">
                   <ul className="list-disc pl-6 space-y-2">
                     <li><strong>Desktop:</strong> Press CTRL + mouse click and drag.</li>
-                    <li><strong>Mobile:</strong> Tap to create a selection square, then drag to resize.</li>
+                    <li><strong>Mobile:</strong> Tap <em>Draw</em>, then tap the map to create a selection square and drag to resize.</li>
                   </ul>
                 </div>
               </div>
             </div>
-            <Suspense fallback={
-              <div className="flex items-center justify-center h-96">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <ErrorBoundary fallback={
+              <div className="p-6 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                The map failed to load. Refresh the page or search for a location instead.
               </div>
             }>
-              <LocationMap 
-                onLocationSelect={handleLocationSelect}
-                onRegionSelect={handleRegionSelect}
-                onSearchLocation={handleSearchLocation}
-                initialRegion={selectedRegion}
-                initialLatitude={selectedLatitude}
-                initialLongitude={selectedLongitude}
-              />
-            </Suspense>
+              <Suspense fallback={
+                <div className="flex items-center justify-center h-96">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              }>
+                <LocationMap 
+                  onLocationSelect={handleLocationSelect}
+                  onRegionSelect={handleRegionSelect}
+                  onSearchLocation={handleSearchLocation}
+                  onClearSelection={handleClearSelection}
+                  initialRegion={selectedRegion}
+                  initialLatitude={selectedLatitude}
+                  initialLongitude={selectedLongitude}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </div>
           
           <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-shadow">
@@ -935,21 +952,27 @@ export default function Home() {
               </div>
             </div>
             <div className="flex-1">
-              <Suspense fallback={
-                <div className="flex items-center justify-center h-48">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <ErrorBoundary fallback={
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                  Tree selection failed to load. Refresh the page to try again.
                 </div>
               }>
-                <TreeTypeSelector
-                  selectedTrees={selectedTrees}
-                  onTreeSelectionChange={handleTreeSelectionChange}
-                  treePercentages={treePercentages}
-                  onTreePercentagesChange={handleTreePercentagesChange}
-                  latitude={selectedLatitude || undefined}
-                  selectedRegion={selectedRegion}
-                  simulationMode={simulationMode}
-                />
-              </Suspense>
+                <Suspense fallback={
+                  <div className="flex items-center justify-center h-48">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  </div>
+                }>
+                  <TreeTypeSelector
+                    selectedTrees={selectedTrees}
+                    onTreeSelectionChange={handleTreeSelectionChange}
+                    treePercentages={treePercentages}
+                    onTreePercentagesChange={handleTreePercentagesChange}
+                    latitude={selectedLatitude ?? undefined}
+                    selectedRegion={selectedRegion}
+                    simulationMode={simulationMode}
+                  />
+                </Suspense>
+              </ErrorBoundary>
             </div>
           </div>
         </div>
@@ -985,24 +1008,29 @@ export default function Home() {
               </div>
             </div>
             
-            {(selectedRegion || (selectedLatitude && selectedLongitude)) && selectedTrees.length > 0 ? (
+            {(selectedRegion || hasCoordinates(selectedLatitude, selectedLongitude)) && selectedTrees.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Calculator Section */}
                 <div>
                   <h3 className="text-base font-semibold text-gray-800 mb-4">
                     {simulationMode === 'planting' ? 'Planting Calculations' : 'Removal Configuration'}
                   </h3>
+                  <ErrorBoundary fallback={
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                      Planting calculations failed. Adjust your selection and try again.
+                    </div>
+                  }>
                   <Suspense fallback={
                     <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                     </div>
                   }>
                     <TreePlantingCalculator
-                      selectedRegion={selectedRegion || (selectedLatitude && selectedLongitude ? {
-                        north: selectedLatitude + 0.01,
-                        south: selectedLatitude - 0.01,
-                        east: selectedLongitude + 0.01,
-                        west: selectedLongitude - 0.01
+                      selectedRegion={selectedRegion || (hasCoordinates(selectedLatitude, selectedLongitude) ? {
+                        north: selectedLatitude! + 0.01,
+                        south: selectedLatitude! - 0.01,
+                        east: selectedLongitude! + 0.01,
+                        west: selectedLongitude! - 0.01
                       } : null)}
                       selectedTreeType={selectedTrees.length === 1 ? selectedTrees[0] : null}
                       selectedTrees={selectedTrees}
@@ -1017,19 +1045,25 @@ export default function Home() {
                       climate={climateData}
                     />
                   </Suspense>
+                  </ErrorBoundary>
                 </div>
                 
                 {/* Impact Results Section */}
                 <div>
                   <h3 className="text-base font-semibold text-gray-800 mb-4">Impact Analysis</h3>
+                  <ErrorBoundary fallback={
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                      Impact analysis failed. Refresh the page or change the selected region.
+                    </div>
+                  }>
                   <Suspense fallback={
                     <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                     </div>
                   }>
                     <ForestImpactCalculator 
-                      latitude={selectedLatitude || (selectedRegion ? (selectedRegion.north + selectedRegion.south) / 2 : null)}
-                      longitude={selectedLongitude || (selectedRegion ? (selectedRegion.east + selectedRegion.west) / 2 : null)}
+                      latitude={selectedLatitude ?? (selectedRegion ? (selectedRegion.north + selectedRegion.south) / 2 : null)}
+                      longitude={selectedLongitude ?? (selectedRegion ? (selectedRegion.east + selectedRegion.west) / 2 : null)}
                       years={years}
                       selectedTreeType={selectedTrees.length === 1 ? selectedTrees[0] : null}
                       selectedTrees={selectedTrees.length > 1 ? selectedTrees : undefined}
@@ -1044,6 +1078,7 @@ export default function Home() {
                       onSoilClimateDataReady={handleSoilClimateDataReady}
                     />
                   </Suspense>
+                  </ErrorBoundary>
                 </div>
               </div>
             ) : (
@@ -1094,11 +1129,11 @@ export default function Home() {
                   averageResilience: 0
                 }
               }}
-              disabled={!selectedTrees.length || (!selectedLatitude && !selectedLongitude && !selectedRegion)}
-              shareableState={(selectedLatitude || selectedLongitude || selectedRegion) && selectedTrees.length > 0 ? {
+              disabled={!selectedTrees.length || (!hasCoordinates(selectedLatitude, selectedLongitude) && !selectedRegion)}
+              shareableState={(hasCoordinates(selectedLatitude, selectedLongitude) || selectedRegion) && selectedTrees.length > 0 ? {
                 mode: simulationMode,
-                latitude: selectedLatitude || undefined,
-                longitude: selectedLongitude || undefined,
+                latitude: selectedLatitude ?? undefined,
+                longitude: selectedLongitude ?? undefined,
                 region: selectedRegion || undefined,
                 years,
                 calculationMode,
@@ -1226,6 +1261,6 @@ export default function Home() {
         </div>
 
       </div>
-    </main>
+    </div>
   );
 }

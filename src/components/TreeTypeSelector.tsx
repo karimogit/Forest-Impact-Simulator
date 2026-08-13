@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { TreeType, TREE_TYPES, getTreeTypesByClimate } from '@/types/treeTypes';
 import { getTreeCategoryColor } from '@/utils/treeColors';
+import { equalSplitPercentages } from '@/utils/geo';
 
 interface TreeTypeSelectorProps {
   selectedTrees: TreeType[];
@@ -246,12 +247,7 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
             <div className="flex gap-2">
               <button
                 onClick={() => {
-                  const equalPercentage = Math.round(100 / selectedTrees.length);
-                  const newPercentages: { [key: string]: number } = {};
-                  selectedTrees.forEach(tree => {
-                    newPercentages[tree.id] = equalPercentage;
-                  });
-                  onTreePercentagesChange(newPercentages);
+                  onTreePercentagesChange(equalSplitPercentages(selectedTrees.map(tree => tree.id)));
                 }}
                 className="px-3 py-2 text-xs bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold transition-colors"
               >

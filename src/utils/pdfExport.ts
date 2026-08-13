@@ -5,6 +5,9 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ExportData } from './exportUtils';
+import { calculateRegionArea } from './treePlanting';
+import { formatLatitude, formatLongitude, hasCoordinates } from './geo';
+import { TreeType } from '@/types/treeTypes';
 
 export async function generatePDFReport(data: ExportData): Promise<void> {
   const doc = new jsPDF();
@@ -87,19 +90,18 @@ export async function generatePDFReport(data: ExportData): Promise<void> {
     
     metadataInfo.push([
       'Region Bounds',
-      `${region.north.toFixed(4)}°N to ${region.south.toFixed(4)}°N, ${region.west.toFixed(4)}°W to ${region.east.toFixed(4)}°E`
+      `${formatLatitude(region.south)} to ${formatLatitude(region.north)}, ${formatLongitude(region.west)} to ${formatLongitude(region.east)}`
     ]);
     
-    // Calculate and add region area
-    const areaKm2 = Math.abs((region.north - region.south) * (region.east - region.west)) * 111 * 111 * Math.cos((centerLat * Math.PI) / 180);
-    const areaHa = areaKm2 * 100;
+    const areaHa = calculateRegionArea(region);
+    const areaKm2 = areaHa / 100;
     metadataInfo.push([
       'Region Area',
       `${areaHa.toFixed(2)} hectares (${areaKm2.toFixed(2)} km²)`
     ]);
-  } else if (data.metadata.location?.latitude && data.metadata.location?.longitude) {
-    const lat = data.metadata.location.latitude;
-    const lon = data.metadata.location.longitude;
+  } else if (hasCoordinates(data.metadata.location?.latitude, data.metadata.location?.longitude)) {
+    const lat = data.metadata.location.latitude as number;
+    const lon = data.metadata.location.longitude as number;
     const latLabel = lat >= 0 ? 'N' : 'S';
     const lonLabel = lon >= 0 ? 'E' : 'W';
     
@@ -145,8 +147,8 @@ export async function generatePDFReport(data: ExportData): Promise<void> {
     doc.text('Selected Tree Species', 14, yPos);
     yPos += 8;
     
-    const treeData = data.metadata.simulation.selectedTrees.map((tree: { name: string; scientificName: string }) => {
-      const percentage = data.metadata.simulation?.treePercentages?.[tree.name.toLowerCase().replace(/\s+/g, '-')] || 0;
+    const treeData = data.metadata.simulation.selectedTrees.map((tree: TreeType) => {
+      const percentage = data.metadata.simulation?.treePercentages?.[tree.id] ?? 0;
       return [
         tree.name,
         tree.scientificName,
