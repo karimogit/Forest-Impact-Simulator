@@ -812,8 +812,6 @@ interface LeafletMouseEvent {
 const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsChange: (bounds: MapBounds) => void; onSelectingChange?: (selecting: boolean) => void }) => {
   const map = useMap();
   const [isSelecting, setIsSelecting] = useState(false);
-  const [startPoint, setStartPoint] = useState<[number, number] | null>(null);
-  const [currentBounds, setCurrentBounds] = useState<MapBounds | null>(null);
   const tempRectangleRef = useRef<L.Rectangle | null>(null);
   const isSelectingRef = useRef(false);
   const startPointRef = useRef<[number, number] | null>(null);
@@ -863,9 +861,7 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
       e.originalEvent.stopPropagation();
       setIsSelecting(true);
       isSelectingRef.current = true;
-      const start: [number, number] = [e.latlng.lat, e.latlng.lng];
-      setStartPoint(start);
-      startPointRef.current = start;
+      startPointRef.current = [e.latlng.lat, e.latlng.lng];
       map.dragging.disable();
       e.originalEvent.stopImmediatePropagation();
     };
@@ -889,10 +885,7 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
       logger.log('Created initial selection square');
       setIsSelecting(true);
       isSelectingRef.current = true;
-      const start: [number, number] = [centerLat, centerLng];
-      setStartPoint(start);
-      startPointRef.current = start;
-      setCurrentBounds(bounds);
+      startPointRef.current = [centerLat, centerLng];
       currentBoundsRef.current = bounds;
       map.dragging.disable();
       
@@ -924,7 +917,6 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
         getWest: () => Math.min(start[1], e.latlng.lng),
         getEast: () => Math.max(start[1], e.latlng.lng),
       };
-      setCurrentBounds(bounds);
       currentBoundsRef.current = bounds;
       
       // Update temporary rectangle for visual feedback
@@ -960,7 +952,6 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
         getWest: () => Math.min(start[1], e.latlng.lng),
         getEast: () => Math.max(start[1], e.latlng.lng),
       };
-      setCurrentBounds(bounds);
       currentBoundsRef.current = bounds;
       
       // Update temporary rectangle for visual feedback
@@ -1010,9 +1001,7 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
       map.dragging.enable();
       setIsSelecting(false);
       isSelectingRef.current = false;
-      setStartPoint(null);
       startPointRef.current = null;
-      setCurrentBounds(null);
       currentBoundsRef.current = null;
     };
 
@@ -1035,9 +1024,7 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
       map.dragging.enable();
       setIsSelecting(false);
       isSelectingRef.current = false;
-      setStartPoint(null);
       startPointRef.current = null;
-      setCurrentBounds(null);
       currentBoundsRef.current = null;
     };
 
@@ -1149,9 +1136,9 @@ const LocationMap: React.FC<LocationMapProps> = ({
       setSelectedRegion([initialRegion.north, initialRegion.west, initialRegion.south, initialRegion.east]);
       setSelectedLocation(null);
     } else if (hasCoordinates(initialLatitude, initialLongitude)) {
-      newCenter = [initialLatitude, initialLongitude];
+      newCenter = [initialLatitude!, initialLongitude!];
       newZoom = 12; // Zoom in closer for point locations
-      setSelectedLocation([initialLatitude, initialLongitude]);
+      setSelectedLocation([initialLatitude!, initialLongitude!]);
       setSelectedRegion(null);
     } else {
       return;

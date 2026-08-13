@@ -8,7 +8,6 @@ import { calculateRegionArea } from '@/utils/treePlanting';
 import { getCachedData, setCachedData, generateLocationKey } from '@/utils/apiCache';
 import {
   TREE_GROWTH_FACTORS,
-  TREE_AGE_GROWTH_FACTORS,
   BIODIVERSITY_GROWTH_FACTORS,
   COMPARISON_FACTORS,
   SOCIAL_IMPACT,
@@ -371,7 +370,7 @@ const fetchClimateData = async (lat: number, lon: number, retries = 2): Promise<
           }
         }
       }
-    } catch (histError) {
+    } catch {
       // Historical data fetch failed - continue without it
       logger.log('[CLIMATE API] Historical data unavailable, continuing with current data only');
     }
@@ -676,7 +675,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
       if (percentagesSumTo100(treePercentages)) {
         // Use percentage distribution
         treeTypes.forEach(tree => {
-          const percentage = treePercentages[tree.id] || 0;
+          const percentage = treePercentages?.[tree.id] || 0;
           const weight = percentage / 100;
           carbonBase += tree.carbonSequestration * weight;
           biodiversityBase += tree.biodiversityValue * weight;

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { TreeType, TREE_TYPES } from '@/types/treeTypes';
 import { ExportData } from '@/utils/exportUtils';
-import { generateShareableUrl, getShareParameterFromUrl, decodeUrlToState, copyToClipboard, ShareableState } from '@/utils/shareableLink';
+import { getShareParameterFromUrl, decodeUrlToState } from '@/utils/shareableLink';
 import { logger } from '@/utils/logger';
 import { equalSplitPercentages, hasCoordinates } from '@/utils/geo';
 
@@ -771,31 +771,6 @@ export default function Home() {
     }
   };
 
-  const handleShare = async () => {
-    const state: ShareableState = {
-      mode: simulationMode,
-      latitude: selectedLatitude ?? undefined,
-      longitude: selectedLongitude ?? undefined,
-      region: selectedRegion || undefined,
-      years,
-      calculationMode,
-      averageTreeAge: simulationMode === 'clear-cutting' ? averageTreeAge : undefined,
-      treeIds: selectedTrees.map(t => t.id),
-      treePercentages
-    };
-
-    const url = generateShareableUrl(state);
-    const success = await copyToClipboard(url);
-    
-    if (success) {
-      setShareNotification('Link copied to clipboard!');
-      setTimeout(() => setShareNotification(null), 3000);
-    } else {
-      setShareNotification('Failed to copy link. Please try again.');
-      setTimeout(() => setShareNotification(null), 3000);
-    }
-  };
-
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-6 md:p-8 lg:p-12">
       <div className="container mx-auto max-w-7xl w-full">
@@ -1023,10 +998,10 @@ export default function Home() {
                   }>
                     <TreePlantingCalculator
                       selectedRegion={selectedRegion || (hasCoordinates(selectedLatitude, selectedLongitude) ? {
-                        north: selectedLatitude + 0.01,
-                        south: selectedLatitude - 0.01,
-                        east: selectedLongitude + 0.01,
-                        west: selectedLongitude - 0.01
+                        north: selectedLatitude! + 0.01,
+                        south: selectedLatitude! - 0.01,
+                        east: selectedLongitude! + 0.01,
+                        west: selectedLongitude! - 0.01
                       } : null)}
                       selectedTreeType={selectedTrees.length === 1 ? selectedTrees[0] : null}
                       selectedTrees={selectedTrees}

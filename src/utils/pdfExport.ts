@@ -100,8 +100,8 @@ export async function generatePDFReport(data: ExportData): Promise<void> {
       `${areaHa.toFixed(2)} hectares (${areaKm2.toFixed(2)} km²)`
     ]);
   } else if (hasCoordinates(data.metadata.location?.latitude, data.metadata.location?.longitude)) {
-    const lat = data.metadata.location.latitude;
-    const lon = data.metadata.location.longitude;
+    const lat = data.metadata.location.latitude as number;
+    const lon = data.metadata.location.longitude as number;
     const latLabel = lat >= 0 ? 'N' : 'S';
     const lonLabel = lon >= 0 ? 'E' : 'W';
     

@@ -1,5 +1,4 @@
 import React from 'react';
-import { TreeType } from '@/types/treeTypes';
 import { calculateAnnualCarbonWithGrowth, calculateClearCuttingCarbon } from '@/utils/treeCalculations';
 import { CollapsibleSection } from './CollapsibleSection';
 
