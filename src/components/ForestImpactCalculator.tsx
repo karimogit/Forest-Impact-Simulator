@@ -7,7 +7,6 @@ import { ExportData } from '@/utils/exportUtils';
 import { calculateRegionArea } from '@/utils/treePlanting';
 import { getCachedData, setCachedData, generateLocationKey } from '@/utils/apiCache';
 import {
-  TREE_GROWTH_FACTORS,
   BIODIVERSITY_GROWTH_FACTORS,
   COMPARISON_FACTORS,
   SOCIAL_IMPACT,
@@ -24,6 +23,7 @@ import { EconomicTab } from './tabs/EconomicTab';
 import { LandUseTab } from './tabs/LandUseTab';
 import { logger } from '@/utils/logger';
 import { hasCoordinates, percentagesSumTo100 } from '@/utils/geo';
+import { getPlantingGrowthFactor } from '@/utils/treeCalculations';
 
 // Simple fetch with timeout
 const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout: number = 15000): Promise<Response> => {
@@ -827,24 +827,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
                           climate?.precipitation !== null && climate?.precipitation !== undefined;
     
     for (let year = 1; year <= years; year++) {
-      // Growth curve: slow start, rapid growth, then plateau
-      // Year 1: 5% of mature rate
-      // Year 2: 15% of mature rate  
-      // Year 3: 30% of mature rate
-      // Year 4: 50% of mature rate
-      // Year 5: 70% of mature rate
-      // Year 6: 85% of mature rate
-      // Year 7+: 95% of mature rate (approaching full maturity)
-      
-      let growthFactor: number;
-      if (year === 1) growthFactor = TREE_GROWTH_FACTORS.YEAR_1;
-      else if (year === 2) growthFactor = TREE_GROWTH_FACTORS.YEAR_2;
-      else if (year === 3) growthFactor = TREE_GROWTH_FACTORS.YEAR_3;
-      else if (year === 4) growthFactor = TREE_GROWTH_FACTORS.YEAR_4;
-      else if (year === 5) growthFactor = TREE_GROWTH_FACTORS.YEAR_5;
-      else if (year === 6) growthFactor = TREE_GROWTH_FACTORS.YEAR_6;
-      else growthFactor = TREE_GROWTH_FACTORS.YEAR_7_PLUS;
-      
+      const growthFactor = getPlantingGrowthFactor(year);
       let combinedGrowthFactor = growthFactor;
       
       // Only apply climate prediction if we have actual climate data

@@ -67,10 +67,10 @@ export const EnvironmentTab: React.FC<EnvironmentTabProps> = ({
             description={calculationMode === 'perTree' 
               ? simulationMode === 'planting' 
                 ? "Current year's carbon sequestration per tree based on growth stage. Trees start with low sequestration and increase as they mature over 20+ years."
-                : `Carbon released immediately when cutting a ${averageTreeAge}-year-old tree. This represents the tree's current annual carbon sequestration rate.`
+                : `Carbon stored over the tree's ${averageTreeAge}-year lifetime, released when it is cut.`
               : simulationMode === 'planting'
                 ? `Current year's carbon sequestration for all ${totalTrees.toLocaleString()} trees in the selected area, based on tree growth stage. This is the yearly rate, not cumulative.`
-                : `Carbon released immediately when cutting all ${totalTrees.toLocaleString()} trees at age ${averageTreeAge} years. This represents the current annual sequestration rate.`
+                : `Carbon stored in all ${totalTrees.toLocaleString()} trees over ${averageTreeAge} years, released when they are cut.`
             }
             isExpanded={expandedSections['annual-carbon'] || false}
             onToggle={() => onToggleSection('annual-carbon')}

@@ -239,30 +239,12 @@ export const calculatePlantingTimeline = (totalTrees: number): {
     recommendedApproach = "Industrial-scale operations with advanced mechanization and multiple teams";
   }
 
-  const treesPerDay = treesPerPersonPerDay * people;
+  const dailyCap = totalTrees < 100 ? 200 : totalTrees < 10000 ? 1000 : 2000;
+  const plantingWindowDays = totalTrees < 100 ? 30 : totalTrees < 10000 ? 60 : 90;
+  const treesPerDay = Math.min(treesPerPersonPerDay * people, dailyCap);
   const treesPerYear = treesPerDay * plantingDaysPerYear;
-  
-  // Ensure realistic project duration - minimum 1 year, but for very small projects, 
-  // use a more realistic approach based on actual planting time
-  let yearsToComplete: number;
-  
-  if (totalTrees < 100) {
-    // For very small projects, calculate based on actual planting time
-    const treesPerDay = Math.min(treesPerPersonPerDay * people, 200); // Cap at 200 trees/day for small projects
-    const daysToComplete = Math.ceil(totalTrees / treesPerDay);
-    yearsToComplete = Math.max(1, Math.ceil(daysToComplete / 30)); // Assume 30-day planting window
-  } else if (totalTrees < 10000) {
-    // For medium projects, use more conservative rates
-    const treesPerDay = Math.min(treesPerPersonPerDay * people, 1000); // Cap at 1000 trees/day for medium projects
-    const daysToComplete = Math.ceil(totalTrees / treesPerDay);
-    yearsToComplete = Math.max(1, Math.ceil(daysToComplete / 60)); // Assume 60-day planting window
-  } else {
-    // For larger projects, use more realistic rates
-    const treesPerDay = Math.min(treesPerPersonPerDay * people, 2000); // Cap at 2000 trees/day for large projects
-    const daysToComplete = Math.ceil(totalTrees / treesPerDay);
-    yearsToComplete = Math.max(1, Math.ceil(daysToComplete / 90)); // Assume 90-day planting window
-  }
-  
+  const daysToComplete = Math.max(1, Math.ceil(totalTrees / Math.max(treesPerDay, 1)));
+  const yearsToComplete = Math.max(1, Math.ceil(daysToComplete / plantingWindowDays));
   const treesPerSeason = Math.ceil(totalTrees / yearsToComplete);
 
   return {

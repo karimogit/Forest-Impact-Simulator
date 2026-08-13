@@ -809,7 +809,7 @@ interface LeafletMouseEvent {
   originalEvent: MouseEvent | TouchEvent;
 }
 
-const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsChange: (bounds: MapBounds) => void; onSelectingChange?: (selecting: boolean) => void }) => {
+const CustomRegionSelector = ({ onBoundsChange, onSelectingChange, drawMode }: { onBoundsChange: (bounds: MapBounds) => void; onSelectingChange?: (selecting: boolean) => void; drawMode: boolean }) => {
   const map = useMap();
   const [isSelecting, setIsSelecting] = useState(false);
   const tempRectangleRef = useRef<L.Rectangle | null>(null);
@@ -867,6 +867,9 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
     };
 
     const handleTouchStart = (e: LeafletMouseEvent) => {
+      if (!drawMode) {
+        return;
+      }
       // For mobile devices, use click-to-create-square approach
       logger.log('Touch start:', e.latlng);
       
@@ -1040,8 +1043,12 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
     
     // Also add click event for mobile as fallback
     map.on('click', (e: LeafletMouseEvent) => {
-      // Only handle clicks on mobile devices (no CTRL key)
-      if (!('ctrlKey' in e.originalEvent && (e.originalEvent as MouseEvent).ctrlKey) && 'ontouchstart' in window) {
+      // Only handle clicks on mobile when draw mode is enabled
+      if (
+        drawMode &&
+        !('ctrlKey' in e.originalEvent && (e.originalEvent as MouseEvent).ctrlKey) &&
+        'ontouchstart' in window
+      ) {
         logger.log('Mobile click detected:', e.latlng);
         handleTouchStart(e);
       }
@@ -1060,7 +1067,7 @@ const CustomRegionSelector = ({ onBoundsChange, onSelectingChange }: { onBoundsC
       }
       map.dragging.enable();
     };
-  }, [map, onBoundsChange]);
+  }, [map, onBoundsChange, drawMode]);
 
   return null;
 };
@@ -1152,6 +1159,7 @@ const LocationMap: React.FC<LocationMapProps> = ({
     }
   }, [initialRegion, initialLatitude, initialLongitude]); // Intentionally excluding mapCenter and mapZoom to avoid loops
   const [showHistory, setShowHistory] = useState(false);
+  const [drawMode, setDrawMode] = useState(false);
   const [locationHistory, setLocationHistory] = useState<LocationHistoryItem[]>([]);
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -1237,6 +1245,7 @@ const LocationMap: React.FC<LocationMapProps> = ({
       }
     });
     setLocationHistory(getLocationHistory());
+    setDrawMode(false);
   };
 
   const handleHistoryItemClick = (item: LocationHistoryItem) => {
@@ -1284,12 +1293,38 @@ const LocationMap: React.FC<LocationMapProps> = ({
     <div>
       <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden"> 
         <div className="relative p-3">
-          <div className="mb-2">
-            <LocationSearch onLocationSelect={handleSearchLocation} />
+          <div className="mb-2 flex items-start gap-2">
+            <div className="flex-1">
+              <LocationSearch onLocationSelect={handleSearchLocation} />
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowHistory(prev => !prev)}
+              className={`mt-0 px-3 py-2 rounded-lg border text-xs font-semibold transition-colors ${
+                showHistory ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+              aria-pressed={showHistory}
+              aria-label="Recent locations"
+              title="Recent locations"
+            >
+              Recent
+            </button>
+            <button
+              type="button"
+              onClick={() => setDrawMode(prev => !prev)}
+              className={`mt-0 px-3 py-2 rounded-lg border text-xs font-semibold transition-colors md:hidden ${
+                drawMode ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+              aria-pressed={drawMode}
+              aria-label="Draw region on map"
+              title="Draw region"
+            >
+              Draw
+            </button>
           </div>
 
           {/* History Dropdown */}
-          {showHistory && locationHistory.length > 0 && (
+          {showHistory && (
             <div className="absolute top-full left-3 right-3 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-[1000] max-h-64 overflow-y-auto">
               <div className="p-2">
                 <div className="flex items-center justify-between mb-2 px-2">
@@ -1345,6 +1380,9 @@ const LocationMap: React.FC<LocationMapProps> = ({
                     </button>
                   </div>
                 ))}
+                {locationHistory.length === 0 && (
+                  <p className="px-2 py-3 text-xs text-gray-500">No recent locations yet. Search or select a region to save one.</p>
+                )}
                 </div>
               </div>
             )}
@@ -1405,7 +1443,8 @@ const LocationMap: React.FC<LocationMapProps> = ({
                 
                 {/* Custom Region Selector - Always enabled for drag selection */}
                 <CustomRegionSelector 
-                  onBoundsChange={handleBoundsChange} 
+                  onBoundsChange={handleBoundsChange}
+                  drawMode={drawMode}
                 />
                 <MapClickHandler />
               </MapContainer>

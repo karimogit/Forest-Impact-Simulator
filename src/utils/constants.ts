@@ -3,14 +3,16 @@
  */
 
 // Growth factors for tree carbon sequestration (by year)
+// Matches the documented planting growth curve in README.md
 export const TREE_GROWTH_FACTORS = {
-  YEAR_1: 0.05,   // 5% of mature rate - establishment phase
-  YEAR_2: 0.15,   // 15% of mature rate - early growth
-  YEAR_3: 0.30,   // 30% of mature rate
-  YEAR_4: 0.50,   // 50% of mature rate
-  YEAR_5: 0.70,   // 70% of mature rate
-  YEAR_6: 0.85,   // 85% of mature rate
-  YEAR_7_PLUS: 0.95  // 95% of mature rate - approaching maturity
+  YEAR_1: 0.05,         // Establishment
+  YEAR_2: 0.15,
+  YEAR_3: 0.30,
+  YEAR_4: 0.50,         // Rapid growth
+  YEAR_5: 0.70,
+  YEAR_6_TO_10: 0.80,
+  YEAR_11_TO_20: 0.90,  // Maturation
+  YEAR_20_PLUS: 1.00    // Mature
 } as const;
 
 // Tree age-based growth factors for clear-cutting calculations

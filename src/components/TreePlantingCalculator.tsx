@@ -9,7 +9,8 @@ import {
   formatArea,
   formatNumber,
   TREE_SPACING_CONFIGS,
-  getRecommendedSpacing
+  getRecommendedSpacing,
+  calculatePlantingTimeline
 } from '@/utils/treePlanting';
 import { ExportData } from '@/utils/exportUtils';
 import { formatLatitude, formatLongitude } from '@/utils/geo';
@@ -146,18 +147,27 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
   }, [selectedRegion, treeForPlanting, selectedTrees, treePercentages, customSpacing]);
 
   // Call onDataReady callback when data is available
+  const plantingTimeline = React.useMemo(
+    () => plantingConfig ? calculatePlantingTimeline(plantingConfig.totalTrees) : null,
+    [plantingConfig]
+  );
+
   React.useEffect(() => {
-    if (onDataReady && selectedRegion && plantingConfig) {
+    if (onDataReady && selectedRegion && plantingConfig && plantingTimeline) {
       onDataReady({
         plantingData: {
           area: plantingConfig.area,
           totalTrees: plantingConfig.totalTrees,
           spacing: plantingConfig.spacing,
-          density: plantingConfig.density
+          density: plantingConfig.density,
+          timeline: {
+            yearsToComplete: plantingTimeline.yearsToComplete,
+            treesPerSeason: plantingTimeline.treesPerSeason
+          }
         }
       });
     }
-  }, [onDataReady, selectedRegion, plantingConfig, customSpacing]);
+  }, [onDataReady, selectedRegion, plantingConfig, plantingTimeline, customSpacing]);
 
   // Early return checks - must be after all hooks
   if (!selectedRegion || (!selectedTreeType && (!selectedTrees || selectedTrees.length === 0))) {
@@ -288,6 +298,21 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
             <span className="text-xs text-gray-900 font-bold">Total Trees:</span>
             <span className="text-sm font-bold text-primary">{formatNumber(plantingConfig.totalTrees)}</span>
           </div>
+          {plantingTimeline && (
+            <>
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-xs text-gray-900 font-bold">Project scale:</span>
+                <span className="text-xs font-medium">{plantingTimeline.projectScale}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-900 font-bold">Planting timeline:</span>
+                <span className="text-xs font-medium">
+                  {plantingTimeline.yearsToComplete} year{plantingTimeline.yearsToComplete === 1 ? '' : 's'}
+                  {' '}({formatNumber(plantingTimeline.treesPerSeason)} trees/season)
+                </span>
+              </div>
+            </>
+          )}
         </div>
         
         {selectedTrees && selectedTrees.length > 1 && (

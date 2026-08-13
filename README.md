@@ -212,10 +212,14 @@ Household Electricity: Average US household emits ~7.5 metric tons CO₂/year
 
 **Realistic Growth Model:**
 ```
-Year 1-3: Establishment phase (5-15% of mature rate)
-Year 4-10: Rapid growth phase (15-80% of mature rate)
-Year 11-20: Maturation phase (80-95% of mature rate)
-Year 20+: Mature phase (95-100% of mature rate)
+Year 1: 5% of mature rate (establishment)
+Year 2: 15% of mature rate
+Year 3: 30% of mature rate
+Year 4: 50% of mature rate (rapid growth)
+Year 5: 70% of mature rate
+Year 6-10: 80% of mature rate
+Year 11-20: 90% of mature rate (maturation)
+Year 20+: 100% of mature rate (mature)
 ```
 
 **Annual Carbon Calculation:**

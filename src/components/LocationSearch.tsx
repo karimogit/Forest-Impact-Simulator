@@ -78,7 +78,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect }) => 
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(sanitizedQuery)}&limit=5&addressdetails=1`,
+        `/api/geocode?q=${encodeURIComponent(sanitizedQuery)}`,
         { signal: controller.signal }
       );
       
