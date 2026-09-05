@@ -1,39 +1,52 @@
 import React from 'react';
 import Link from 'next/link';
+import { GitHubIcon } from './ui/Icons';
+
+const BrandMark = () => (
+  <span
+    aria-hidden="true"
+    className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-forest-700 text-white shadow-sm"
+  >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3 7.5 9.5h2.5L6 15h5v5h2v-5h5l-4-5.5h2.5L12 3Z" />
+    </svg>
+  </span>
+);
 
 const Header = () => {
   return (
-    <header className="bg-primary text-white p-4 shadow-md">
-      <div className="container mx-auto flex justify-between items-center">
-        <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity duration-200">
-          {/* FIS Logo */}
-          <span aria-label="FIS Logo" className="inline-block align-middle">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="16" cy="16" r="16" fill="white"/>
-              <text x="16" y="20" textAnchor="middle" fill="#1B4D3E" fontSize="12" fontWeight="bold" fontFamily="Arial, sans-serif">FIS</text>
-            </svg>
+    <header className="sticky top-0 z-[1100] border-b border-sand-200/80 bg-sand-50/85 backdrop-blur supports-[backdrop-filter]:bg-sand-50/70">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="group flex items-center gap-3 rounded-lg">
+          <BrandMark />
+          <span className="flex flex-col leading-tight">
+            <span className="font-display text-lg text-ink-900 group-hover:text-forest-700 transition-colors">
+              Forest Impact Simulator
+            </span>
+            <span className="hidden sm:block text-[11px] font-medium uppercase tracking-[0.14em] text-ink-400">
+              Planting &amp; clear-cutting analysis
+            </span>
           </span>
-          <h1 className="text-xl font-bold">Forest Impact Simulator</h1>
         </Link>
-        
-        {/* GitHub Logo and Link */}
-        <a 
-          href="https://github.com/KarimOsmanGH/forest-impact-simulator" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-200"
-          aria-label="View on GitHub"
-        >
-          <svg 
-            width="24" 
-            height="24" 
-            viewBox="0 0 24 24" 
-            fill="currentColor" 
-            xmlns="http://www.w3.org/2000/svg"
+
+        <nav aria-label="Primary" className="flex items-center gap-1 sm:gap-2">
+          <a
+            href="#faq"
+            className="hidden sm:inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium text-ink-500 hover:bg-sand-100 hover:text-ink-900 transition-colors"
           >
-            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-          </svg>
-        </a>
+            FAQ
+          </a>
+          <a
+            href="https://github.com/KarimOsmanGH/forest-impact-simulator"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-sand-300 bg-white px-3 text-sm font-medium text-ink-700 hover:border-ink-300 hover:bg-sand-50 transition-colors"
+            aria-label="View source on GitHub"
+          >
+            <GitHubIcon size={16} />
+            <span className="hidden sm:inline">GitHub</span>
+          </a>
+        </nav>
       </div>
     </header>
   );

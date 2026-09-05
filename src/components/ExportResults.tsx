@@ -2,16 +2,26 @@
 
 import React, { useState } from 'react';
 import { logger } from '@/utils/logger';
-import { 
-  ExportData, 
-  generateGeoJSON, 
-  generateJSON, 
-  generateCSV, 
-  downloadFile, 
-  formatTimestamp 
+import {
+  ExportData,
+  generateGeoJSON,
+  generateJSON,
+  generateCSV,
+  downloadFile,
+  formatTimestamp
 } from '@/utils/exportUtils';
 import { generatePDFReport } from '@/utils/pdfExport';
 import { generateShareableUrl, copyToClipboard, ShareableState } from '@/utils/shareableLink';
+import { Panel, Callout, EmptyState } from './ui/primitives';
+import {
+  DownloadIcon,
+  LinkIcon,
+  FileTextIcon,
+  GlobeIcon,
+  BracesIcon,
+  TableIcon,
+  Spinner,
+} from './ui/Icons';
 
 interface ExportResultsProps {
   exportData: ExportData;
@@ -20,15 +30,34 @@ interface ExportResultsProps {
   onShareSuccess?: (message: string) => void;
 }
 
-const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = false, shareableState, onShareSuccess }) => {
+type ExportFormat = 'geojson' | 'json' | 'csv' | 'pdf';
+
+const exportOptions: {
+  format: ExportFormat;
+  label: string;
+  hint: string;
+  icon: React.ReactNode;
+}[] = [
+  { format: 'pdf', label: 'PDF report', hint: 'Formatted summary', icon: <FileTextIcon size={20} /> },
+  { format: 'geojson', label: 'GeoJSON', hint: 'GIS tools', icon: <GlobeIcon size={20} /> },
+  { format: 'json', label: 'JSON', hint: 'Complete data', icon: <BracesIcon size={20} /> },
+  { format: 'csv', label: 'CSV', hint: 'R / Python', icon: <TableIcon size={20} /> },
+];
+
+const ExportResults: React.FC<ExportResultsProps> = ({
+  exportData,
+  disabled = false,
+  shareableState,
+  onShareSuccess,
+}) => {
   const [isExporting, setIsExporting] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
 
-  const handleExport = async (format: 'geojson' | 'json' | 'csv' | 'pdf') => {
+  const handleExport = async (format: ExportFormat) => {
     if (disabled || isExporting) return;
-    
+
     setIsExporting(true);
-    
+
     try {
       if (format === 'pdf') {
         await generatePDFReport(exportData);
@@ -37,7 +66,7 @@ const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = fa
         let content: string;
         let filename: string;
         let mimeType: string;
-        
+
         switch (format) {
           case 'geojson':
             content = generateGeoJSON(exportData);
@@ -57,7 +86,7 @@ const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = fa
           default:
             throw new Error('Unsupported export format');
         }
-        
+
         downloadFile(content, filename, mimeType);
       }
     } catch (error) {
@@ -68,22 +97,14 @@ const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = fa
     }
   };
 
-  if (disabled) {
-    return (
-      <div className="p-5 md:p-6 bg-gray-50 border-2 border-gray-200 rounded-xl">
-        <p className="text-sm text-gray-700 font-medium">Complete your analysis to enable exports</p>
-      </div>
-    );
-  }
-
   const handleShare = async () => {
     if (!shareableState || disabled) return;
-    
+
     setIsSharing(true);
     try {
       const url = generateShareableUrl(shareableState);
       const success = await copyToClipboard(url);
-      
+
       if (success && onShareSuccess) {
         onShareSuccess('Link copied to clipboard!');
       } else if (!success) {
@@ -97,86 +118,81 @@ const ExportResults: React.FC<ExportResultsProps> = ({ exportData, disabled = fa
     }
   };
 
-  return (
-    <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 p-5 md:p-6">
-      <h3 className="text-lg font-bold text-gray-900 mb-4">Export and Share Results</h3>
-      
-      <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 md:gap-4">
-        <button
-          onClick={() => handleExport('pdf')}
-          disabled={isExporting}
-          className="flex flex-col items-center p-4 md:p-5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-primary transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <div className="text-xl mb-2">📋</div>
-          <span className="text-xs font-semibold">PDF Report</span>
-          <span className="text-xs md:text-sm text-gray-600 hidden sm:block mt-1">Formatted</span>
-        </button>
+  if (disabled) {
+    return (
+      <Panel className="p-5 sm:p-6">
+        <EmptyState
+          icon={<DownloadIcon size={20} />}
+          title="Complete your analysis to enable exports"
+          description="Select a location, choose species, and review the impact results to unlock PDF, data exports, and shareable links."
+        />
+      </Panel>
+    );
+  }
 
-        <button
-          onClick={() => handleExport('geojson')}
-          disabled={isExporting}
-          className="flex flex-col items-center p-4 md:p-5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-primary transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <div className="text-xl mb-2">🗺️</div>
-          <span className="text-xs font-semibold">GeoJSON</span>
-          <span className="text-xs md:text-sm text-gray-600 hidden sm:block mt-1">GIS tools</span>
-        </button>
-        
-        <button
-          onClick={() => handleExport('json')}
-          disabled={isExporting}
-          className="flex flex-col items-center p-4 md:p-5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-primary transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <div className="text-xl mb-2">📄</div>
-          <span className="text-xs font-semibold">JSON</span>
-          <span className="text-xs md:text-sm text-gray-600 hidden sm:block mt-1">Complete</span>
-        </button>
-        
-        <button
-          onClick={() => handleExport('csv')}
-          disabled={isExporting}
-          className="flex flex-col items-center p-4 md:p-5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-primary transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <div className="text-xl mb-2">📊</div>
-          <span className="text-xs font-semibold">CSV</span>
-          <span className="text-xs md:text-sm text-gray-600 hidden sm:block mt-1">R/Python</span>
-        </button>
+  const busy = isExporting || isSharing;
+
+  return (
+    <Panel className="p-5 sm:p-6">
+      <div className="mb-5">
+        <h3 className="font-display text-lg text-ink-900">Export and share</h3>
+        <p className="mt-0.5 text-sm text-ink-500">
+          Download your results or copy a link that restores this exact scenario.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {exportOptions.map(({ format, label, hint, icon }) => (
+          <button
+            key={format}
+            type="button"
+            onClick={() => handleExport(format)}
+            disabled={busy}
+            className="group flex flex-col items-center rounded-2xl border border-sand-200 bg-white p-4 text-center transition-all hover:border-accent hover:bg-accent-soft/40 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-sand-100 text-ink-500 transition-colors group-hover:bg-white group-hover:text-accent">
+              {icon}
+            </span>
+            <span className="text-xs font-semibold text-ink-900">{label}</span>
+            <span className="mt-0.5 hidden text-[11px] text-ink-400 sm:block">{hint}</span>
+          </button>
+        ))}
 
         {shareableState && (
           <button
+            type="button"
             onClick={handleShare}
-            disabled={disabled || isSharing}
-            className="flex flex-col items-center p-4 md:p-5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-primary transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={busy}
+            className="group flex flex-col items-center rounded-2xl border border-sand-200 bg-white p-4 text-center transition-all hover:border-accent hover:bg-accent-soft/40 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <div className="text-xl mb-2">🔗</div>
-            <span className="text-xs font-semibold">Share Link</span>
-            <span className="text-xs md:text-sm text-gray-600 hidden sm:block mt-1">Copy URL</span>
+            <span className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-sand-100 text-ink-500 transition-colors group-hover:bg-white group-hover:text-accent">
+              <LinkIcon size={20} />
+            </span>
+            <span className="text-xs font-semibold text-ink-900">Share link</span>
+            <span className="mt-0.5 hidden text-[11px] text-ink-400 sm:block">Copy URL</span>
           </button>
         )}
       </div>
-      
-      {(isExporting || isSharing) && (
-        <div className="mt-4 text-center">
-          <div className="inline-flex items-center text-sm text-gray-700">
-            <div className="animate-spin rounded-full h-5 w-5 md:h-6 md:w-6 border-b-2 border-primary mr-3"></div>
-            {isSharing ? 'Generating share link...' : 'Preparing export...'}
-          </div>
+
+      {busy && (
+        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-ink-500">
+          <Spinner size={18} className="text-accent" />
+          {isSharing ? 'Generating share link…' : 'Preparing export…'}
         </div>
       )}
-      
-      <div className="mt-6 p-4 md:p-5 bg-primary/10 border-2 border-primary/30 rounded-xl">
-        <h4 className="text-sm font-bold text-primary mb-3">Export Includes:</h4>
-        <ul className="text-xs text-primary space-y-2">
-          <li>• Location coordinates and region boundaries</li>
-          <li>• Selected tree species/forest types and percentages</li>
-          <li>• Environmental data (soil, climate)</li>
-          <li>• Impact calculations (carbon sequestration/emissions, biodiversity, etc.)</li>
-          <li>• Planting/removal specifications and configuration</li>
-          <li>• Simulation metadata and timestamp</li>
+
+      <Callout tone="accent" title="Export includes" className="mt-5">
+        <ul className="space-y-1 text-sm">
+          <li>Location coordinates and region boundaries</li>
+          <li>Selected tree species and percentage distribution</li>
+          <li>Environmental data (soil, climate)</li>
+          <li>Impact calculations (carbon, biodiversity, resilience, and more)</li>
+          <li>Planting or removal specifications and configuration</li>
+          <li>Simulation metadata and timestamp</li>
         </ul>
-      </div>
-    </div>
+      </Callout>
+    </Panel>
   );
 };
 
-export default ExportResults; 
+export default ExportResults;

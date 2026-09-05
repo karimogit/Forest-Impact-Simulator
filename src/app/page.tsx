@@ -7,6 +7,9 @@ import { getShareParameterFromUrl, decodeUrlToState } from '@/utils/shareableLin
 import { logger } from '@/utils/logger';
 import { equalSplitPercentages, hasCoordinates } from '@/utils/geo';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import FaqSection from '@/components/FaqSection';
+import { Panel, StepHeader, Eyebrow, Callout, LoadingBlock, EmptyState } from '@/components/ui/primitives';
+import { SproutIcon, AxeIcon, RefreshIcon, CheckIcon, MapPinIcon, TreeIcon, ChartIcon } from '@/components/ui/Icons';
 
 // Lazy load components for better performance
 const LocationMap = lazy(() => import('@/components/LocationMap'));
@@ -15,8 +18,75 @@ const TreeTypeSelector = lazy(() => import('@/components/TreeTypeSelector'));
 const TreePlantingCalculator = lazy(() => import('@/components/TreePlantingCalculator'));
 const ExportResults = lazy(() => import('@/components/ExportResults'));
 
+type SimulationMode = 'planting' | 'clear-cutting';
+
+const ModeSwitcher = ({ mode, onChange }: { mode: SimulationMode; onChange: (mode: SimulationMode) => void }) => {
+  const options: { value: SimulationMode; label: string; hint: string; icon: React.ReactNode }[] = [
+    { value: 'planting', label: 'Planting', hint: 'Benefits of new forest', icon: <SproutIcon size={18} /> },
+    { value: 'clear-cutting', label: 'Clear-cutting', hint: 'Cost of removing forest', icon: <AxeIcon size={18} /> },
+  ];
+  return (
+    <div role="group" aria-label="Simulation mode" className="inline-flex rounded-2xl border border-sand-200 bg-white p-1.5 shadow-card">
+      {options.map(opt => {
+        const active = opt.value === mode;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            aria-pressed={active}
+            aria-label={`Switch to ${opt.label.toLowerCase()} mode`}
+            className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-left transition-all sm:px-5 ${
+              active ? 'bg-accent text-white shadow-sm' : 'text-ink-500 hover:bg-sand-100 hover:text-ink-900'
+            }`}
+          >
+            <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${active ? 'bg-white/15' : 'bg-sand-100'}`}>
+              {opt.icon}
+            </span>
+            <span className="flex flex-col leading-tight">
+              <span className="text-sm font-semibold">{opt.label}</span>
+              <span className={`hidden text-[11px] sm:block ${active ? 'text-white/75' : 'text-ink-400'}`}>{opt.hint}</span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+const ProgressStep = ({
+  index,
+  label,
+  status,
+  icon,
+}: {
+  index: number;
+  label: string;
+  status: 'done' | 'active' | 'todo';
+  icon: React.ReactNode;
+}) => (
+  <li className="flex items-center gap-2.5">
+    <span
+      className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+        status === 'done'
+          ? 'bg-accent text-white'
+          : status === 'active'
+            ? 'bg-white text-accent-strong ring-2 ring-accent'
+            : 'bg-sand-100 text-ink-400 ring-1 ring-sand-200'
+      }`}
+      aria-hidden="true"
+    >
+      {status === 'done' ? <CheckIcon size={14} strokeWidth={2.5} /> : index}
+    </span>
+    <span className={`flex items-center gap-1.5 text-sm ${status === 'todo' ? 'text-ink-400' : 'font-medium text-ink-900'}`}>
+      <span className="hidden sm:inline text-ink-400">{icon}</span>
+      {label}
+    </span>
+  </li>
+);
+
 export default function Home() {
-  const [simulationMode, setSimulationMode] = useState<'planting' | 'clear-cutting'>('planting');
+  const [simulationMode, setSimulationMode] = useState<SimulationMode>('planting');
   const [selectedLatitude, setSelectedLatitude] = useState<number | null>(null);
   const [selectedLongitude, setSelectedLongitude] = useState<number | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<{
@@ -36,597 +106,13 @@ export default function Home() {
     spacing: number;
     density: number;
   } | null>(null);
-  
+
   // Soil and climate data state
   const [soilData, setSoilData] = useState<{ carbon: number | null; ph: number | null } | null>(null);
   const [climateData, setClimateData] = useState<{ temperature: number | null; precipitation: number | null; historicalData?: { temperatures: number[]; precipitations: number[] } } | null>(null);
 
-  const [faqOpen, setFaqOpen] = useState<{ [key: string]: boolean }>({});
-  const [faqSearch, setFaqSearch] = useState<string>('');
-  const [faqShowAll, setFaqShowAll] = useState<boolean>(false);
   const [exportData, setExportData] = useState<ExportData | null>(null);
   const [shareNotification, setShareNotification] = useState<string | null>(null);
-
-  const faqs = [
-    {
-      id: 1,
-      title: 'Who made this tool and how can I contribute?',
-      searchText: 'who made this tool contribute open source github creator karim osman typeScript python r simulator',
-      content: (
-        <p className="text-gray-900 mb-3">
-          The Forest Impact Simulator was created by{' '}
-          <a
-            href="https://kar.im"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:text-primary/80"
-          >
-            Karim Osman
-          </a>{' '}
-          to simulate and analyze the environmental impact of forest planting and clear-cutting operations. This tool is completely
-          open-source and available on GitHub. The simulator is available as a{' '}
-          <a
-            href="https://github.com/KarimOsmanGH/forest-impact-simulator"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:text-primary/80"
-          >
-            TypeScript (web)
-          </a>
-          ,{' '}
-          <a
-            href="https://github.com/KarimOsmanGH/forest-impact-simulator-python"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:text-primary/80"
-          >
-            Python notebook
-          </a>
-          , and{' '}
-          <a
-            href="https://github.com/KarimOsmanGH/forest-impact-simulator-r"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:text-primary/80"
-          >
-            R notebook
-          </a>
-          . We welcome contributions from the community! Whether you&apos;re a developer, environmental scientist, or forestry expert, there
-          are many ways to help improve this simulator.
-        </p>
-      ),
-    },
-    {
-      id: 2,
-      title: 'What is planting mode and how does it work?',
-      searchText: 'planting mode how it works carbon sequestration reforestation carbon offset biodiversity restoration environmental planning',
-      content: (
-        <>
-          <p className="text-gray-900 mb-3">
-            Planting mode allows you to analyze the environmental benefits of forest restoration and tree planting operations. This mode is
-            useful for:
-          </p>
-          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-2">
-            <li>
-              <strong>Reforestation Projects:</strong> Planning and quantifying the benefits of tree planting initiatives
-            </li>
-            <li>
-              <strong>Carbon Offset Planning:</strong> Calculating potential carbon sequestration from new forests
-            </li>
-            <li>
-              <strong>Biodiversity Restoration:</strong> Understanding how tree planting can enhance local ecosystems
-            </li>
-            <li>
-              <strong>Environmental Planning:</strong> Evaluating the long-term environmental benefits of forest restoration
-            </li>
-          </ul>
-          <p className="text-gray-900 mb-3">
-            In planting mode, the simulator shows carbon sequestration (positive values) representing the carbon that would be absorbed from
-            the atmosphere as trees grow and mature. The interface shows &quot;recommended species for this region&quot; and displays
-            planting configurations with timelines for project completion.
-          </p>
-          <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mt-3">
-            <p className="text-sm text-primary">
-              <strong>Note:</strong> This tool is for educational and planning purposes. Always consult with forestry professionals and
-              environmental experts before making real-world decisions about forest management.
-            </p>
-          </div>
-        </>
-      ),
-    },
-    {
-      id: 3,
-      title: 'What is clear-cutting mode and how does it work?',
-      searchText: 'clear cutting mode how it works carbon emissions deforestation removal impacts policy analysis educational',
-      content: (
-        <>
-          <p className="text-gray-900 mb-3">
-            Clear-cutting mode allows you to analyze the environmental impacts of forest removal operations. This mode is useful for:
-          </p>
-          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-2">
-            <li>
-              <strong>Environmental Impact Assessment:</strong> Understanding the carbon emissions and biodiversity loss from forest removal
-            </li>
-            <li>
-              <strong>Land Use Planning:</strong> Evaluating the trade-offs of converting forested areas to other uses
-            </li>
-            <li>
-              <strong>Policy Analysis:</strong> Quantifying the environmental costs of deforestation
-            </li>
-            <li>
-              <strong>Educational Purposes:</strong> Demonstrating the value of existing forests
-            </li>
-          </ul>
-          <p className="text-gray-900 mb-3">
-            In clear-cutting mode, the simulator shows carbon emissions (positive values) representing the carbon that would be released
-            into the atmosphere, including both immediate emissions from tree removal and the lost future sequestration capacity. You can
-            specify the average age of trees in the forest area to get more accurate calculations. The interface adapts to show &quot;forest
-            types present in this region&quot; instead of &quot;recommended species&quot; and displays removal configurations with tree age
-            settings.
-          </p>
-          <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mt-3">
-            <p className="text-sm text-primary">
-              <strong>Note:</strong> This tool is for educational and planning purposes. Always consult with forestry professionals and
-              environmental experts before making real-world decisions about forest management.
-            </p>
-          </div>
-        </>
-      ),
-    },
-    {
-      id: 4,
-      title: 'What do the different impact analysis tabs show?',
-      searchText: 'impact analysis tabs environment economic social land use what do they show',
-      content: (
-        <>
-          <p className="text-gray-900 mb-3">
-            The impact analysis is organized into four comprehensive tabs, each focusing on different aspects of forest impact:
-          </p>
-          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-2">
-            <li>
-              <strong>Environment Tab:</strong> Core environmental metrics including soil data, climate information, carbon
-              sequestration/emissions, biodiversity impact, forest resilience, water retention, and air quality improvement. This is the most
-              detailed tab with real-time environmental data integration.
-            </li>
-            <li>
-              <strong>Economic Tab:</strong> Economic benefits such as job creation estimates, conservation value, and economic impact
-              calculations based on forest size and type.
-            </li>
-            <li>
-              <strong>Social Tab:</strong> Community benefits, social impact scores, and societal value of forest restoration or the social
-              costs of forest removal.
-            </li>
-            <li>
-              <strong>Land Use Tab:</strong> Land management impacts including erosion reduction, soil improvement, habitat creation, and
-              land use change effects.
-            </li>
-          </ul>
-          <p className="text-gray-900 mb-3">
-            Each tab provides detailed metrics, real-world comparisons, and context-specific information to help you understand the full
-            scope of forest impact in your selected region.
-          </p>
-        </>
-      ),
-    },
-    {
-      id: 5,
-      title: 'How accurate are the carbon sequestration estimates?',
-      searchText: 'how accurate carbon sequestration estimates ipcc growth model clear cutting calculations',
-      content: (
-        <>
-          <p className="text-gray-900 mb-3">
-            Our estimates are based on{' '}
-            <a
-              href="https://www.ipcc.ch/report/ar4/wg1/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:text-primary/80"
-            >
-              IPCC Fourth Assessment Report
-            </a>{' '}
-            data, with species-specific rates ranging from 15-30 kg CO₂/year for mature trees. We apply realistic growth curves that account
-            for the fact that young trees sequester much less carbon than mature ones.
-          </p>
-          <p className="text-gray-900 mb-3">
-            <strong>Growth Model:</strong> Trees don&apos;t reach full capacity immediately. Our realistic model shows: Year 1-3 (5-15% of
-            mature rate), Year 4-10 (15-80% of mature rate), Year 11-20 (80-95% of mature rate), and Year 20+ (95-100% of mature rate). This
-            reflects real-world tree growth patterns and provides more accurate long-term projections.
-          </p>
-          <p className="text-gray-900 mb-3">
-            <strong>Clear-cutting Carbon Calculations:</strong> In clear-cutting mode, the simulator calculates immediate carbon release as
-            the tree&apos;s current annual sequestration rate (representing carbon released when the tree is cut down) plus lost future
-            sequestration (carbon that would have been absorbed over the simulation period). This provides realistic emission estimates
-            based on the actual age of trees being removed.
-          </p>
-          <p className="text-gray-900 mb-3">The simulator also factors in local soil conditions and climate data for more accurate predictions.</p>
-        </>
-      ),
-    },
-    {
-      id: 6,
-      title: "What's the difference between single and multiple tree selection?",
-      searchText: 'difference between single and multiple tree selection forest mix equal split percentages',
-      content: (
-        <p className="text-gray-900 mb-3">
-          Single tree selection uses the specific carbon sequestration rate of that species. Multiple tree selection allows you to create a
-          mixed forest with custom percentage distributions. You can either use the &quot;Equal Split&quot; option for balanced distribution
-          or manually set percentages for each species to reflect your forest management strategy.
-        </p>
-      ),
-    },
-    {
-      id: 7,
-      title: 'How are environmental factors calculated and what benefits do they provide?',
-      searchText: 'environmental factors calculated benefits soilgrids open meteo biodiversity resilience water retention air quality',
-      content: (
-        <>
-          <p className="text-gray-900 mb-3">
-            <strong>Environmental Data Sources:</strong> The simulator uses real-time data from multiple sources: Soil carbon content from{' '}
-            <a
-              href="https://soilgrids.org/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:text-primary/80"
-            >
-              ISRIC SoilGrids
-            </a>{' '}
-            (adds 0.1 kg CO₂/year per g/kg of soil carbon) and climate data from{' '}
-            <a
-              href="https://open-meteo.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:text-primary/80"
-            >
-              Open-Meteo
-            </a>{' '}
-            (precipitation affects forest resilience). Biodiversity values are based on scientific literature and species-specific
-            ecological characteristics. When environmental data is unavailable, the simulator uses climate-zone based estimates to ensure
-            calculations remain accurate.
-          </p>
-          <p className="text-gray-900 mb-3">
-            <strong>Environmental Benefits Calculated:</strong> Beyond carbon sequestration, the simulator calculates biodiversity impact
-            (how well the forest supports wildlife), forest resilience (ability to withstand climate stresses), water retention (improved
-            soil moisture and reduced runoff), and air quality improvement (pollution filtration). In planting mode, these metrics improve
-            over time and scale with forest size. In clear-cutting mode, these metrics degrade over time and scale with the extent of forest
-            removal. These metrics provide a comprehensive view of the forest&apos;s environmental contribution or impact.
-          </p>
-        </>
-      ),
-    },
-    {
-      id: 8,
-      title: 'Why should I simulate different time periods?',
-      searchText: 'why simulate different time periods years long term short term',
-      content: (
-        <p className="text-gray-900 mb-3">
-          Different time periods show how forest impact compounds over time. Short-term simulations (1-5 years) show immediate benefits like
-          soil stabilization and initial carbon capture. Long-term simulations (10-100 years) reveal the full potential for carbon
-          sequestration, biodiversity enhancement, and ecosystem restoration. This helps in planning both immediate and long-term
-          environmental strategies.
-        </p>
-      ),
-    },
-    {
-      id: 9,
-      title: 'How can I use this simulator for real-world projects?',
-      searchText: 'use simulator for real world projects reforestation urban tree planting carbon offset impact assessment',
-      content: (
-        <>
-          <p className="text-gray-900 mb-3">
-            The simulator is perfect for planning reforestation projects, urban tree planting initiatives, carbon offset programs, and
-            environmental impact assessments. Use it to compare different tree species for your climate zone, estimate long-term
-            environmental benefits, analyze the impacts of forest removal, and communicate the impact of your projects to stakeholders. The
-            region-specific data ensures your calculations are relevant to your actual forest management area.
-          </p>
-          <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mt-3">
-            <p className="text-sm text-primary font-medium">
-              &#9888;&#65039; <strong>Disclaimer:</strong> This simulator is for educational and planning purposes only. Use at your own risk.
-              Always consult with forestry professionals, environmental experts, and local authorities before implementing any real-world
-              projects.
-            </p>
-          </div>
-        </>
-      ),
-    },
-    {
-      id: 10,
-      title: 'What formulas and calculations does the simulator use?',
-      searchText: 'formulas calculations simulator weighted average growth model climate prediction biodiversity resilience water retention air quality',
-      content: (
-        <div className="space-y-4">
-          <div>
-            <h4 className="font-semibold text-black mb-2">Carbon Sequestration</h4>
-            <div className="bg-gray-50 p-3 rounded text-sm text-black">
-              <p className="mb-2">
-                <strong>Weighted Average Formula:</strong>
-              </p>
-              <code className="block bg-white p-2 rounded mb-2">Carbon = Σ(Treeᵢ × Percentageᵢ) / 100</code>
-              <p className="mb-2">
-                <strong>Environmental Modifiers:</strong>
-              </p>
-              <code className="block bg-white p-2 rounded mb-2">Soil Bonus = Soil Carbon (g/kg) × 0.1 kg CO₂/year</code>
-              <code className="block bg-white p-2 rounded mb-2">Final Carbon = Base Carbon + Soil Bonus</code>
-              <p className="mt-2 text-sm text-black">
-                <strong>Display Values:</strong>
-              </p>
-              <code className="block bg-white p-2 rounded text-black">Annual Carbon = Yearly sequestration rate</code>
-              <code className="block bg-white p-2 rounded text-black">Total Carbon = Cumulative over entire simulation period</code>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-black mb-2">Tree Growth Model</h4>
-            <div className="bg-gray-50 p-3 rounded text-sm text-black">
-              <p className="mb-2">
-                <strong>4-Phase Growth Model:</strong>
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-sm text-black">
-                <div>
-                  <strong>Years 1-3:</strong> Establishment phase (5-15% of mature rate)
-                </div>
-                <div>
-                  <strong>Years 4-10:</strong> Rapid growth phase (15-80% of mature rate)
-                </div>
-                <div>
-                  <strong>Years 11-20:</strong> Maturation phase (80-95% of mature rate)
-                </div>
-                <div>
-                  <strong>Years 20+:</strong> Mature phase (95-100% of mature rate)
-                </div>
-              </div>
-              <p className="mt-2 text-sm text-black">
-                <strong>Annual Carbon Calculation:</strong>
-              </p>
-              <code className="block bg-white p-2 rounded text-black">Annual Carbon = Mature Rate × Growth Factor (based on year)</code>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-black mb-2">Climate Prediction</h4>
-            <div className="bg-gray-50 p-3 rounded text-sm text-black">
-              <p className="mb-2">
-                <strong>Temperature Trend Analysis:</strong>
-              </p>
-              <code className="block bg-white p-2 rounded mb-2 text-black">Historical Data = 11 years of temperature records</code>
-              <code className="block bg-white p-2 rounded mb-2 text-black">Linear Regression = Calculate temperature trend (°C/year)</code>
-              <code className="block bg-white p-2 rounded mb-2 text-black">Future Temperature = Current + (Trend × Years)</code>
-              <p className="mt-2 mb-2 text-sm text-black">
-                <strong>Growth Modifier:</strong>
-              </p>
-              <code className="block bg-white p-2 rounded mb-2 text-black">Temperature Change = Future Temp - Current Temp</code>
-              <code className="block bg-white p-2 rounded text-black">Growth Modifier = 1 + (Temperature Change × 0.02)</code>
-              <p className="mt-2 text-sm text-black">
-                <strong>Regional Estimates (fallback):</strong>
-              </p>
-              <code className="block bg-white p-2 rounded text-black">
-                Tropical: 25°C, Temperate: 15°C, Boreal: 5°C, Arctic: -5°C
-              </code>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-black mb-2">Biodiversity Impact</h4>
-            <div className="bg-gray-50 p-3 rounded text-sm text-black">
-              <p className="mb-2">
-                <strong>Species Diversity Score:</strong>
-              </p>
-              <code className="block bg-white p-2 rounded mb-2 text-black">Base Score = Average biodiversity value (1-5)</code>
-              <code className="block bg-white p-2 rounded mb-2 text-black">Multiplier = 1 + (Number of species - 1) × 0.1</code>
-              <code className="block bg-white p-2 rounded text-black">Final Score = min(Base Score × Multiplier, 5)</code>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-black mb-2">Forest Resilience</h4>
-            <div className="bg-gray-50 p-3 rounded text-sm text-black">
-              <p className="mb-2">
-                <strong>Resilience Calculation:</strong>
-              </p>
-              <code className="block bg-white p-2 rounded mb-2 text-black">Base Resilience = Average resilience score (1-5)</code>
-              <code className="block bg-white p-2 rounded mb-2 text-black">Climate Bonus = Precipitation (mm) × 0.001</code>
-              <code className="block bg-white p-2 rounded text-black">Final Resilience = min(Base + Climate Bonus, 5)</code>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-black mb-2">Water Retention</h4>
-            <div className="bg-gray-50 p-3 rounded text-sm text-black">
-              <p className="mb-2">
-                <strong>Progressive Enhancement:</strong>
-              </p>
-              <code className="block bg-white p-2 rounded mb-2 text-black">Base Retention = 70-85% (based on latitude)</code>
-              <code className="block bg-white p-2 rounded mb-2 text-black">Annual Improvement = 0.3% per year</code>
-              <code className="block bg-white p-2 rounded mb-2 text-black">Precipitation Bonus = Annual Precipitation (mm) × 0.01</code>
-              <code className="block bg-white p-2 rounded text-black">
-                Water Retention = min(Base + (Years × 0.3) + Bonus, 95%)
-              </code>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-black mb-2">Air Quality Improvement</h4>
-            <div className="bg-gray-50 p-3 rounded text-sm text-black">
-              <p className="mb-2">
-                <strong>Progressive Enhancement:</strong>
-              </p>
-              <code className="block bg-white p-2 rounded mb-2 text-black">Base Quality = 60%</code>
-              <code className="block bg-white p-2 rounded mb-2 text-black">Annual Improvement = 0.7% per year</code>
-              <code className="block bg-white p-2 rounded text-black">Air Quality = min(Base + (Years × 0.7), 95%)</code>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-black mb-2">Mathematical Notation</h4>
-            <div className="bg-gray-50 p-3 rounded text-base text-black">
-              <ul className="space-y-2">
-                <li>
-                  <strong>Σ:</strong> Summation across all selected tree species
-                </li>
-                <li>
-                  <strong>Treeᵢ:</strong> Carbon sequestration rate of tree species i
-                </li>
-                <li>
-                  <strong>Percentageᵢ:</strong> User-specified percentage for tree species i
-                </li>
-                <li>
-                  <strong>n:</strong> Number of selected tree species
-                </li>
-                <li>
-                  <strong>Years:</strong> Simulation duration in years
-                </li>
-                <li>
-                  <strong>min():</strong> Function returning the minimum value (capping at maximum)
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: 11,
-      title: 'What tree species are included in the database?',
-      searchText: 'what tree species are included database temperate tropical boreal arid subtropical',
-      content: (
-        <>
-          <p className="text-gray-900 mb-3">
-            Our comprehensive tree database includes 80 species from around the world, covering diverse ecosystems and 7 major climate
-            zones:
-          </p>
-          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-1">
-            <li>
-              <strong>Temperate Trees:</strong> Oak, Beech, Ash, Maple, Birch, and European/North American species
-            </li>
-            <li>
-              <strong>Coniferous Trees:</strong> Pine, Spruce, Cedar, Redwood, and other evergreens
-            </li>
-            <li>
-              <strong>Tropical Trees:</strong> Mahogany, Teak, Mango, Mangrove, and tropical hardwoods
-            </li>
-            <li>
-              <strong>Mediterranean Trees:</strong> Olive, Cork Oak, Aleppo Pine, and Mediterranean climate species
-            </li>
-            <li>
-              <strong>Boreal Trees:</strong> Black Spruce, White Spruce, Balsam Fir, Tamarack, Jack Pine, and northern forest species
-            </li>
-            <li>
-              <strong>Arid Zone Trees:</strong> Mesquite, Palo Verde, Desert Ironwood, Joshua Tree, and drought-resistant species
-            </li>
-            <li>
-              <strong>Subtropical Trees:</strong> Live Oak, Bald Cypress, Southern Magnolia, Pecan, and warm climate species
-            </li>
-          </ul>
-          <p className="text-gray-900 mb-3">
-            Each tree species includes detailed data on carbon sequestration rates, growth characteristics, biodiversity value, climate
-            preferences, and environmental impact factors. The database is continuously updated with new species and improved data.
-          </p>
-        </>
-      ),
-    },
-    {
-      id: 12,
-      title: 'What export formats are available and how can I use them?',
-      searchText: 'export formats available pdf geojson json csv share link how to use',
-      content: (
-        <>
-          <p className="text-gray-900 mb-3">The simulator offers multiple export and sharing options to suit different use cases:</p>
-          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-2">
-            <li>
-              <strong>PDF Report:</strong> Professional formatted report with all analysis results, charts, and metrics. Perfect for
-              presentations, reports, and documentation.
-            </li>
-            <li>
-              <strong>GeoJSON:</strong> Geographic data format for GIS professionals and mapping tools. Includes point features (analysis
-              location) and polygon features (forest region) with all environmental metrics as properties.
-            </li>
-            <li>
-              <strong>JSON:</strong> Complete structured data export for developers and data analysis. Contains all simulation parameters,
-              environmental data, impact results, and forest management specifications.
-            </li>
-            <li>
-              <strong>CSV:</strong> Spreadsheet-friendly format organized by sections (metadata, trees, environmental data, results, forest
-              data) for use in Excel, R, Python, and other data analysis tools.
-            </li>
-            <li>
-              <strong>Share Link:</strong> Generate a shareable URL that preserves your entire analysis configuration. Others can view your
-              exact analysis by opening the link, with all settings, species selections, and region data preserved.
-            </li>
-          </ul>
-          <p className="text-gray-900 mb-3">
-            All exports include timestamps and are automatically generated once you complete your analysis. Files are downloaded directly to
-            your browser with descriptive filenames.
-          </p>
-        </>
-      ),
-    },
-    {
-      id: 13,
-      title: 'Why does environmental data sometimes show as "Estimated"?',
-      searchText: 'why environmental data sometimes show estimated fallback climate zone api soilgrids open meteo cache',
-      content: (
-        <>
-          <p className="text-gray-900 mb-3">
-            The Forest Impact Simulator fetches real-time environmental data from two scientific sources:
-          </p>
-          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-1">
-            <li>
-              <strong>Soil data:</strong>{' '}
-              <a
-                href="https://soilgrids.org/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:text-primary/80"
-              >
-                ISRIC SoilGrids
-              </a>{' '}
-              (global soil property database)
-            </li>
-            <li>
-              <strong>Climate data:</strong>{' '}
-              <a
-                href="https://open-meteo.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:text-primary/80"
-              >
-                Open-Meteo
-              </a>{' '}
-              (weather and climate API)
-            </li>
-          </ul>
-          <p className="text-gray-900 mb-3">Sometimes this data cannot be fetched because:</p>
-          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-1">
-            <li>The APIs may be temporarily unavailable or experiencing high latency</li>
-            <li>Your selected location may not have data coverage in these databases</li>
-            <li>Network connectivity issues or firewall/ad-blocker restrictions</li>
-            <li>API rate limits may be reached during high traffic periods</li>
-          </ul>
-          <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mb-3">
-            <p className="text-sm text-primary">
-              <strong>Don&apos;t worry!</strong> When real-time data is unavailable, the simulator automatically uses{' '}
-              <strong>scientifically-based estimates</strong> derived from:
-            </p>
-            <ul className="list-disc pl-6 text-sm text-primary mt-2 space-y-1">
-              <li>Climate zone analysis (based on latitude)</li>
-              <li>Regional climate patterns</li>
-              <li>Established environmental science models</li>
-            </ul>
-          </div>
-          <p className="text-gray-900 mb-3">
-            These estimates are reliable and the calculations remain accurate. You&apos;ll see an &quot;(Estimated)&quot; indicator when
-            fallback data is used. Additionally:
-          </p>
-          <ul className="list-disc pl-6 text-gray-900 mb-3 space-y-1">
-            <li>
-              Data is <strong>cached locally</strong> for 1 hour to reduce API calls
-            </li>
-            <li>The simulator tries 3 times with different timeouts before using estimates</li>
-            <li>Estimated values are based on peer-reviewed climate zone classifications</li>
-          </ul>
-        </>
-      ),
-    },
-  ];
 
   // Load state from URL on mount
   useEffect(() => {
@@ -679,7 +165,6 @@ export default function Home() {
     setSelectedLongitude(lng);
     // Clear any existing region selection when location is searched
     setSelectedRegion(null);
-    // You could add a toast notification here to show the searched location
     logger.log(`Searched for: ${name} at ${lat}, ${lng}`);
   };
 
@@ -783,185 +268,117 @@ export default function Home() {
     }
   };
 
+  const hasLocation = !!selectedRegion || hasCoordinates(selectedLatitude, selectedLongitude);
+  const hasTrees = selectedTrees.length > 0;
+  const isReady = hasLocation && hasTrees;
+  const hasAnyState = hasLocation || hasTrees;
+  const isPlanting = simulationMode === 'planting';
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-6 md:p-8 lg:p-12">
-      <div className="container mx-auto max-w-7xl w-full">
-        <section className="text-center mb-8" aria-labelledby="main-heading">
-          <h1 id="main-heading" className="text-3xl font-bold text-center mb-2">
-            Simulate the Impact of Forest Management
+    <div data-mode={simulationMode} className="page-backdrop">
+      <div className="mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-6 md:pt-14 lg:px-8">
+        {/* Hero */}
+        <section className="mx-auto max-w-3xl text-center" aria-labelledby="main-heading">
+          <Eyebrow>Live soil &amp; climate data · 80+ species · 1–100 year horizon</Eyebrow>
+          <h1 id="main-heading" className="font-display mt-3 text-4xl leading-[1.05] text-ink-900 sm:text-5xl md:text-6xl">
+            Simulate the impact of{' '}
+            <span className="text-accent-strong">{isPlanting ? 'planting' : 'clearing'}</span> a forest
           </h1>
-          <p className="text-base text-gray-600 mb-8 max-w-3xl mx-auto text-center">
-            Use real-time environmental data to analyze the impacts of forest planting and clear-cutting on carbon storage, biodiversity, economic value, social outcomes, and land use.
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-ink-500 sm:text-lg">
+            Draw a region anywhere in the world, choose the species, and see how carbon, biodiversity, water,
+            jobs, and land change over time — powered by real environmental data and transparent formulas.
           </p>
-        </section>
-        
-        {/* Simulation Mode Selector and Reset Button */}
-        <div className="mb-10 md:mb-12">
-          <div className="flex justify-center items-center gap-4 md:gap-6 flex-wrap">
-            <div className="bg-gradient-to-r from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-2 shadow-xl">
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setSimulationMode('planting')}
-                  aria-label="Switch to planting mode"
-                  aria-pressed={simulationMode === 'planting'}
-                  className={`relative px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                    simulationMode === 'planting'
-                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-green-500/30 scale-[1.02]'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m-8-9H3m18 0h-1M5.636 5.636l.707.707m11.314 11.314l.707.707M5.636 18.364l.707-.707m11.314-11.314l.707-.707" />
-                    <circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.3" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v8M8 12h8" />
-                  </svg>
-                  <span>Planting</span>
-                  {simulationMode === 'planting' && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-                  )}
-                </button>
-                <div className="w-px h-10 bg-gray-200 mx-1" />
-                <button
-                  onClick={() => setSimulationMode('clear-cutting')}
-                  aria-label="Switch to clear-cutting mode"
-                  aria-pressed={simulationMode === 'clear-cutting'}
-                  className={`relative px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                    simulationMode === 'clear-cutting'
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30 scale-[1.02]'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                  </svg>
-                  <span>Clear-cutting</span>
-                  {simulationMode === 'clear-cutting' && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full animate-pulse" />
-                  )}
-                </button>
-              </div>
-            </div>
-            {/* Reset Button */}
-            {(hasCoordinates(selectedLatitude, selectedLongitude) || selectedRegion || selectedTrees.length > 0) && (
+
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <ModeSwitcher mode={simulationMode} onChange={setSimulationMode} />
+            {hasAnyState && (
               <button
+                type="button"
                 onClick={handleReset}
-                className="bg-white border border-red-300 text-red-700 hover:bg-red-50 px-4 py-3 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-sand-300 bg-white px-4 text-sm font-medium text-ink-700 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700"
                 title="Reset all selections"
                 aria-label="Reset all selections"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
+                <RefreshIcon size={16} />
                 Reset
               </button>
             )}
           </div>
-        </div>
-        
+        </section>
+
+        {/* Progress */}
+        <nav aria-label="Analysis progress" className="mt-10 flex justify-center">
+          <ol className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-full border border-sand-200 bg-white/80 px-5 py-2.5 shadow-sm backdrop-blur">
+            <ProgressStep index={1} label="Location" status={hasLocation ? 'done' : 'active'} icon={<MapPinIcon size={14} />} />
+            <span className="hidden h-px w-6 bg-sand-300 sm:block" aria-hidden="true" />
+            <ProgressStep index={2} label="Species" status={hasTrees ? 'done' : hasLocation ? 'active' : 'todo'} icon={<TreeIcon size={14} />} />
+            <span className="hidden h-px w-6 bg-sand-300 sm:block" aria-hidden="true" />
+            <ProgressStep index={3} label="Results" status={isReady ? 'active' : 'todo'} icon={<ChartIcon size={14} />} />
+          </ol>
+        </nav>
+
         {/* Share Notification Toast */}
         {shareNotification && (
-          <div className="fixed top-4 right-4 z-50 bg-primary text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+          <div
+            role="status"
+            className="fixed bottom-6 left-1/2 z-[1200] flex -translate-x-1/2 items-center gap-3 rounded-full bg-ink-900 px-5 py-3 text-sm font-medium text-white shadow-float animate-fade-in"
+          >
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-forest-500">
+              <CheckIcon size={14} strokeWidth={2.5} />
+            </span>
             {shareNotification}
           </div>
         )}
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 mb-12">
-            <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-shadow">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full text-xs">
-                  <svg
-                    aria-hidden="true"
-                    className="w-6 h-6 md:w-7 md:h-7"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 11a3 3 0 100-6 3 3 0 000 6z" />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 11c0 4.5 7 11 7 11s7-6.5 7-11a7 7 0 10-14 0z"
-                    />
-                  </svg>
-                  <span className="sr-only">Location step icon</span>
-                </div>
-              <div className="flex-1">
-                <h2 className="text-lg font-semibold text-gray-800">Select Location</h2>
-                <div className="text-base text-gray-600">
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li><strong>Desktop:</strong> Press CTRL + mouse click and drag.</li>
-                    <li><strong>Mobile:</strong> Tap <em>Draw</em>, then tap the map to create a selection square and drag to resize.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <ErrorBoundary fallback={
-              <div className="p-6 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-                The map failed to load. Refresh the page or search for a location instead.
-              </div>
-            }>
-              <Suspense fallback={
-                <div className="flex items-center justify-center h-96">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              }>
-                <LocationMap 
-                  onLocationSelect={handleLocationSelect}
-                  onRegionSelect={handleRegionSelect}
-                  onSearchLocation={handleSearchLocation}
-                  onClearSelection={handleClearSelection}
-                  initialRegion={selectedRegion}
-                  initialLatitude={selectedLatitude}
-                  initialLongitude={selectedLongitude}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          </div>
-          
-          <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-start gap-4 mb-6">
-                <div className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full text-xs">
-                  <svg
-                    aria-hidden="true"
-                    className="w-6 h-6 md:w-7 md:h-7"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4l4 6H8l4-6z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10l3 5H9l3-5z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v5" />
-                  </svg>
-                  <span className="sr-only">Tree selection icon</span>
-                </div>
-              <div className="flex-1">
-                <h2 className="text-lg font-semibold text-gray-800">
-                  {simulationMode === 'planting' ? 'Select Tree Species' : 'Select Tree Species'}
-                </h2>
-                <p className="text-base text-gray-600">
-                  {simulationMode === 'planting' 
-                    ? 'Select one or multiple tree types and set their distribution'
-                    : 'Select the tree species to be removed and their composition'
-                  }
-                </p>
-              </div>
-            </div>
-            <div className="flex-1">
+
+        {/* Steps 1 & 2 */}
+        <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <Panel className="p-5 sm:p-6 lg:p-7 animate-rise-in" aria-labelledby="step-location">
+            <StepHeader
+              step={1}
+              id="step-location"
+              title="Select a location"
+              description={
+                <ul className="mt-1 space-y-1">
+                  <li><span className="font-medium text-ink-700">Desktop:</span> hold <kbd className="rounded border border-sand-300 bg-sand-50 px-1.5 py-0.5 font-mono text-[11px] text-ink-700">Ctrl</kbd> and drag on the map to draw a region.</li>
+                  <li><span className="font-medium text-ink-700">Mobile:</span> tap <em>Draw</em>, then tap the map to place a square and drag to resize.</li>
+                </ul>
+              }
+            />
+            <div className="mt-5">
               <ErrorBoundary fallback={
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-                  Tree selection failed to load. Refresh the page to try again.
-                </div>
+                <Callout tone="warning">The map failed to load. Refresh the page or search for a location instead.</Callout>
               }>
-                <Suspense fallback={
-                  <div className="flex items-center justify-center h-48">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                  </div>
-                }>
+                <Suspense fallback={<LoadingBlock label="Loading map…" className="h-[440px]" />}>
+                  <LocationMap
+                    onLocationSelect={handleLocationSelect}
+                    onRegionSelect={handleRegionSelect}
+                    onSearchLocation={handleSearchLocation}
+                    onClearSelection={handleClearSelection}
+                    initialRegion={selectedRegion}
+                    initialLatitude={selectedLatitude}
+                    initialLongitude={selectedLongitude}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+          </Panel>
+
+          <Panel className="p-5 sm:p-6 lg:p-7 animate-rise-in" aria-labelledby="step-species" style={{ animationDelay: '60ms' }}>
+            <StepHeader
+              step={2}
+              id="step-species"
+              title={isPlanting ? 'Choose tree species' : 'Identify the forest composition'}
+              description={
+                isPlanting
+                  ? 'Pick one or more species to plant and set how the mix is distributed.'
+                  : 'Select the species being removed and their share of the forest.'
+              }
+            />
+            <div className="mt-5">
+              <ErrorBoundary fallback={
+                <Callout tone="warning">Tree selection failed to load. Refresh the page to try again.</Callout>
+              }>
+                <Suspense fallback={<LoadingBlock label="Loading species…" className="h-64" />}>
                   <TreeTypeSelector
                     selectedTrees={selectedTrees}
                     onTreeSelectionChange={handleTreeSelectionChange}
@@ -974,57 +391,29 @@ export default function Home() {
                 </Suspense>
               </ErrorBoundary>
             </div>
-          </div>
+          </Panel>
         </div>
-        
-        {/* Combined Calculator and Impact Results - Full Width */}
-        <div className="mt-16 md:mt-24">
-          <div className="bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg">
-            <div className="flex items-start gap-4 mb-8">
-                <div className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full text-xs">
-                  <svg
-                    aria-hidden="true"
-                    className="w-6 h-6 md:w-7 md:h-7"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 19h16" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 15v4" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 11v8" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7v12" />
-                  </svg>
-                  <span className="sr-only">Impact analysis icon</span>
-                </div>
-              <div className="flex-1">
-                <h2 className="text-lg font-semibold text-gray-800">Impact Results</h2>
-                <p className="text-base text-gray-600">
-                  {simulationMode === 'planting' 
-                    ? 'Calculate planting details and see environmental benefits'
-                    : 'Calculate removal details and see environmental impacts'
-                  }
-                </p>
-              </div>
-            </div>
-            
-            {(selectedRegion || hasCoordinates(selectedLatitude, selectedLongitude)) && selectedTrees.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Calculator Section */}
-                <div>
-                  <h3 className="text-base font-semibold text-gray-800 mb-4">
-                    {simulationMode === 'planting' ? 'Planting Calculations' : 'Removal Configuration'}
-                  </h3>
-                  <ErrorBoundary fallback={
-                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-                      Planting calculations failed. Adjust your selection and try again.
-                    </div>
-                  }>
-                  <Suspense fallback={
-                    <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                    </div>
-                  }>
+
+        {/* Step 3: configuration and results */}
+        <Panel className="mt-6 p-5 sm:p-6 lg:p-7 animate-rise-in" aria-labelledby="step-results" style={{ animationDelay: '120ms' }}>
+          <StepHeader
+            step={3}
+            id="step-results"
+            title={isPlanting ? 'Configure the project and review the impact' : 'Configure the removal and review the impact'}
+            description={
+              isPlanting
+                ? 'Adjust the time horizon and spacing, then explore environmental, economic, social, and land-use results.'
+                : 'Set the time horizon and forest age, then explore environmental, economic, social, and land-use impacts.'
+            }
+          />
+
+          {isReady ? (
+            <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-12">
+              <div className="xl:col-span-5">
+                <ErrorBoundary fallback={
+                  <Callout tone="warning">Planting calculations failed. Adjust your selection and try again.</Callout>
+                }>
+                  <Suspense fallback={<LoadingBlock label="Preparing configuration…" className="h-64" />}>
                     <TreePlantingCalculator
                       selectedRegion={selectedRegion || (hasCoordinates(selectedLatitude, selectedLongitude) ? {
                         north: selectedLatitude! + 0.01,
@@ -1045,23 +434,15 @@ export default function Home() {
                       climate={climateData}
                     />
                   </Suspense>
-                  </ErrorBoundary>
-                </div>
-                
-                {/* Impact Results Section */}
-                <div>
-                  <h3 className="text-base font-semibold text-gray-800 mb-4">Impact Analysis</h3>
-                  <ErrorBoundary fallback={
-                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-                      Impact analysis failed. Refresh the page or change the selected region.
-                    </div>
-                  }>
-                  <Suspense fallback={
-                    <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                    </div>
-                  }>
-                    <ForestImpactCalculator 
+                </ErrorBoundary>
+              </div>
+
+              <div className="xl:col-span-7">
+                <ErrorBoundary fallback={
+                  <Callout tone="warning">Impact analysis failed. Refresh the page or change the selected region.</Callout>
+                }>
+                  <Suspense fallback={<LoadingBlock label="Loading impact analysis…" className="h-64" />}>
+                    <ForestImpactCalculator
                       latitude={selectedLatitude ?? (selectedRegion ? (selectedRegion.north + selectedRegion.south) / 2 : null)}
                       longitude={selectedLongitude ?? (selectedRegion ? (selectedRegion.east + selectedRegion.west) / 2 : null)}
                       years={years}
@@ -1078,30 +459,33 @@ export default function Home() {
                       onSoilClimateDataReady={handleSoilClimateDataReady}
                     />
                   </Suspense>
-                  </ErrorBoundary>
-                </div>
+                </ErrorBoundary>
               </div>
-            ) : (
-              <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-600">
-                  {simulationMode === 'planting' 
-                    ? 'Select a region and tree types to see planting calculations and environmental impact analysis.'
-                    : 'Select a region and forest type to see removal calculations and environmental impact analysis.'
-                  }
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Export and Share Results Section */}
-        <div className="mt-12 md:mt-16 bg-white border-2 border-primary/20 rounded-2xl p-6 md:p-8 shadow-lg">
-          <Suspense fallback={
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
             </div>
-          }>
-            <ExportResults 
+          ) : (
+            <EmptyState
+              className="mt-6"
+              icon={<ChartIcon size={20} />}
+              title={
+                !hasLocation && !hasTrees
+                  ? 'Select a location and species to begin'
+                  : !hasLocation
+                    ? 'Select a location on the map to continue'
+                    : 'Select at least one tree species to continue'
+              }
+              description={
+                isPlanting
+                  ? 'Planting configuration and the full environmental impact analysis appear here once both steps are complete.'
+                  : 'Removal configuration and the full environmental impact analysis appear here once both steps are complete.'
+              }
+            />
+          )}
+        </Panel>
+
+        {/* Export and share */}
+        <div className="mt-6 animate-rise-in" style={{ animationDelay: '180ms' }}>
+          <Suspense fallback={<LoadingBlock label="Loading export options…" className="h-32" />}>
+            <ExportResults
               exportData={exportData || {
                 metadata: {
                   timestamp: new Date().toISOString(),
@@ -1148,118 +532,11 @@ export default function Home() {
             />
           </Suspense>
         </div>
-        
 
-
-        {/* FAQ Section */}
-        <div className="mt-20 md:mt-28">
-          <h2 className="text-xl font-bold text-center mb-4 flex items-center justify-center gap-2 text-gray-900">
-            <span className="flex items-center justify-center w-6 h-6 bg-primary text-white rounded-full text-xs font-semibold">
-              ?
-            </span>
-            Frequently Asked Questions
-          </h2>
-
-          {/* FAQ Search */}
-          <div className="max-w-xl mx-auto mb-6">
-            <label htmlFor="faq-search" className="sr-only">
-              Search frequently asked questions
-            </label>
-            <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
-                <svg
-                  className="h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
-                </svg>
-              </span>
-              <input
-                id="faq-search"
-                type="text"
-                value={faqSearch}
-                onChange={(e) => {
-                  setFaqSearch(e.target.value);
-                  setFaqShowAll(false);
-                }}
-                placeholder="Search questions about modes, data, exports, and more..."
-                  className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-10 pr-4 text-base text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-            <p className="mt-3 text-sm text-center text-gray-600">
-              Try searching for terms like &quot;clear-cutting&quot;, &quot;carbon&quot;, &quot;exports&quot;, or &quot;species&quot;.
-            </p>
-          </div>
-
-          {/* FAQ List */}
-          <div className="max-w-4xl mx-auto space-y-4">
-            {(() => {
-              const query = faqSearch.trim().toLowerCase();
-              const filtered = query
-                ? faqs.filter((faq) => faq.searchText.toLowerCase().includes(query) || faq.title.toLowerCase().includes(query))
-                : faqs;
-              const visible = !query && !faqShowAll ? filtered.slice(0, 5) : filtered;
-
-              if (!visible.length) {
-                return (
-                  <div className="bg-white border border-dashed border-gray-300 rounded-xl p-6 text-center text-sm text-gray-700">
-                    No questions match your search yet. Try a different keyword or clear the search box.
-                  </div>
-                );
-              }
-
-              return (
-                <>
-                  {visible.map((faq) => (
-                    <div key={faq.id} className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden mb-4">
-                      <button
-                        onClick={() => setFaqOpen((prev) => ({ ...prev, [faq.id]: !prev[faq.id] }))}
-                        className="w-full p-6 md:p-8 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-                        aria-expanded={!!faqOpen[faq.id]}
-                      >
-                        <h3 className="text-base font-semibold text-gray-800 pr-4">{faq.title}</h3>
-                        <svg
-                          className={`w-6 h-6 md:w-7 md:h-7 text-gray-500 transition-transform flex-shrink-0 ${faqOpen[faq.id] ? 'rotate-180' : ''}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                      {faqOpen[faq.id] && <div className="px-6 pb-6 text-gray-700">{faq.content}</div>}
-                    </div>
-                  ))}
-
-                  {!query && filtered.length > 5 && (
-                    <div className="flex justify-center pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setFaqShowAll((prev) => !prev)}
-                        className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
-                      >
-                        <span>{faqShowAll ? 'Show fewer questions' : `Show ${filtered.length - 5} more questions`}</span>
-                        <svg
-                          className={`h-5 w-5 md:h-6 md:w-6 transition-transform ${faqShowAll ? 'rotate-180' : ''}`}
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>
+        {/* FAQ */}
+        <div className="mt-24">
+          <FaqSection />
         </div>
-
       </div>
     </div>
   );

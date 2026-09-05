@@ -14,6 +14,8 @@ import {
 } from '@/utils/treePlanting';
 import { ExportData } from '@/utils/exportUtils';
 import { formatLatitude, formatLongitude } from '@/utils/geo';
+import { SegmentedControl, DataRow, Callout, Badge } from './ui/primitives';
+import { CalendarIcon, RulerIcon, ThermometerIcon, DropletIcon } from './ui/Icons';
 
 // Types for soil and climate data
 interface SoilData {
@@ -184,59 +186,47 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
 
 
 
+  const ageLabel =
+    averageTreeAge < 10 ? 'Young' :
+    averageTreeAge < 60 ? 'Mature' : 'Ancient';
+
   return (
-    <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 p-5 md:p-6">
-      
-      {/* Calculation Mode - At the very top */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between p-4 md:p-5 bg-gray-50 border-2 border-gray-200 rounded-xl">
+    <div className="space-y-5">
+      {/* Calculation mode */}
+      <div className="rounded-2xl border border-sand-200 bg-sand-50 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
-              Calculation Mode
-            </label>
-            {calculationMode === 'perTree' ? (
-              <p className="text-xs text-gray-600">
-                Showing impact per individual tree
-              </p>
-            ) : (
-              <p className="text-xs text-gray-600">
-                Showing impact for entire area
-              </p>
-            )}
+            <label className="text-sm font-semibold text-ink-900">Calculation mode</label>
+            <p className="mt-0.5 text-xs text-ink-500">
+              {calculationMode === 'perTree' ? 'Impact per individual tree' : 'Impact for the entire selected area'}
+            </p>
           </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setCalculationMode('perTree')}
-              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                calculationMode === 'perTree'
-                  ? 'bg-primary text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              Per Tree
-            </button>
-            <button
-              onClick={() => setCalculationMode('perArea')}
-              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                calculationMode === 'perArea'
-                  ? 'bg-primary text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              Per Area
-            </button>
-          </div>
+          <SegmentedControl
+            ariaLabel="Calculation mode"
+            value={calculationMode}
+            onChange={setCalculationMode}
+            options={[
+              { value: 'perTree', label: 'Per tree' },
+              { value: 'perArea', label: 'Per area' },
+            ]}
+          />
         </div>
       </div>
 
-      {/* Simulation Duration - Right below Calculation Mode */}
+      {/* Simulation duration */}
       {onYearsChange && (
-        <div className="mb-4">
-          <label htmlFor="years" className="block text-sm font-semibold text-gray-900 mb-3">
-            <span className="font-bold">Simulation Duration:</span> <span className="font-bold text-primary">{years} year{years !== 1 ? 's' : ''}</span>
-          </label>
+        <div className="rounded-2xl border border-sand-200 bg-white p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <label htmlFor="years" className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+              <CalendarIcon size={16} className="text-accent" />
+              Simulation duration
+            </label>
+            <span className="rounded-full bg-accent-soft px-3 py-1 text-sm font-semibold text-accent-strong tnum">
+              {years} year{years !== 1 ? 's' : ''}
+            </span>
+          </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-600 w-8 text-center font-medium">1</span>
+            <span className="w-6 text-center text-xs font-medium text-ink-400 tnum">1</span>
             <input
               id="years"
               type="range"
@@ -250,237 +240,202 @@ const TreePlantingCalculator: React.FC<TreePlantingCalculatorProps> = ({
                 const newValue = Math.max(1, Math.min(100, years + delta));
                 onYearsChange(newValue);
               }}
-              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              className="range flex-1"
               style={{
-                background: `linear-gradient(to right, #1B4D3E 0%, #1B4D3E ${((years - 1) / 99) * 100}%, #e5e7eb ${((years - 1) / 99) * 100}%, #e5e7eb 100%)`
+                background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${((years - 1) / 99) * 100}%, var(--sand-200) ${((years - 1) / 99) * 100}%, var(--sand-200) 100%)`
               }}
             />
-            <span className="text-xs text-gray-600 w-8 text-center font-medium">100</span>
+            <span className="w-8 text-center text-xs font-medium text-ink-400 tnum">100</span>
           </div>
         </div>
       )}
 
-      {/* Region and Configuration */}
-      <div className="mb-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-900 font-bold">Area size:</span>
-            <span className="text-sm font-semibold">{formatArea(plantingConfig.area)}</span>
-          </div>
+      {/* Project summary */}
+      <div className="rounded-2xl border border-sand-200 bg-white p-4">
+        <h4 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink-400">
+          {simulationMode === 'planting' ? 'Planting configuration' : 'Removal configuration'}
+        </h4>
+        <dl className="divide-y divide-sand-200">
+          <DataRow label="Area size" value={formatArea(plantingConfig.area)} emphasize />
           {selectedRegion && (
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-900 font-bold">Coordinates:</span>
-              <span className="text-xs font-medium">
-                {formatLatitude(selectedRegion.south)} to {formatLatitude(selectedRegion.north)}<br />
-                {formatLongitude(selectedRegion.west)} to {formatLongitude(selectedRegion.east)}
-              </span>
-            </div>
+            <DataRow
+              label="Coordinates"
+              value={
+                <span className="block text-right text-xs leading-relaxed tnum">
+                  {formatLatitude(selectedRegion.south)} – {formatLatitude(selectedRegion.north)}
+                  <br />
+                  {formatLongitude(selectedRegion.west)} – {formatLongitude(selectedRegion.east)}
+                </span>
+              }
+            />
           )}
-          <div className="flex items-center justify-between">
-            <span 
-              className="text-xs text-gray-900 font-bold cursor-help"
-              title="Tree spacing is optimized for healthy growth, allowing adequate sunlight, water, and root space. Denser spacing (2-3m) creates closed canopy faster, while wider spacing (4-6m) allows for understory development and easier maintenance."
-            >
-              Spacing:
-            </span>
-            <span className="text-sm font-semibold">{plantingConfig.spacing}m between trees</span>
-          </div>
-          <div className="flex items-center justify-between pb-3 border-b-2 border-gray-200">
-            <span 
-              className="text-xs text-gray-900 font-bold cursor-help"
-              title="Trees per hectare = 10,000m² ÷ (spacing in meters)². This ensures optimal tree distribution across your area for maximum forest health and carbon sequestration potential."
-            >
-              Density:
-            </span>
-            <span className="text-sm font-semibold">{formatNumber(plantingConfig.density)} trees/ha</span>
-          </div>
-          <div className="flex items-center justify-between pt-2">
-            <span className="text-xs text-gray-900 font-bold">Total Trees:</span>
-            <span className="text-sm font-bold text-primary">{formatNumber(plantingConfig.totalTrees)}</span>
-          </div>
+          <DataRow
+            label="Spacing"
+            value={`${plantingConfig.spacing} m`}
+            hint="Tree spacing is optimized for healthy growth, allowing adequate sunlight, water, and root space."
+          />
+          <DataRow
+            label="Density"
+            value={`${formatNumber(plantingConfig.density)} trees/ha`}
+            hint="Trees per hectare = 10,000 m² ÷ (spacing in meters)²."
+          />
+          <DataRow label="Total trees" value={formatNumber(plantingConfig.totalTrees)} emphasize />
           {plantingTimeline && (
             <>
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-xs text-gray-900 font-bold">Project scale:</span>
-                <span className="text-xs font-medium">{plantingTimeline.projectScale}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-900 font-bold">Planting timeline:</span>
-                <span className="text-xs font-medium">
-                  {plantingTimeline.yearsToComplete} year{plantingTimeline.yearsToComplete === 1 ? '' : 's'}
-                  {' '}({formatNumber(plantingTimeline.treesPerSeason)} trees/season)
-                </span>
-              </div>
+              <DataRow label="Project scale" value={plantingTimeline.projectScale} />
+              <DataRow
+                label="Planting timeline"
+                value={`${plantingTimeline.yearsToComplete} yr${plantingTimeline.yearsToComplete === 1 ? '' : 's'} · ${formatNumber(plantingTimeline.treesPerSeason)} trees/season`}
+              />
             </>
           )}
-        </div>
-        
+        </dl>
+
         {selectedTrees && selectedTrees.length > 1 && (
-          <div className="mt-3 p-3 bg-primary/10 border-2 border-primary/30 rounded-lg text-xs text-primary">
-            <strong>🌳 Multi-species spacing:</strong> Spacing calculated as weighted average based on your tree selection and percentages.
-          </div>
+          <Callout tone="accent" className="mt-4">
+            <strong>Multi-species spacing:</strong> Spacing is calculated as a weighted average based on your species selection and percentages.
+          </Callout>
         )}
       </div>
 
-
-      {/* Configuration Settings - Conditional based on calculation mode */}
-      <div className="mb-4 space-y-4">
-        {/* Per Area Mode Settings */}
+      {/* Additional settings */}
+      <div className="space-y-4">
         {calculationMode === 'perArea' && (
-          <>
-      {/* Custom Spacing Option */}
-            <div>
-        <label 
-          className="block text-sm font-semibold text-gray-900 mb-2 cursor-help"
-          title="Adjust spacing for specific site conditions, access requirements, or management goals. Wider spacing (5-6m) for equipment access, narrower (2-3m) for rapid canopy closure. Auto uses species-specific recommendations."
-        >
-          Custom Spacing (meters)
-        </label>
-        <div className="flex gap-3">
-          <input
-            type="number"
-            min="1"
-            max="10"
-            step="0.5"
-            value={customSpacing || ''}
-            onChange={(e) => setCustomSpacing(e.target.value ? parseFloat(e.target.value) : undefined)}
-            placeholder="Auto"
-            className="flex-1 px-4 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
-          />
-          <button
-            onClick={() => setCustomSpacing(undefined)}
-              className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold transition-colors"
-          >
-            Auto
-          </button>
-        </div>
-      </div>
-          </>
-        )}
-
-        {/* Average Tree Age (Clear-cutting mode only) */}
-        {simulationMode === 'clear-cutting' && (
-          <div>
-            <label 
-              className="block text-sm font-semibold text-gray-900 mb-2 cursor-help"
-              title="Enter the average age of trees in this forest area. Young forests: 5-15 years, Mature forests: 20-50 years, Old-growth: 50+ years. This affects carbon emission calculations."
+          <div className="rounded-2xl border border-sand-200 bg-white p-4">
+            <label
+              htmlFor="custom-spacing"
+              className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink-900"
+              title="Adjust spacing for specific site conditions, access requirements, or management goals."
             >
-              Average Tree Age (years)
+              <RulerIcon size={16} className="text-accent" />
+              Custom spacing (meters)
             </label>
-            <div className="flex gap-3 items-center">
-            <input
-              type="number"
-              min="1"
-              max="200"
-              step="1"
-              value={averageTreeAge || ''}
-              onChange={(e) => setAverageTreeAge(e.target.value ? parseInt(e.target.value) : 20)}
-              className="flex-1 px-4 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
-            />
-              <div className="text-sm text-gray-700 flex items-center font-semibold whitespace-nowrap">
-                {averageTreeAge < 10 && "Young"}
-                {averageTreeAge >= 10 && averageTreeAge < 30 && "Mature"}
-                {averageTreeAge >= 30 && averageTreeAge < 60 && "Mature"}
-                {averageTreeAge >= 60 && "Ancient"}
-              </div>
+            <div className="flex gap-2">
+              <input
+                id="custom-spacing"
+                type="number"
+                min="1"
+                max="10"
+                step="0.5"
+                value={customSpacing || ''}
+                onChange={(e) => setCustomSpacing(e.target.value ? parseFloat(e.target.value) : undefined)}
+                placeholder="Auto"
+                className="plain h-10 flex-1 rounded-xl border border-sand-300 bg-white px-3 text-sm font-medium text-ink-900 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring"
+              />
+              <button
+                type="button"
+                onClick={() => setCustomSpacing(undefined)}
+                className="rounded-xl border border-sand-300 bg-sand-50 px-4 text-sm font-medium text-ink-700 transition-colors hover:bg-sand-100"
+              >
+                Auto
+              </button>
             </div>
           </div>
         )}
 
+        {simulationMode === 'clear-cutting' && (
+          <div className="rounded-2xl border border-sand-200 bg-white p-4">
+            <label
+              htmlFor="tree-age"
+              className="mb-2 block text-sm font-semibold text-ink-900"
+              title="Enter the average age of trees in this forest area. This affects carbon emission calculations."
+            >
+              Average tree age (years)
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                id="tree-age"
+                type="number"
+                min="1"
+                max="200"
+                step="1"
+                value={averageTreeAge || ''}
+                onChange={(e) => setAverageTreeAge(e.target.value ? parseInt(e.target.value) : 20)}
+                className="plain h-10 flex-1 rounded-xl border border-sand-300 bg-white px-3 text-sm font-medium text-ink-900 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring"
+              />
+              <Badge tone={averageTreeAge >= 60 ? 'warning' : 'neutral'}>{ageLabel}</Badge>
+            </div>
+          </div>
+        )}
 
-        {/* Soil and Climate Data */}
         {(soil || climate) && (
-          <div className="mt-4 space-y-3">
-            <h4 className="font-bold text-gray-900 text-base mb-3">Environmental Data</h4>
-            
+          <div className="space-y-3">
+            <h4 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-400">Environmental data</h4>
+
             {soil && (
-              <div className="bg-primary/10 border-2 border-primary/30 rounded-xl p-4 md:p-5">
-                <h5 className="font-bold text-primary mb-3 text-sm flex items-center gap-2">
-                  Soil Data
-                  {soil.isEstimated && (
-                    <span className="text-xs font-normal text-primary/80">(Estimated)</span>
-                  )}
-                </h5>
-                <div className="space-y-2 text-xs text-primary">
-                  <div className="flex justify-between">
-                    <span className="font-medium">Soil Carbon Content:</span>
-                    <span className="font-bold">
-                      {soil?.carbon !== undefined && soil.carbon !== null ? `${soil.carbon.toFixed(1)} g/kg` : 'Not available'}
-                    </span>
+              <div className="rounded-2xl border border-sand-200 bg-sand-50 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <h5 className="text-sm font-semibold text-ink-900">Soil</h5>
+                  {soil.isEstimated && <Badge tone="warning">Estimated</Badge>}
+                </div>
+                <dl className="space-y-2 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-ink-500">Carbon content</dt>
+                    <dd className="font-semibold text-ink-900 tnum">
+                      {soil?.carbon != null ? `${soil.carbon.toFixed(1)} g/kg` : 'Not available'}
+                    </dd>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Soil pH Level:</span>
-                    <span className="font-bold">
-                      {soil?.ph !== undefined && soil.ph !== null ? soil.ph.toFixed(1) : 'Not available'}
-                    </span>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-ink-500">pH level</dt>
+                    <dd className="font-semibold text-ink-900 tnum">
+                      {soil?.ph != null ? soil.ph.toFixed(1) : 'Not available'}
+                    </dd>
                   </div>
                   {soil?.carbon && (
-                    <div className="mt-3 pt-3 border-t-2 border-primary/30">
-                      <div className="text-xs text-primary">
-                        <span className="font-bold">Carbon Bonus:</span> +{(soil.carbon * 0.1).toFixed(1)} kg CO₂/year per tree
-                      </div>
+                    <div className="border-t border-sand-200 pt-2 text-xs text-ink-600">
+                      <strong>Carbon bonus:</strong> +{(soil.carbon * 0.1).toFixed(1)} kg CO₂/year per tree
                     </div>
                   )}
                   {soil.isEstimated && (
-                    <div className="mt-3 pt-3 border-t-2 border-primary/30 text-xs text-primary/80">
-                      ℹ️ Soil data unavailable for this location. Using climate-zone estimates.
-                    </div>
+                    <p className="border-t border-sand-200 pt-2 text-xs text-ink-500">
+                      Soil data unavailable for this location. Using climate-zone estimates.
+                    </p>
                   )}
-                </div>
+                </dl>
               </div>
             )}
 
             {climate && (
-              <div className="bg-primary/10 border-2 border-primary/30 rounded-xl p-4 md:p-5">
-                <h5 className="font-bold text-primary mb-3 text-sm flex items-center gap-2">
-                  Climate Data
-                  {climate.isEstimated && (
-                    <span className="text-xs font-normal text-primary/80">(Estimated)</span>
-                  )}
-                </h5>
-                <div className="space-y-1 text-xs text-primary">
-                  <div className="flex justify-between">
-                    <span>Temperature:</span>
-                    <span className="font-medium">
-                      {climate?.temperature !== undefined && climate.temperature !== null 
-                        ? `${climate.temperature.toFixed(1)}°C` 
-                        : 'Estimated from latitude'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Annual Precipitation:</span>
-                    <span className="font-medium">
-                      {climate?.precipitation !== undefined && climate.precipitation !== null 
-                        ? `${climate.precipitation.toFixed(1)} mm` 
-                        : 'Estimated from latitude'}
-                    </span>
-                  </div>
-
-                  {climate?.historicalData && climate.historicalData.temperatures.length > 0 && (
-                    <div className="mt-3 pt-3 border-t-2 border-primary/30">
-                      <div className="text-xs text-primary">
-                        <span className="font-bold">Climate Trend:</span> {calculateLinearTrend(Array.from({length: climate.historicalData.temperatures.length}, (_, i) => i), climate.historicalData.temperatures).toFixed(3)}°C/year
-                      </div>
-                    </div>
-                  )}
-                  {climate.isEstimated && (
-                    <div className="mt-3 pt-3 border-t-2 border-primary/30 text-xs text-primary/80">
-                      ℹ️ Climate data unavailable for this location. Using climate-zone estimates.
-                    </div>
-                  )}
+              <div className="rounded-2xl border border-sand-200 bg-sand-50 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <h5 className="text-sm font-semibold text-ink-900">Climate</h5>
+                  {climate.isEstimated && <Badge tone="warning">Estimated</Badge>}
                 </div>
+                <dl className="space-y-2 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <dt className="flex items-center gap-1.5 text-ink-500"><ThermometerIcon size={14} /> Temperature</dt>
+                    <dd className="font-semibold text-ink-900 tnum">
+                      {climate?.temperature != null ? `${climate.temperature.toFixed(1)}°C` : 'Estimated from latitude'}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="flex items-center gap-1.5 text-ink-500"><DropletIcon size={14} /> Annual precipitation</dt>
+                    <dd className="font-semibold text-ink-900 tnum">
+                      {climate?.precipitation != null ? `${climate.precipitation.toFixed(1)} mm` : 'Estimated from latitude'}
+                    </dd>
+                  </div>
+                  {climate?.historicalData && climate.historicalData.temperatures.length > 0 && (
+                    <div className="border-t border-sand-200 pt-2 text-xs text-ink-600">
+                      <strong>Climate trend:</strong>{' '}
+                      {calculateLinearTrend(
+                        Array.from({ length: climate.historicalData.temperatures.length }, (_, i) => i),
+                        climate.historicalData.temperatures
+                      ).toFixed(3)}°C/year
+                    </div>
+                  )}
+                  {climate.isEstimated && (
+                    <p className="border-t border-sand-200 pt-2 text-xs text-ink-500">
+                      Climate data unavailable for this location. Using climate-zone estimates.
+                    </p>
+                  )}
+                </dl>
               </div>
             )}
           </div>
         )}
       </div>
-
-
-
     </div>
   );
 };
-
-
 
 export default TreePlantingCalculator; 

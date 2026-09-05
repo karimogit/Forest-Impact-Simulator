@@ -21,9 +21,12 @@ import { EnvironmentTab } from './tabs/EnvironmentTab';
 import { SocialTab } from './tabs/SocialTab';
 import { EconomicTab } from './tabs/EconomicTab';
 import { LandUseTab } from './tabs/LandUseTab';
+import { Callout, EmptyState, LoadingBlock, SegmentedControl, Badge } from './ui/primitives';
+import { ChartIcon, LeafIcon, BriefcaseIcon, UsersIcon, LandscapeIcon, MapPinIcon } from './ui/Icons';
 import { logger } from '@/utils/logger';
 import { hasCoordinates, percentagesSumTo100 } from '@/utils/geo';
 import { getPlantingGrowthFactor } from '@/utils/treeCalculations';
+import { getTreeCategoryColor } from '@/utils/treeColors';
 
 // Simple fetch with timeout
 const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout: number = 15000): Promise<Response> => {
@@ -1043,100 +1046,53 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
   // Early return checks - must be after all hooks and calculations
   if (!hasCoordinates(latitude, longitude)) {
     return (
-      <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
-        <p className="text-gray-600">Select a location on the map to see the potential impact of planting a forest there.</p>
-      </div>
+      <EmptyState
+        icon={<MapPinIcon size={20} />}
+        title="Select a location to view impact"
+        description="Choose a point or draw a region on the map to load environmental data and impact projections."
+      />
     );
   }
 
   if (loading) {
-    return (
-      <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-          <span className="ml-3 text-gray-600">Loading environmental data...</span>
-        </div>
-      </div>
-    );
+    return <LoadingBlock label="Loading environmental data…" className="h-48" />;
   }
 
+  const impactTabs = [
+    { value: 'environment' as const, label: 'Environment', icon: <LeafIcon size={15} /> },
+    { value: 'economic' as const, label: 'Economic', icon: <BriefcaseIcon size={15} /> },
+    { value: 'social' as const, label: 'Social', icon: <UsersIcon size={15} /> },
+    { value: 'landuse' as const, label: 'Land use', icon: <LandscapeIcon size={15} /> },
+  ];
+
   return (
-    <div className="p-6 md:p-8 bg-white border-2 border-gray-200 rounded-xl shadow-lg">
+    <div className="space-y-5">
       {error && (
-        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800" role="status">
+        <Callout tone="warning" title="Data note">
           {error}
-        </div>
+        </Callout>
       )}
 
-
-      <div className="mb-6">
-        <h4 className="text-lg font-bold text-gray-900 mb-4">Impact Analysis</h4>
-        
-        {/* Tab Navigation */}
-        <div className="flex border-b-2 border-gray-200 mb-4 overflow-x-auto" role="tablist" aria-label="Impact analysis categories">
-          <button
-            id="environment-tab"
-            onClick={() => setActiveEnvTab('environment')}
-            className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
-              activeEnvTab === 'environment'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-            }`}
-            role="tab"
-            aria-selected={activeEnvTab === 'environment'}
-            aria-controls="environment-panel"
-            tabIndex={activeEnvTab === 'environment' ? 0 : -1}
-          >
-            Environment
-          </button>
-          <button
-            id="economic-tab"
-            onClick={() => setActiveEnvTab('economic')}
-            className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
-              activeEnvTab === 'economic'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-            }`}
-            role="tab"
-            aria-selected={activeEnvTab === 'economic'}
-            aria-controls="economic-panel"
-            tabIndex={activeEnvTab === 'economic' ? 0 : -1}
-          >
-            Economic
-          </button>
-          <button
-            id="social-tab"
-            onClick={() => setActiveEnvTab('social')}
-            className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
-              activeEnvTab === 'social'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-            }`}
-            role="tab"
-            aria-selected={activeEnvTab === 'social'}
-            aria-controls="social-panel"
-            tabIndex={activeEnvTab === 'social' ? 0 : -1}
-          >
-            Social
-          </button>
-          <button
-            id="landuse-tab"
-            onClick={() => setActiveEnvTab('landuse')}
-            className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
-              activeEnvTab === 'landuse'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-            }`}
-            role="tab"
-            aria-selected={activeEnvTab === 'landuse'}
-            aria-controls="landuse-panel"
-            tabIndex={activeEnvTab === 'landuse' ? 0 : -1}
-          >
-            Land Use
-          </button>
+      <div className="rounded-2xl border border-sand-200 bg-white p-4 sm:p-5">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-display text-lg text-ink-900">Impact analysis</h3>
+            <p className="mt-0.5 text-xs text-ink-500">
+              Explore environmental, economic, social, and land-use outcomes for your scenario.
+            </p>
+          </div>
+          <div className="overflow-x-auto -mx-1 px-1" role="tablist" aria-label="Impact analysis categories">
+            <SegmentedControl
+              ariaLabel="Impact analysis categories"
+              value={activeEnvTab}
+              onChange={setActiveEnvTab}
+              options={impactTabs}
+              size="sm"
+              className="min-w-max"
+            />
+          </div>
         </div>
 
-        {/* Tab Content */}
         <div className="min-h-[100px]">
           {activeEnvTab === 'environment' && (
             <EnvironmentTab
@@ -1185,77 +1141,90 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
       </div>
 
       {selectedTrees && selectedTrees.length > 0 && (
-        <div className="mb-6 flex flex-col bg-white rounded-xl shadow-md p-5 md:p-6 max-w-3xl w-full border border-gray-200">
-          <span className="text-sm font-bold text-gray-900 mb-3">
-            Selected Trees: {selectedTrees.length} species
+        <div className="rounded-2xl border border-sand-200 bg-sand-50 p-4 sm:p-5">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <h4 className="text-sm font-semibold text-ink-900">
+              Selected species ({selectedTrees.length})
+            </h4>
             {calculationMode === 'perArea' && selectedRegion && (
-              <span className="text-primary ml-2">• {totalTrees.toLocaleString()} total trees in area</span>
+              <Badge tone="accent">{totalTrees.toLocaleString()} trees in area</Badge>
             )}
-          </span>
-          <ul className="space-y-3 text-xs text-gray-700">
+          </div>
+          <ul className="space-y-2.5">
             {selectedTrees.map((tree) => {
               const percentage = treePercentages?.[tree.id] || 0;
               return (
-                <li key={tree.id} className="flex flex-col sm:flex-row sm:items-center sm:gap-2 break-words">
-                  <span className="font-medium">{tree.name} <span className="font-normal text-gray-500">- {tree.scientificName}</span></span>
-                  <span className="text-gray-600">({tree.carbonSequestration} kg CO₂/year)</span>
-                  {selectedTrees.length > 1 && percentage > 0 && (
-                    <span className="text-primary font-medium">({percentage}%)</span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          <p className="text-xs text-gray-600 mt-4">
-            {selectedTrees.length === 0 
-              ? <><span className="font-semibold">No trees selected</span></>
-              : selectedTrees.length > 1 && percentagesSumTo100(treePercentages) 
-                ? <><span className="font-semibold">Weighted avg:</span> {calculationMode === 'perTree' ? `${impact.carbonSequestration.toFixed(1)} kg CO₂/year` : `${(impact.carbonSequestration / totalTrees).toFixed(1)} kg CO₂/year per tree`}</>
-                : <><span className="font-semibold">Average:</span> {calculationMode === 'perTree' ? `${(selectedTrees.reduce((sum, tree) => sum + tree.carbonSequestration, 0) / selectedTrees.length).toFixed(1)} kg CO₂/year per tree` : `${(selectedTrees.reduce((sum, tree) => sum + tree.carbonSequestration, 0) / selectedTrees.length).toFixed(1)} kg CO₂/year per tree`}</>
-            }
-          </p>
-        </div>
-      )}
-
-      {/* Horizontal separator line */}
-      <div className="my-6 border-t border-gray-200"></div>
-
-
-
-      {/* Impact boxes moved to Environment tab */}
-
-      {comparisons.length > 0 && (
-        <div className="mb-6 p-5 md:p-6 bg-primary/10 border-2 border-primary/30 rounded-xl">
-          <h4 className="text-base font-bold text-primary mb-3">Real-world Impact Comparison</h4>
-          <p className="text-sm text-primary mb-3 font-semibold">
-            {simulationMode === 'planting'
-              ? 'This forest would sequester the equivalent of:'
-              : 'Clear-cutting this forest would release the equivalent of:'}
-          </p>
-          <ul className="text-xs text-primary space-y-2">
-            {comparisons.map((comparison, index) => {
-              // Split comparison text and make numbers bold using React components (safe)
-              const parts = comparison.split(/(\d+\.?\d*)/g);
-              return (
-                <li key={index} className="flex items-start">
-                  <span className="text-primary mr-2">•</span>
-                  <span>
-                    {parts.map((part, partIndex) => {
-                      // Check if part is a number (matches the regex pattern)
-                      if (/^\d+\.?\d*$/.test(part)) {
-                        return <strong key={partIndex}>{part}</strong>;
-                      }
-                      return <span key={partIndex}>{part}</span>;
-                    })}
+                <li
+                  key={tree.id}
+                  className="flex flex-col gap-1 rounded-xl border border-sand-200 bg-white px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium text-ink-900">{tree.name}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getTreeCategoryColor(tree.category, 'badge')}`}>
+                        {tree.category}
+                      </span>
+                      {selectedTrees.length > 1 && percentage > 0 && (
+                        <Badge tone="accent">{percentage}%</Badge>
+                      )}
+                    </div>
+                    <p className="text-xs italic text-ink-400">{tree.scientificName}</p>
+                  </div>
+                  <span className="shrink-0 text-xs font-medium text-ink-600 tnum">
+                    {tree.carbonSequestration} kg CO₂/yr
                   </span>
                 </li>
               );
             })}
           </ul>
+          <p className="mt-3 border-t border-sand-200 pt-3 text-xs text-ink-600">
+            {selectedTrees.length > 1 && percentagesSumTo100(treePercentages)
+              ? (
+                <>
+                  <span className="font-semibold text-ink-900">Weighted average: </span>
+                  {calculationMode === 'perTree'
+                    ? `${impact.carbonSequestration.toFixed(1)} kg CO₂/year`
+                    : `${(impact.carbonSequestration / totalTrees).toFixed(1)} kg CO₂/year per tree`}
+                </>
+              )
+              : (
+                <>
+                  <span className="font-semibold text-ink-900">Average: </span>
+                  {`${(selectedTrees.reduce((sum, tree) => sum + tree.carbonSequestration, 0) / selectedTrees.length).toFixed(1)} kg CO₂/year per tree`}
+                </>
+              )}
+          </p>
         </div>
       )}
 
-
+      {comparisons.length > 0 && (
+        <Callout tone="accent" title="Real-world comparison">
+          <p className="mb-2 font-medium">
+            {simulationMode === 'planting'
+              ? 'This forest would sequester the equivalent of:'
+              : 'Clear-cutting this forest would release the equivalent of:'}
+          </p>
+          <ul className="space-y-1.5 text-sm">
+            {comparisons.map((comparison, index) => {
+              const parts = comparison.split(/(\d+\.?\d*)/g);
+              return (
+                <li key={index} className="flex items-start gap-2">
+                  <ChartIcon size={14} className="mt-0.5 shrink-0 opacity-70" />
+                  <span>
+                    {parts.map((part, partIndex) =>
+                      /^\d+\.?\d*$/.test(part) ? (
+                        <strong key={partIndex} className="font-semibold">{part}</strong>
+                      ) : (
+                        <span key={partIndex}>{part}</span>
+                      )
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </Callout>
+      )}
     </div>
   );
 };

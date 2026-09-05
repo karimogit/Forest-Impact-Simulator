@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronDownIcon } from '../ui/Icons';
 
 interface CollapsibleSectionProps {
   title: string;
@@ -18,30 +19,26 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   className = "" 
 }) => {
   return (
-    <div className={`bg-white rounded shadow p-4 ${className}`}>
+    <div className={`rounded-2xl border border-sand-200 bg-white p-4 transition-colors hover:border-ink-300 ${className}`}>
       <button
+        type="button"
         onClick={onToggle}
-        className="w-full flex items-center justify-between text-left hover:bg-gray-50 rounded transition-colors"
+        className="flex w-full items-start justify-between gap-3 text-left"
         aria-expanded={isExpanded}
         aria-label={`${title}: ${value}`}
       >
-        <div className="flex-1">
-          <div className="text-xs text-gray-900 font-bold mb-2">{title}</div>
-          <div className="text-primary font-bold text-base">{value}</div>
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-400">{title}</div>
+          <div className="mt-1 font-display text-2xl leading-tight text-accent-strong tnum">{value}</div>
         </div>
-        <svg
-          className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronDownIcon
+          size={18}
+          className={`mt-1 shrink-0 text-ink-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+        />
       </button>
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t-2 border-gray-200" role="region" aria-label={`Details for ${title}`}>
-          <p className="text-sm text-gray-700 leading-relaxed">{description}</p>
+        <div className="mt-3 border-t border-sand-200 pt-3" role="region" aria-label={`Details for ${title}`}>
+          <p className="text-sm leading-relaxed text-ink-600">{description}</p>
         </div>
       )}
     </div>
