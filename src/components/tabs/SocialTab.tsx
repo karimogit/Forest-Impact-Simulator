@@ -28,7 +28,10 @@ export const SocialTab: React.FC<SocialTabProps> = ({
   const treeDiversityBonus = selectedTrees && selectedTrees.length > 1 
     ? Math.min(selectedTrees.length * SOCIAL_IMPACT.TREE_DIVERSITY_MULTIPLIER, SOCIAL_IMPACT.MAX_DIVERSITY_BONUS) 
     : 0;
-  const timeBonus = Math.min(years * SOCIAL_IMPACT.TIME_MULTIPLIER_PLANTING, SOCIAL_IMPACT.MAX_TIME_BONUS);
+  const timeBonus = Math.min(
+    years * (isPlanting ? SOCIAL_IMPACT.TIME_MULTIPLIER_PLANTING : SOCIAL_IMPACT.TIME_MULTIPLIER_CLEARING),
+    SOCIAL_IMPACT.MAX_TIME_BONUS
+  );
   const areaBonus = selectedRegion 
     ? Math.min(calculateRegionArea(selectedRegion) * SOCIAL_IMPACT.AREA_MULTIPLIER_PLANTING, SOCIAL_IMPACT.MAX_AREA_BONUS) 
     : 0;
@@ -53,7 +56,7 @@ export const SocialTab: React.FC<SocialTabProps> = ({
           </div>
           <div className="flex items-baseline justify-between gap-4">
             <dt className="text-sm text-ink-500">{isPlanting ? 'Time investment bonus' : 'Duration impact'}</dt>
-            <dd className="text-sm font-medium text-ink-900 tnum">+{timeBonus.toFixed(1)}</dd>
+            <dd className="text-sm font-medium text-ink-900 tnum">+{timeBonus.toFixed(2)}</dd>
           </div>
           {selectedRegion && (
             <div className="flex items-baseline justify-between gap-4">
