@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { TreeType, TREE_TYPES, getTreeTypesByClimate } from '@/types/treeTypes';
-import { getTreeCategoryColor } from '@/utils/treeColors';
+import { getTreeCategoryColor, TreeCategory } from '@/utils/treeColors';
 import { equalSplitPercentages } from '@/utils/geo';
+import { SearchIcon, StarIcon, CheckIcon, XIcon } from './ui/Icons';
 
 interface TreeTypeSelectorProps {
   selectedTrees: TreeType[];
@@ -156,250 +157,282 @@ const TreeTypeSelector: React.FC<TreeTypeSelectorProps> = ({
 
 
 
+  const percentageTotal = Object.values(treePercentages).reduce((sum, p) => sum + (p || 0), 0);
+  const totalIsValid = percentageTotal === 100;
+
   return (
-    <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 p-5 md:p-6 min-h-[450px]">
-      
-      {/* Search and Filter */}
-      <div className="mb-4 md:mb-5 space-y-3">
-        <input
-          type="text"
-          placeholder="Search trees..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-          aria-label="Search tree species"
-          role="searchbox"
-        />
-        
-        <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-2" role="group" aria-label="Filter trees by category">
-          {categories.map(category => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-3 py-2 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${
-                selectedCategory === category
-                  ? getTreeCategoryColor(category as 'deciduous' | 'coniferous' | 'tropical' | 'mediterranean' | 'boreal' | 'arid' | 'subtropical' | 'all', 'bg')
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-              aria-pressed={selectedCategory === category}
-              aria-label={`Filter by ${category} trees`}
-            >
-              {category.charAt(0).toUpperCase() + category.slice(1)}
-            </button>
-          ))}
+    <div className="space-y-4">
+      {/* Search and filter */}
+      <div className="space-y-3">
+        <div className="relative">
+          <label htmlFor="tree-search" className="sr-only">Search tree species</label>
+          <SearchIcon size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" />
+          <input
+            id="tree-search"
+            type="text"
+            placeholder="Search by name, scientific name, or trait…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-11 w-full rounded-xl border border-sand-300 bg-white pl-10 pr-4 text-sm text-ink-900 placeholder:text-ink-400 shadow-sm transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring"
+            aria-label="Search tree species"
+            role="searchbox"
+          />
+        </div>
+
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scroll-thin" role="group" aria-label="Filter trees by category">
+          {categories.map(category => {
+            const active = selectedCategory === category;
+            return (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setSelectedCategory(category)}
+                className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                  active
+                    ? `${getTreeCategoryColor(category as TreeCategory, 'bg')} border-transparent shadow-sm`
+                    : 'border-sand-300 bg-white text-ink-500 hover:border-ink-300 hover:text-ink-900'
+                }`}
+                aria-pressed={active}
+                aria-label={`Filter by ${category} trees`}
+              >
+                {category}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Recommended species text - shown when region is selected */}
+      {/* Recommended species */}
       {recommendedSpecies.length > 0 && (
-        <div className="mb-4 p-3 md:p-4 bg-primary/10 border-2 border-primary/30 rounded-lg">
-          <p className="text-xs text-primary">
-            <span className="font-semibold">
-              {simulationMode === 'planting' 
-                ? 'Recommended for this region:' 
-                : 'Forest types present in this region:'
-              }
-            </span> {recommendedSpecies.map(tree => tree.name).join(', ')}
-          </p>
-        </div>
-      )}
-
-      {/* Selected Trees Summary */}
-      {selectedTrees.length > 0 && (
-        <div className="mb-4 p-3 md:p-4 bg-gray-100 border-2 border-gray-200 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-900">
-              <span className="font-bold">{selectedTrees.length}</span> tree type{selectedTrees.length !== 1 ? 's' : ''} selected
-            </p>
-            <button
-              onClick={clearAll}
-              className="px-3 py-2 text-xs bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold transition-colors"
-            >
-              Clear All
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {selectedTrees.map(tree => (
-              <div
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-accent-soft px-4 py-3">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent-strong">
+            <StarIcon size={14} className="fill-current" />
+            {simulationMode === 'planting' ? 'Recommended here' : 'Present in this region'}
+          </span>
+          {recommendedSpecies.map(tree => {
+            const isSelected = selectedTrees.some(t => t.id === tree.id);
+            return (
+              <button
                 key={tree.id}
-                className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-xs border-2"
+                type="button"
+                onClick={() => handleTreeToggle(tree)}
+                aria-pressed={isSelected}
+                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  isSelected
+                    ? 'border-accent bg-accent text-white'
+                    : 'border-transparent bg-white text-ink-700 hover:border-accent'
+                }`}
               >
-                <span className="text-lg">🌳</span>
-                <span className="text-gray-900 font-medium">{tree.name}</span>
+                {isSelected && <CheckIcon size={12} strokeWidth={2.5} />}
+                {tree.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Selected species */}
+      {selectedTrees.length > 0 && (
+        <div className="rounded-2xl border border-sand-200 bg-sand-50 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-ink-900">
+              <span className="font-semibold tnum">{selectedTrees.length}</span>{' '}
+              {selectedTrees.length === 1 ? 'species selected' : 'species selected'}
+            </p>
+            <div className="flex items-center gap-2">
+              {selectedTrees.length > 1 && (
                 <button
-                  onClick={() => handleTreeToggle(tree)}
-                  className="text-red-500 hover:text-red-700 ml-1 text-lg font-bold"
-                  aria-label={`Remove ${tree.name}`}
+                  type="button"
+                  onClick={() => {
+                    onTreePercentagesChange(equalSplitPercentages(selectedTrees.map(tree => tree.id)));
+                  }}
+                  className="rounded-lg border border-sand-300 bg-white px-2.5 py-1.5 text-xs font-medium text-ink-700 transition-colors hover:border-ink-300"
                 >
-                  ×
+                  Equal split
                 </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Percentage Distribution */}
-      {selectedTrees.length > 1 && (
-        <div className="mb-4 p-4 md:p-5 bg-gray-100 border-2 border-gray-200 rounded-lg">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-bold text-gray-900">Tree Distribution</h4>
-            <div className="flex gap-2">
+              )}
               <button
-                onClick={() => {
-                  onTreePercentagesChange(equalSplitPercentages(selectedTrees.map(tree => tree.id)));
-                }}
-                className="px-3 py-2 text-xs bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold transition-colors"
+                type="button"
+                onClick={clearAll}
+                className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-ink-500 transition-colors hover:bg-white hover:text-red-700"
               >
-                Equal Split
-              </button>
-              <button
-                onClick={() => {
-                  // Clear all percentages and remove all trees from selection
-                  onTreePercentagesChange({});
-                  onTreeSelectionChange([]);
-                }}
-                className="px-3 py-2 text-sm md:text-base bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold transition-colors"
-              >
-                Clear
+                Clear all
               </button>
             </div>
           </div>
-          
-          <div className="space-y-3">
-            {selectedTrees.map(tree => (
-              <div key={tree.id} className="flex items-center gap-3">
-                <span className="text-xs text-gray-900 font-medium w-24 truncate">{tree.name}</span>
-                <div className="flex items-center gap-2 flex-1">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={treePercentages[tree.id] || ''}
-                    onChange={(e) => {
-                      const inputValue = e.target.value;
-                      const newPercentages = { ...treePercentages };
-                      
-                      if (inputValue === '') {
-                        // Allow empty field - just remove from percentages but keep tree selected
-                        delete newPercentages[tree.id];
-                      } else {
-                        const value = parseInt(inputValue) || 0;
-                        if (value > 0) {
-                          newPercentages[tree.id] = value;
-                        } else {
-                          // If value is 0, just remove from percentages but keep tree selected
-                          delete newPercentages[tree.id];
-                        }
-                      }
-                      
-                      onTreePercentagesChange(newPercentages);
-                    }}
-                    className="w-20 px-3 py-2 text-sm border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
-                    aria-label={`Percentage for ${tree.name}`}
-                  />
-                  <span className="text-sm text-gray-900 font-semibold">%</span>
-                </div>
-                <div className="w-24 md:w-32 h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full transition-all duration-200 ${getTreeCategoryColor(tree.category, 'bg')}`}
-                    style={{ width: `${treePercentages[tree.id] || 0}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-            
-            <div className="flex items-center justify-between pt-3 border-t-2 border-gray-300">
-              <span className="text-sm text-gray-900 font-bold">Total:</span>
-              <span className={`text-sm font-bold ${
-                Object.values(treePercentages).reduce((sum, p) => sum + (p || 0), 0) === 100 
-                  ? 'text-primary' 
-                  : 'text-red-500'
-              }`}>
-                {Object.values(treePercentages).reduce((sum, p) => sum + (p || 0), 0)}%
-              </span>
+
+          {selectedTrees.length === 1 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {selectedTrees.map(tree => (
+                <span
+                  key={tree.id}
+                  className="inline-flex items-center gap-2 rounded-full border border-sand-200 bg-white pl-3 pr-1.5 py-1 text-xs font-medium text-ink-900"
+                >
+                  <span className={`h-2 w-2 rounded-full ${getTreeCategoryColor(tree.category, 'bg')}`} aria-hidden="true" />
+                  {tree.name}
+                  <button
+                    type="button"
+                    onClick={() => handleTreeToggle(tree)}
+                    className="rounded-full p-0.5 text-ink-400 hover:bg-sand-100 hover:text-red-600"
+                    aria-label={`Remove ${tree.name}`}
+                  >
+                    <XIcon size={12} />
+                  </button>
+                </span>
+              ))}
             </div>
-            
-            {Object.values(treePercentages).reduce((sum, p) => sum + (p || 0), 0) !== 100 && (
-              <p className="text-xs text-red-500 font-semibold">
-                Total should equal 100% for accurate calculations
-              </p>
-            )}
-          </div>
+          ) : (
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-400">Distribution</h4>
+                <span className={`text-xs font-semibold tnum ${totalIsValid ? 'text-accent-strong' : 'text-red-600'}`}>
+                  Total {percentageTotal}%
+                </span>
+              </div>
+
+              <ul className="space-y-2.5">
+                {selectedTrees.map(tree => (
+                  <li key={tree.id} className="flex items-center gap-3">
+                    <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${getTreeCategoryColor(tree.category, 'bg')}`} aria-hidden="true" />
+                    <span className="w-28 shrink-0 truncate text-sm font-medium text-ink-900 sm:w-36" title={tree.name}>{tree.name}</span>
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-sand-200">
+                      <div
+                        className={`h-full rounded-full transition-all duration-200 ${getTreeCategoryColor(tree.category, 'bg')}`}
+                        style={{ width: `${Math.min(100, treePercentages[tree.id] || 0)}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={treePercentages[tree.id] || ''}
+                        onChange={(e) => {
+                          const inputValue = e.target.value;
+                          const newPercentages = { ...treePercentages };
+                          
+                          if (inputValue === '') {
+                            // Allow empty field - just remove from percentages but keep tree selected
+                            delete newPercentages[tree.id];
+                          } else {
+                            const value = parseInt(inputValue) || 0;
+                            if (value > 0) {
+                              newPercentages[tree.id] = value;
+                            } else {
+                              // If value is 0, just remove from percentages but keep tree selected
+                              delete newPercentages[tree.id];
+                            }
+                          }
+                          
+                          onTreePercentagesChange(newPercentages);
+                        }}
+                        className="plain h-8 w-14 rounded-lg border border-sand-300 bg-white px-2 text-right text-sm font-medium text-ink-900 tnum focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring"
+                        aria-label={`Percentage for ${tree.name}`}
+                      />
+                      <span className="text-xs text-ink-400">%</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleTreeToggle(tree)}
+                      className="rounded-md p-1 text-ink-300 hover:bg-white hover:text-red-600"
+                      aria-label={`Remove ${tree.name}`}
+                    >
+                      <XIcon size={14} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              {!totalIsValid && (
+                <p className="text-xs font-medium text-red-600">
+                  Total should equal 100% for accurate calculations.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Tree Grid */}
-      <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
-        {filteredTrees.map(tree => {
-          const isSelected = selectedTrees.some(t => t.id === tree.id);
-          const isRecommended = recommendedSpecies.some(rec => rec.id === tree.id);
-          return (
-            <div
-              key={tree.id}
-              onClick={() => handleTreeToggle(tree)}
-              className={`p-4 md:p-5 border-2 rounded-xl cursor-pointer transition-all hover:shadow-lg ${
-                isSelected
-                  ? `${getTreeCategoryColor(tree.category, 'bg-light')} border-primary`
-                  : 'border-gray-200 hover:border-primary/50'
-              }`}
-              role="checkbox"
-              aria-checked={isSelected}
-              aria-label={`${tree.name} - ${tree.scientificName}. Carbon sequestration: ${tree.carbonSequestration} kg CO₂/year`}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleTreeToggle(tree);
-                }
-              }}
-            >
-              {/* Tree Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1 mr-3">
-                    <h4 className="font-bold text-gray-900 text-sm">
-                      {isRecommended && <span className="text-primary mr-2 text-base">★</span>}
-                      {tree.name} <span className="font-normal text-gray-600 text-xs">- {tree.scientificName}</span>
-                    </h4>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {/* Selection Indicator */}
-                    {isSelected && (
-                      <div className={`w-6 h-6 text-white rounded-full flex items-center justify-center text-xs font-bold ${getTreeCategoryColor(tree.category, 'bg')}`}>
-                        ✓
-                      </div>
-                    )}
-                    <span className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 ${getTreeCategoryColor(tree.category, 'bg')}`}>
-                      {tree.category.charAt(0).toUpperCase() + tree.category.slice(1)}
-                    </span>
+      {/* Species list */}
+      <div>
+        <div className="mb-2 flex items-center justify-between px-1">
+          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-400">
+            {filteredTrees.length} {filteredTrees.length === 1 ? 'species' : 'species'}
+          </span>
+          <span className="text-xs text-ink-400">Carbon in kg CO₂ / year per mature tree</span>
+        </div>
+        <ul className="max-h-[420px] space-y-2 overflow-y-auto pr-1 scroll-thin" aria-label="Available tree species">
+          {filteredTrees.map(tree => {
+            const isSelected = selectedTrees.some(t => t.id === tree.id);
+            const isRecommended = recommendedSpecies.some(rec => rec.id === tree.id);
+            return (
+              <li key={tree.id}>
+                <div
+                  onClick={() => handleTreeToggle(tree)}
+                  className={`group flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 transition-all ${
+                    isSelected
+                      ? 'border-accent bg-accent-soft/60 shadow-sm'
+                      : 'border-sand-200 bg-white hover:border-ink-300 hover:shadow-card'
+                  }`}
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  aria-label={`${tree.name} - ${tree.scientificName}. Carbon sequestration: ${tree.carbonSequestration} kg CO₂/year`}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleTreeToggle(tree);
+                    }
+                  }}
+                >
+                  <span
+                    className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
+                      isSelected ? 'border-accent bg-accent text-white' : 'border-sand-300 bg-white group-hover:border-ink-300'
+                    }`}
+                    aria-hidden="true"
+                  >
+                    {isSelected && <CheckIcon size={13} strokeWidth={3} />}
+                  </span>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <h4 className="text-sm font-semibold text-ink-900">{tree.name}</h4>
+                      <span className="text-xs italic text-ink-400">{tree.scientificName}</span>
+                      {isRecommended && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent-strong">
+                          <StarIcon size={11} className="fill-current" />
+                          {simulationMode === 'planting' ? 'Recommended' : 'Present'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-500">
+                      <span className={`rounded-full px-2 py-0.5 font-medium capitalize ${getTreeCategoryColor(tree.category, 'badge')}`}>
+                        {tree.category}
+                      </span>
+                      <span>
+                        <span className="font-semibold text-ink-900 tnum">{tree.carbonSequestration}</span> kg CO₂/yr
+                      </span>
+                      <span className="capitalize">
+                        Growth <span className="font-semibold text-ink-900">{tree.growthRate}</span>
+                      </span>
+                      <span>
+                        Biodiversity <span className="font-semibold text-ink-900 tnum">{tree.biodiversityValue}</span>/5
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3 mb-3">
-                  <div className="text-center bg-white border-2 border-gray-300 rounded-lg p-3">
-                    <div className="text-xs font-semibold text-gray-900">Carbon: {tree.carbonSequestration} kg</div>
-                  </div>
-                  <div className="text-center bg-white border-2 border-gray-300 rounded-lg p-3">
-                    <div className="text-xs font-semibold text-gray-900 capitalize">Growth: {tree.growthRate}</div>
-                  </div>
-                  <div className="text-center bg-white border-2 border-gray-300 rounded-lg p-3">
-                    <div className="text-xs font-semibold text-gray-900">Bio: {tree.biodiversityValue}</div>
-                  </div>
-                </div>
+              </li>
+            );
+          })}
+        </ul>
 
-
-              </div>
-            </div>
-          );
-        })}
+        {filteredTrees.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-sand-300 bg-sand-50 py-8 text-center">
+            <p className="text-sm font-semibold text-ink-900">No trees match your search.</p>
+            <p className="mt-1 text-xs text-ink-500">Try a different keyword or category.</p>
+          </div>
+        )}
       </div>
-
-      {filteredTrees.length === 0 && (
-        <div className="text-center py-8 text-gray-600">
-          <p className="text-sm font-semibold">No trees found matching your criteria.</p>
-          <p className="text-xs mt-2">Try adjusting your search or filters.</p>
-        </div>
-      )}
     </div>
   );
 };

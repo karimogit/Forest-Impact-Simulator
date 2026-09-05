@@ -1,97 +1,300 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------
+   Design tokens
+   ------------------------------------------------------------------ */
 :root {
-  --background: #FFFFFF; /* Pure White */
-  --foreground: #1B4D3E; /* Dark Green */
+  /* Brand greens */
+  --forest-50: #f2f8f4;
+  --forest-100: #e1f0e7;
+  --forest-200: #c3e0d0;
+  --forest-300: #93c7ac;
+  --forest-400: #5fa985;
+  --forest-500: #3b8c67;
+  --forest-600: #2a7052;
+  --forest-700: #1b4d3e;
+  --forest-800: #173f34;
+  --forest-900: #12312a;
+  --forest-950: #0a1d18;
+
+  /* Warm neutrals */
+  --sand-50: #fbfaf7;
+  --sand-100: #f5f2eb;
+  --sand-200: #eae5da;
+  --sand-300: #d9d2c3;
+  --sand-400: #b8af9c;
+
+  /* Text */
+  --ink-900: #141b18;
+  --ink-700: #2e3a34;
+  --ink-500: #5b6a62;
+  --ink-400: #7f8c85;
+  --ink-300: #a6b0aa;
+
+  /* Clear-cutting accent */
+  --ember-50: #fff7ed;
+  --ember-100: #ffedd5;
+  --ember-200: #fed7aa;
+  --ember-500: #d97706;
+  --ember-600: #b45309;
+  --ember-700: #92400e;
+
+  /* Mode-aware accent (planting by default) */
+  --accent: var(--forest-600);
+  --accent-strong: var(--forest-700);
+  --accent-soft: var(--forest-100);
+  --accent-ring: var(--forest-300);
+
+  --background: var(--sand-50);
+  --foreground: var(--ink-900);
+}
+
+[data-mode="clear-cutting"] {
+  --accent: var(--ember-600);
+  --accent-strong: var(--ember-700);
+  --accent-soft: var(--ember-100);
+  --accent-ring: var(--ember-200);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-primary: #1B4D3E; /* Dark Green */
-  --color-secondary: #2D5A4A; /* Slightly lighter dark green */
+
+  --color-forest-50: var(--forest-50);
+  --color-forest-100: var(--forest-100);
+  --color-forest-200: var(--forest-200);
+  --color-forest-300: var(--forest-300);
+  --color-forest-400: var(--forest-400);
+  --color-forest-500: var(--forest-500);
+  --color-forest-600: var(--forest-600);
+  --color-forest-700: var(--forest-700);
+  --color-forest-800: var(--forest-800);
+  --color-forest-900: var(--forest-900);
+  --color-forest-950: var(--forest-950);
+
+  --color-sand-50: var(--sand-50);
+  --color-sand-100: var(--sand-100);
+  --color-sand-200: var(--sand-200);
+  --color-sand-300: var(--sand-300);
+  --color-sand-400: var(--sand-400);
+
+  --color-ink-900: var(--ink-900);
+  --color-ink-700: var(--ink-700);
+  --color-ink-500: var(--ink-500);
+  --color-ink-400: var(--ink-400);
+  --color-ink-300: var(--ink-300);
+
+  --color-ember-50: var(--ember-50);
+  --color-ember-100: var(--ember-100);
+  --color-ember-200: var(--ember-200);
+  --color-ember-500: var(--ember-500);
+  --color-ember-600: var(--ember-600);
+  --color-ember-700: var(--ember-700);
+
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ring: var(--accent-ring);
+
+  /* Kept for backwards compatibility with existing utilities */
+  --color-primary: var(--forest-700);
+  --color-secondary: var(--forest-600);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+
+  --shadow-card: 0 1px 2px rgba(20, 27, 24, 0.04), 0 8px 24px -12px rgba(20, 27, 24, 0.12);
+  --shadow-float: 0 12px 40px -16px rgba(20, 27, 24, 0.28);
+
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.75rem;
+}
+
+/* ------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------ */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: #FFFFFF !important;
+  background-color: var(--background);
   color: var(--foreground);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 144, "SOFT" 30;
+  letter-spacing: -0.015em;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
-main {
-  background: #FFFFFF !important;
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink-900);
 }
 
+/* Subtle page backdrop */
+.page-backdrop {
+  background:
+    radial-gradient(1200px 420px at 50% -120px, rgba(59, 140, 103, 0.14), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent 320px);
+}
+[data-mode="clear-cutting"] .page-backdrop {
+  background:
+    radial-gradient(1200px 420px at 50% -120px, rgba(217, 119, 6, 0.14), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent 320px);
+}
+
+/* Tabular numbers for data displays */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------
+   Motion
+   ------------------------------------------------------------------ */
 @keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in 0.25s ease-out; }
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-rise-in { animation: rise-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in, .animate-rise-in { animation: none; }
+  html { scroll-behavior: auto; }
 }
 
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
+/* ------------------------------------------------------------------
+   Form controls
+   ------------------------------------------------------------------ */
+input[type="range"].range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--sand-200);
+  outline: none;
+}
+input[type="range"].range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 2px solid var(--accent);
+  box-shadow: 0 2px 6px rgba(20, 27, 24, 0.18);
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+input[type="range"].range::-webkit-slider-thumb:hover { transform: scale(1.08); }
+input[type="range"].range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 2px solid var(--accent);
+  box-shadow: 0 2px 6px rgba(20, 27, 24, 0.18);
+  cursor: pointer;
 }
 
-/* Custom Leaflet marker styled with branding green */
+/* Hide number spinners for a cleaner look; keyboard still works */
+input[type="number"].plain::-webkit-outer-spin-button,
+input[type="number"].plain::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"].plain { -moz-appearance: textfield; appearance: textfield; }
+
+/* Thin scrollbars inside scrollable panels */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sand-300) transparent;
+}
+.scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--sand-300);
+  border-radius: 9999px;
+}
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
+
+/* ------------------------------------------------------------------
+   Leaflet integration
+   ------------------------------------------------------------------ */
+.leaflet-container {
+  font-family: var(--font-sans);
+  border-radius: inherit;
+}
+.leaflet-control-zoom a,
+.leaflet-bar a {
+  color: var(--ink-700) !important;
+}
+.leaflet-bar {
+  border: 1px solid var(--sand-200) !important;
+  border-radius: 10px !important;
+  box-shadow: var(--shadow-card) !important;
+  overflow: hidden;
+}
+.leaflet-control-scale-line {
+  border-color: var(--ink-700) !important;
+  color: var(--ink-700) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: var(--shadow-float);
+}
+
 .custom-marker-icon {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Pulsing animation for the marker to make it more visible */
 @keyframes marker-pulse {
-  0% {
-    box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.4), 0 6px 12px rgba(15, 23, 42, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(27, 77, 62, 0.2), 0 6px 12px rgba(15, 23, 42, 0.4);
-  }
-  100% {
-    box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.4), 0 6px 12px rgba(15, 23, 42, 0.4);
-  }
+  0%   { box-shadow: 0 0 0 3px rgba(42, 112, 82, 0.35), 0 6px 12px rgba(15, 23, 42, 0.35); }
+  50%  { box-shadow: 0 0 0 9px rgba(42, 112, 82, 0.15), 0 6px 12px rgba(15, 23, 42, 0.35); }
+  100% { box-shadow: 0 0 0 3px rgba(42, 112, 82, 0.35), 0 6px 12px rgba(15, 23, 42, 0.35); }
 }
 
 .custom-marker-pin {
   display: block;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 9999px;
-  background-color: #1B4D3E; /* branding primary green */
-  border: 3px solid #FFFFFF;
-  box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.4), 0 6px 12px rgba(15, 23, 42, 0.4);
+  background-color: var(--accent);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 3px rgba(42, 112, 82, 0.35), 0 6px 12px rgba(15, 23, 42, 0.35);
   animation: marker-pulse 2s ease-in-out infinite;
 }
 
-/* Ensure Leaflet marker containers don't interfere with custom styling */
 .leaflet-marker-icon.custom-marker-icon {
   background: transparent !important;
   border: none !important;
 }
 
-/* Custom overlay panes for forest and protected area overlays */
 .leaflet-forestOverlayPane-pane,
 .leaflet-protectedOverlayPane-pane {
   z-index: 450 !important;
   pointer-events: auto;
 }
-
-.leaflet-protectedOverlayPane-pane {
-  z-index: 455 !important;
-}
-
-/* Ensure overlay polygons are visible and clickable */
+.leaflet-protectedOverlayPane-pane { z-index: 455 !important; }
 .leaflet-forestOverlayPane-pane path,
 .leaflet-protectedOverlayPane-pane path {
   pointer-events: auto;

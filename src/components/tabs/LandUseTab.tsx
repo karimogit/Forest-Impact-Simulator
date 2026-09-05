@@ -1,4 +1,5 @@
 import React from 'react';
+import { LandscapeIcon } from '../ui/Icons';
 
 interface LandUseTabProps {
   simulationMode: 'planting' | 'clear-cutting';
@@ -21,89 +22,86 @@ export const LandUseTab: React.FC<LandUseTabProps> = ({
   selectedRegion,
   landUseImpact
 }) => {
+  const isPlanting = simulationMode === 'planting';
+
+  const Metric = ({ label, value }: { label: string; value: string }) => (
+    <div className="flex items-baseline justify-between gap-4 py-2">
+      <span className="text-sm text-ink-500">{label}</span>
+      <span className="text-sm font-semibold text-ink-900 tnum">{value}</span>
+    </div>
+  );
+
   return (
-    <div className="space-y-3" role="tabpanel" id="landuse-panel" aria-labelledby="landuse-tab">
-      <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
-        <h5 className="font-semibold text-green-800 mb-2 flex items-center">
-          {simulationMode === 'planting' ? 'Land Use Improvements' : 'Land Use Impact Assessment'}
+    <div className="space-y-4" role="tabpanel" id="landuse-panel" aria-labelledby="landuse-tab">
+      <div className="rounded-2xl border border-sand-200 bg-sand-50 p-4">
+        <h5 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink-900">
+          <LandscapeIcon size={16} className="text-accent" />
+          {isPlanting ? 'Land use improvements' : 'Land use impact assessment'}
         </h5>
-        <div className="space-y-3 text-xs text-primary">
+        <div className="divide-y divide-sand-200">
           {selectedRegion && (
-            <div className="flex justify-between">
-              <span>{simulationMode === 'planting' ? 'Erosion Reduction:' : 'Erosion Risk Increase:'}</span>
-              <span className="font-medium">
-                {simulationMode === 'planting' 
-                  ? `${landUseImpact.erosionReduction.toFixed(0)}%`
-                  : `${(100 - landUseImpact.erosionReduction).toFixed(0)}%`
-                }
-              </span>
-            </div>
+            <Metric
+              label={isPlanting ? 'Erosion reduction' : 'Erosion risk increase'}
+              value={isPlanting
+                ? `${landUseImpact.erosionReduction.toFixed(0)}%`
+                : `${(100 - landUseImpact.erosionReduction).toFixed(0)}%`}
+            />
           )}
-          <div className="flex justify-between">
-            <span>{simulationMode === 'planting' ? 'Soil Quality Improvement:' : 'Soil Quality Degradation:'}</span>
-            <span className="font-medium">
-              {simulationMode === 'planting' 
-                ? `${landUseImpact.soilImprovement.toFixed(0)}%`
-                : `${(100 - landUseImpact.soilImprovement).toFixed(0)}%`
-              }
-            </span>
-          </div>
+          <Metric
+            label={isPlanting ? 'Soil quality improvement' : 'Soil quality degradation'}
+            value={isPlanting
+              ? `${landUseImpact.soilImprovement.toFixed(0)}%`
+              : `${(100 - landUseImpact.soilImprovement).toFixed(0)}%`}
+          />
           {selectedRegion && (
-            <div className="flex justify-between">
-              <span>{simulationMode === 'planting' ? 'Habitat Creation:' : 'Habitat Loss:'}</span>
-              <span className="font-medium">
-                {simulationMode === 'planting' 
-                  ? `${landUseImpact.habitatCreation.toFixed(0)}%`
-                  : `${(100 - landUseImpact.habitatCreation).toFixed(0)}%`
-                }
-              </span>
-            </div>
+            <Metric
+              label={isPlanting ? 'Habitat creation' : 'Habitat loss'}
+              value={isPlanting
+                ? `${landUseImpact.habitatCreation.toFixed(0)}%`
+                : `${(100 - landUseImpact.habitatCreation).toFixed(0)}%`}
+            />
           )}
-          <div className="flex justify-between">
-            <span>{simulationMode === 'planting' ? 'Water Quality Improvement:' : 'Water Quality Degradation:'}</span>
-            <span className="font-medium">
-              {simulationMode === 'planting' 
-                ? `${landUseImpact.waterQuality.toFixed(0)}%`
-                : `${(100 - landUseImpact.waterQuality).toFixed(0)}%`
-              }
-            </span>
-          </div>
+          <Metric
+            label={isPlanting ? 'Water quality improvement' : 'Water quality degradation'}
+            value={isPlanting
+              ? `${landUseImpact.waterQuality.toFixed(0)}%`
+              : `${(100 - landUseImpact.waterQuality).toFixed(0)}%`}
+          />
         </div>
       </div>
-      
-      <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
-        <h5 className="font-semibold text-green-800 mb-2 flex items-center">
-          {simulationMode === 'planting' ? 'Land Use Benefits' : 'Land Use Impacts'}
+
+      <div className="rounded-2xl border border-sand-200 bg-white p-4">
+        <h5 className="mb-3 text-sm font-semibold text-ink-900">
+          {isPlanting ? 'Land use benefits' : 'Land use impacts'}
         </h5>
-        <ul className="text-xs text-primary space-y-2">
-          {simulationMode === 'planting' ? (
+        <ul className="space-y-2 text-sm text-ink-600">
+          {isPlanting ? (
             <>
-              <li>• Soil erosion prevention and stabilization</li>
-              <li>• Improved soil fertility and structure</li>
-              <li>• Wildlife habitat creation and connectivity</li>
-              <li>• Water filtration and quality improvement</li>
-              <li>• Microclimate regulation and temperature moderation</li>
-              <li>• Land restoration and ecosystem recovery</li>
+              <li>Soil erosion prevention and stabilization</li>
+              <li>Improved soil fertility and structure</li>
+              <li>Wildlife habitat creation and connectivity</li>
+              <li>Water filtration and quality improvement</li>
+              <li>Microclimate regulation and temperature moderation</li>
+              <li>Land restoration and ecosystem recovery</li>
             </>
           ) : (
             <>
-              <li>• Increased soil erosion and instability</li>
-              <li>• Reduced soil fertility and structure degradation</li>
-              <li>• Wildlife habitat loss and fragmentation</li>
-              <li>• Reduced water filtration and quality decline</li>
-              <li>• Microclimate disruption and temperature changes</li>
-              <li>• Land degradation and ecosystem disruption</li>
+              <li>Increased soil erosion and instability</li>
+              <li>Reduced soil fertility and structure degradation</li>
+              <li>Wildlife habitat loss and fragmentation</li>
+              <li>Reduced water filtration and quality decline</li>
+              <li>Microclimate disruption and temperature changes</li>
+              <li>Land degradation and ecosystem disruption</li>
             </>
           )}
         </ul>
       </div>
-      
-      <div className="text-xs text-gray-600 italic">
-        {simulationMode === 'planting' 
-          ? 'Land use improvements increase over time as the forest develops and matures'
-          : 'Land use impacts represent the environmental costs of forest removal and land conversion'
-        }
-      </div>
+
+      <p className="text-xs italic text-ink-400">
+        {isPlanting
+          ? 'Land use improvements increase over time as the forest develops and matures.'
+          : 'Land use impacts represent the environmental costs of forest removal and land conversion.'}
+      </p>
     </div>
   );
 };

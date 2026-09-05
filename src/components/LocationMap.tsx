@@ -10,6 +10,7 @@ import { getLocationHistory, addToLocationHistory, removeFromLocationHistory, fo
 import { logger } from '@/utils/logger';
 import { escapeHtml } from '@/utils/security';
 import { formatLatitude, formatLongitude, hasCoordinates } from '@/utils/geo';
+import { ClockIcon, XIcon, LayersIcon, CheckIcon, MapPinIcon, Spinner, RulerIcon } from './ui/Icons';
 
 // Dynamically import Leaflet components to avoid SSR issues
 const MapContainer = dynamic(
@@ -63,7 +64,12 @@ const ClientOnlyMap = ({ children }: { children: React.ReactNode }) => {
   }, []);
   
   if (!isClient) {
-    return <div className="h-96 bg-gray-100 flex items-center justify-center">Loading map...</div>;
+    return (
+      <div className="flex h-[440px] items-center justify-center gap-3 bg-sand-100 text-sm text-ink-500">
+        <Spinner size={18} className="text-accent" />
+        Loading map…
+      </div>
+    );
   }
   
   return <>{children}</>;
@@ -417,10 +423,10 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
   
   if (isLoading) {
     return (
-      <div className="leaflet-top leaflet-left" style={{ top: '60px', left: '10px' }}>
-        <div className="bg-white px-2 py-1 rounded shadow-md text-xs text-gray-600 flex items-center gap-1">
-          <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
-          Loading map data...
+      <div className="leaflet-top leaflet-left" style={{ top: '84px', left: '10px' }}>
+        <div className="flex items-center gap-2 rounded-full border border-sand-200 bg-white/95 px-3 py-1.5 text-xs font-medium text-ink-700 shadow-card">
+          <Spinner size={12} className="text-accent" />
+          Loading map data…
         </div>
       </div>
     );
@@ -428,11 +434,9 @@ const OSMOverlays = ({ showForests, showProtectedAreas }: { showForests: boolean
   
   if (showZoomHint) {
     return (
-      <div className="leaflet-top leaflet-left" style={{ top: '60px', left: '10px' }}>
-        <div className="bg-amber-50 border border-amber-200 px-2 py-1 rounded shadow-md text-xs text-amber-700 flex items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-          </svg>
+      <div className="leaflet-top leaflet-left" style={{ top: '84px', left: '10px' }}>
+        <div className="flex items-center gap-2 rounded-full border border-ember-200 bg-ember-50/95 px-3 py-1.5 text-xs font-medium text-ember-700 shadow-card">
+          <LayersIcon size={12} />
           Zoom in to see overlays (level 10+, current: {zoomLevel})
         </div>
       </div>
@@ -490,87 +494,6 @@ const VegetationLayer = ({ show }: { show: boolean }) => {
   }, [map, show]);
   
   return null;
-};
-
-// Locate me control component
-const LocateControl = ({ onLocate }: { onLocate?: (lat: number, lng: number) => void }) => {
-  const map = useMap();
-  const [locating, setLocating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const handleLocate = () => {
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser');
-      setTimeout(() => setError(null), 3000);
-      return;
-    }
-    
-    setLocating(true);
-    setError(null);
-    
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        
-        map.setView([lat, lng], 13, { animate: true });
-        
-        if (onLocate) {
-          onLocate(lat, lng);
-        }
-        
-        setLocating(false);
-      },
-      (error) => {
-        logger.error('Geolocation error:', error);
-        setError('Unable to get your location');
-        setTimeout(() => setError(null), 3000);
-        setLocating(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
-    );
-  };
-  
-  return (
-    <>
-      <div className="leaflet-top leaflet-right" style={{ top: '10px', right: '10px' }}>
-        <div className="leaflet-control leaflet-bar">
-          <button
-            onClick={handleLocate}
-            disabled={locating}
-            className="bg-white hover:bg-gray-50 w-[30px] h-[30px] flex items-center justify-center border-none cursor-pointer disabled:cursor-wait disabled:opacity-60"
-            title="Locate me"
-            aria-label="Locate me"
-            style={{
-              fontSize: '18px',
-              lineHeight: '30px',
-              color: '#333',
-            }}
-          >
-            {locating ? (
-              <span aria-hidden="true" className="text-xs">...</span>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
-      {error && (
-        <div className="leaflet-top leaflet-right" style={{ top: '50px', right: '10px' }}>
-          <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-xs max-w-[200px]">
-            {error}
-          </div>
-        </div>
-      )}
-    </>
-  );
 };
 
 // Layer switcher control component
@@ -646,106 +569,80 @@ const LayerSwitcher = ({
     setActiveLayer(layer);
   };
   
+  const baseLayers: { id: 'street' | 'satellite' | 'terrain'; label: string }[] = [
+    { id: 'satellite', label: 'Satellite' },
+    { id: 'street', label: 'Street' },
+    { id: 'terrain', label: 'Terrain' },
+  ];
+
+  const overlays = [
+    { label: 'Forests', active: showForests, onToggle: onToggleForests, swatch: '#228B22' },
+    { label: 'Protected areas', active: showProtectedAreas, onToggle: onToggleProtectedAreas, swatch: '#4169E1' },
+    { label: 'Vegetation (NASA)', active: showVegetation, onToggle: onToggleVegetation, swatch: '#84cc16' },
+  ];
+
   return (
     <div className="leaflet-bottom leaflet-right" style={{ bottom: '30px', right: '10px' }}>
-      <div className="leaflet-control leaflet-bar bg-white rounded shadow-md">
+      <div className="leaflet-control relative">
         <button
+          type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 border-none cursor-pointer flex items-center gap-2"
+          aria-expanded={isOpen}
+          aria-haspopup="true"
+          className="flex items-center gap-2 rounded-xl border border-sand-200 bg-white/95 px-3 py-2 text-xs font-medium text-ink-700 shadow-card backdrop-blur transition-colors hover:bg-white cursor-pointer"
           title="Map layers & overlays"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-          </svg>
+          <LayersIcon size={15} />
           <span className="hidden sm:inline">Layers</span>
         </button>
         {isOpen && (
-          <div className="absolute bottom-full right-0 mb-2 bg-white rounded shadow-lg border border-gray-200 min-w-[180px]">
-            {/* Base Layers Section */}
-            <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-200">
-              <span className="text-xs font-semibold text-gray-600">Base Map</span>
+          <div className="absolute bottom-full right-0 mb-2 w-56 overflow-hidden rounded-2xl border border-sand-200 bg-white shadow-float">
+            <div className="px-3 pt-3 pb-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-400">Base map</span>
             </div>
-            <button
-              onClick={() => handleLayerChange('street')}
-              className={`w-full px-3 py-2 text-xs text-left hover:bg-gray-50 border-none cursor-pointer flex items-center gap-2 ${activeLayer === 'street' ? 'bg-primary/10 font-semibold' : ''}`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-              <span>Street</span>
-            </button>
-            <button
-              onClick={() => handleLayerChange('satellite')}
-              className={`w-full px-3 py-2 text-xs text-left hover:bg-gray-50 border-none cursor-pointer flex items-center gap-2 ${activeLayer === 'satellite' ? 'bg-primary/10 font-semibold' : ''}`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Satellite</span>
-            </button>
-            <button
-              onClick={() => handleLayerChange('terrain')}
-              className={`w-full px-3 py-2 text-xs text-left hover:bg-gray-50 border-none cursor-pointer flex items-center gap-2 ${activeLayer === 'terrain' ? 'bg-primary/10 font-semibold' : ''}`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l4 4-4 4m6-8v8m4-8l-4 4 4 4M5 17h14" />
-              </svg>
-              <span>Terrain</span>
-            </button>
-            
-            {/* Overlay Layers Section */}
-            <div className="px-3 py-1.5 bg-gray-50 border-t border-b border-gray-200 mt-1">
-              <span className="text-xs font-semibold text-gray-600">Overlays</span>
+            <div className="mx-2 mb-2 grid grid-cols-3 gap-1 rounded-xl bg-sand-100 p-1">
+              {baseLayers.map(layer => (
+                <button
+                  key={layer.id}
+                  type="button"
+                  onClick={() => handleLayerChange(layer.id)}
+                  aria-pressed={activeLayer === layer.id}
+                  className={`rounded-lg px-2 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                    activeLayer === layer.id ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500 hover:text-ink-900'
+                  }`}
+                >
+                  {layer.label}
+                </button>
+              ))}
             </div>
-            <button
-              onClick={onToggleForests}
-              className={`w-full px-3 py-2 text-xs text-left hover:bg-gray-50 border-none cursor-pointer flex items-center gap-2 ${showForests ? 'bg-green-50' : ''}`}
-            >
-              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${showForests ? 'bg-green-600 border-green-600' : 'border-gray-300'}`}>
-                {showForests && (
-                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </div>
-              <span className="flex items-center gap-1">
-                <span style={{ color: '#228B22' }}>🌲</span> Forests
-              </span>
-            </button>
-            <button
-              onClick={onToggleProtectedAreas}
-              className={`w-full px-3 py-2 text-xs text-left hover:bg-gray-50 border-none cursor-pointer flex items-center gap-2 ${showProtectedAreas ? 'bg-blue-50' : ''}`}
-            >
-              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${showProtectedAreas ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
-                {showProtectedAreas && (
-                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </div>
-              <span className="flex items-center gap-1">
-                <span style={{ color: '#4169E1' }}>🛡️</span> Protected Areas
-              </span>
-            </button>
-            <button
-              onClick={onToggleVegetation}
-              className={`w-full px-3 py-2 text-xs text-left hover:bg-gray-50 border-none cursor-pointer flex items-center gap-2 ${showVegetation ? 'bg-lime-50' : ''}`}
-            >
-              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${showVegetation ? 'bg-lime-600 border-lime-600' : 'border-gray-300'}`}>
-                {showVegetation && (
-                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </div>
-              <span className="flex items-center gap-1">
-                <span style={{ color: '#84cc16' }}>🌿</span> Vegetation (NASA)
-              </span>
-            </button>
-            
-            {/* Legend hint */}
-            <div className="px-3 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
-              <p>Zoom in (level 10+) to see forests &amp; reserves</p>
+
+            <div className="border-t border-sand-200 px-3 pt-2.5 pb-1">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-400">Overlays</span>
+            </div>
+            <div className="px-2 pb-2">
+              {overlays.map(overlay => (
+                <button
+                  key={overlay.label}
+                  type="button"
+                  onClick={overlay.onToggle}
+                  role="checkbox"
+                  aria-checked={overlay.active}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left text-xs text-ink-700 transition-colors hover:bg-sand-50 cursor-pointer"
+                >
+                  <span
+                    className={`inline-flex h-4 w-4 items-center justify-center rounded border transition-colors ${
+                      overlay.active ? 'border-accent bg-accent text-white' : 'border-sand-300 bg-white'
+                    }`}
+                  >
+                    {overlay.active && <CheckIcon size={11} strokeWidth={3} />}
+                  </span>
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: overlay.swatch }} aria-hidden="true" />
+                  <span className="flex-1">{overlay.label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="border-t border-sand-200 bg-sand-50 px-3 py-2 text-[11px] text-ink-400">
+              Zoom in (level 10+) to see forests &amp; reserves
             </div>
           </div>
         )}
@@ -1289,197 +1186,213 @@ const LocationMap: React.FC<LocationMapProps> = ({
     }
   };
 
-  return (
-    <div>
-      <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden"> 
-        <div className="relative p-3">
-          <div className="mb-2 flex items-start gap-2">
-            <div className="flex-1">
-              <LocationSearch onLocationSelect={handleSearchLocation} />
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowHistory(prev => !prev)}
-              className={`mt-0 px-3 py-2 rounded-lg border text-xs font-semibold transition-colors ${
-                showHistory ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
-              aria-pressed={showHistory}
-              aria-label="Recent locations"
-              title="Recent locations"
-            >
-              Recent
-            </button>
-            <button
-              type="button"
-              onClick={() => setDrawMode(prev => !prev)}
-              className={`mt-0 px-3 py-2 rounded-lg border text-xs font-semibold transition-colors md:hidden ${
-                drawMode ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
-              aria-pressed={drawMode}
-              aria-label="Draw region on map"
-              title="Draw region"
-            >
-              Draw
-            </button>
-          </div>
+  const regionBounds = selectedRegion
+    ? { north: selectedRegion[0], south: selectedRegion[2], east: selectedRegion[3], west: selectedRegion[1] }
+    : null;
 
-          {/* History Dropdown */}
-          {showHistory && (
-            <div className="absolute top-full left-3 right-3 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-[1000] max-h-64 overflow-y-auto">
-              <div className="p-2">
-                <div className="flex items-center justify-between mb-2 px-2">
-                  <h4 className="text-xs font-semibold text-gray-700">Recent Locations</h4>
+  return (
+    <div className="space-y-3">
+      {/* Toolbar */}
+      <div className="relative">
+        <div className="flex items-start gap-2">
+          <div className="flex-1 min-w-0">
+            <LocationSearch onLocationSelect={handleSearchLocation} />
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowHistory(prev => !prev)}
+            className={`inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-xs font-medium transition-colors ${
+              showHistory
+                ? 'border-accent bg-accent text-white'
+                : 'border-sand-300 bg-white text-ink-700 hover:border-ink-300 hover:bg-sand-50'
+            }`}
+            aria-pressed={showHistory}
+            aria-label="Recent locations"
+            title="Recent locations"
+          >
+            <ClockIcon size={15} />
+            <span className="hidden sm:inline">Recent</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setDrawMode(prev => !prev)}
+            className={`inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-xs font-medium transition-colors md:hidden ${
+              drawMode
+                ? 'border-accent bg-accent text-white'
+                : 'border-sand-300 bg-white text-ink-700 hover:border-ink-300 hover:bg-sand-50'
+            }`}
+            aria-pressed={drawMode}
+            aria-label="Draw region on map"
+            title="Draw region"
+          >
+            <RulerIcon size={15} />
+            Draw
+          </button>
+        </div>
+
+        {/* History Dropdown */}
+        {showHistory && (
+          <div className="absolute left-0 right-0 top-full z-[1000] mt-2 max-h-72 overflow-y-auto scroll-thin rounded-2xl border border-sand-200 bg-white shadow-float animate-fade-in">
+            <div className="flex items-center justify-between border-b border-sand-200 px-4 py-2.5">
+              <h4 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-400">Recent locations</h4>
+              <button
+                type="button"
+                onClick={() => setShowHistory(false)}
+                className="rounded-md p-1 text-ink-400 hover:bg-sand-100 hover:text-ink-700"
+                aria-label="Close recent locations"
+              >
+                <XIcon size={14} />
+              </button>
+            </div>
+            <div className="p-1.5">
+              {locationHistory.map((item) => (
+                <div
+                  key={item.id}
+                  className="group flex items-start justify-between gap-2 rounded-xl px-2.5 py-2 hover:bg-sand-50"
+                >
                   <button
-                    onClick={() => setShowHistory(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    type="button"
+                    onClick={() => handleHistoryItemClick(item)}
+                    className="min-w-0 flex-1 text-left"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-strong">
+                        {item.type === 'region' ? <RulerIcon size={13} /> : <MapPinIcon size={13} />}
+                      </span>
+                      <span className="truncate text-sm font-medium text-ink-900">
+                        {formatLocationName(item)}
+                      </span>
+                    </div>
+                    <div className="ml-8 mt-0.5 text-xs text-ink-400">
+                      {getRelativeTime(item.timestamp)}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleRemoveHistoryItem(item.id, e)}
+                    className="rounded-md p-1.5 text-ink-300 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-600 group-hover:opacity-100 focus:opacity-100"
+                    title="Remove from history"
+                    aria-label={`Remove ${formatLocationName(item)} from history`}
+                  >
+                    <XIcon size={14} />
                   </button>
                 </div>
-                {locationHistory.map((item) => (
-                  <div
-                    key={item.id}
-                    className="w-full text-left px-2 py-2 hover:bg-gray-50 rounded-lg flex items-start justify-between gap-2 group"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleHistoryItemClick(item)}
-                      className="flex-1 min-w-0 text-left"
-                    >
-                      <div className="flex items-center gap-2">
-                        {item.type === 'region' ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                          </svg>
-                        ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                        )}
-                        <span className="text-xs font-medium text-gray-700 truncate">
-                          {formatLocationName(item)}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
-                        {getRelativeTime(item.timestamp)}
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => handleRemoveHistoryItem(item.id, e)}
-                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-opacity p-1"
-                      title="Remove from history"
-                      aria-label={`Remove ${formatLocationName(item)} from history`}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                    </button>
-                  </div>
-                ))}
-                {locationHistory.length === 0 && (
-                  <p className="px-2 py-3 text-xs text-gray-500">No recent locations yet. Search or select a region to save one.</p>
-                )}
-                </div>
-              </div>
-            )}
-          <div 
-            ref={mapContainerRef}
-            className="relative"
-          >
-            <ClientOnlyMap>
-              <MapContainer
-                center={mapCenter}
-                zoom={mapZoom}
-                style={{ 
-                  height: '384px', 
-                  width: '100%',
-                  position: 'relative',
-                }}
-                ref={mapRef}
-                zoomControl={true}
-              >
-                <MapController center={mapCenter} zoom={mapZoom} />
-                <ScaleControl />
-                <LayerSwitcher 
-                  showForests={showForests}
-                  showProtectedAreas={showProtectedAreas}
-                  showVegetation={showVegetation}
-                  onToggleForests={() => setShowForests(!showForests)}
-                  onToggleProtectedAreas={() => setShowProtectedAreas(!showProtectedAreas)}
-                  onToggleVegetation={() => setShowVegetation(!showVegetation)}
-                />
-                
-                {/* Overlay layers */}
-                <OSMOverlays showForests={showForests} showProtectedAreas={showProtectedAreas} />
-                <VegetationLayer show={showVegetation} />
-                
-                {selectedLocation && markerIcon && (
-                  <Marker position={selectedLocation} icon={markerIcon} />
-                )}
-                {selectedRegion && (
-                  <Rectangle 
-                    bounds={[
-                      [selectedRegion[0], selectedRegion[1]],
-                      [selectedRegion[2], selectedRegion[3]]
-                    ]}
-                    color="green"
-                    fillColor="green"
-                    fillOpacity={0.2}
-                  />
-                )}
-                {selectedRegion && markerIcon && (
-                  <Marker
-                    position={[
-                      (selectedRegion[0] + selectedRegion[2]) / 2,
-                      (selectedRegion[1] + selectedRegion[3]) / 2,
-                    ]}
-                    icon={markerIcon}
-                  />
-                )}
-                
-                {/* Custom Region Selector - Always enabled for drag selection */}
-                <CustomRegionSelector 
-                  onBoundsChange={handleBoundsChange}
-                  drawMode={drawMode}
-                />
-                <MapClickHandler />
-              </MapContainer>
-            </ClientOnlyMap>
-            
-            {/* Map control buttons */}
-            <div className="absolute top-2 right-2 z-[1000] flex gap-2">
-              {/* Clear selection button */}
-              {selectedRegion && (
-                <button
-                  onClick={clearSelection}
-                  className="bg-white hover:bg-gray-100 text-gray-700 rounded-md p-2 shadow-md border border-gray-200 transition-colors"
-                  title="Clear selection"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+              ))}
+              {locationHistory.length === 0 && (
+                <p className="px-3 py-4 text-sm text-ink-500">No recent locations yet. Search or select a region to save one.</p>
               )}
             </div>
           </div>
-        </div>
+        )}
       </div>
-      
-      {/* Region information box - moved outside map container */}
-      {selectedRegion && (
-        <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-          <div className="text-sm text-gray-600 space-y-1">
-            <p><strong>Selected region:</strong> {formatLatitude(selectedRegion[2])} to {formatLatitude(selectedRegion[0])}, {formatLongitude(selectedRegion[1])} to {formatLongitude(selectedRegion[3])}</p>
-            <p><strong>Area size:</strong> {formatArea(calculateRegionArea({
-              north: selectedRegion[0],
-              south: selectedRegion[2], 
-              east: selectedRegion[3],
-              west: selectedRegion[1]
-            }))}</p>
+
+      {/* Map */}
+      <div
+        ref={mapContainerRef}
+        className="relative overflow-hidden rounded-2xl border border-sand-200 bg-sand-100 shadow-sm"
+      >
+        <ClientOnlyMap>
+          <MapContainer
+            center={mapCenter}
+            zoom={mapZoom}
+            style={{
+              height: '440px',
+              width: '100%',
+              position: 'relative',
+            }}
+            ref={mapRef}
+            zoomControl={true}
+          >
+            <MapController center={mapCenter} zoom={mapZoom} />
+            <ScaleControl />
+            <LayerSwitcher
+              showForests={showForests}
+              showProtectedAreas={showProtectedAreas}
+              showVegetation={showVegetation}
+              onToggleForests={() => setShowForests(!showForests)}
+              onToggleProtectedAreas={() => setShowProtectedAreas(!showProtectedAreas)}
+              onToggleVegetation={() => setShowVegetation(!showVegetation)}
+            />
+
+            {/* Overlay layers */}
+            <OSMOverlays showForests={showForests} showProtectedAreas={showProtectedAreas} />
+            <VegetationLayer show={showVegetation} />
+
+            {selectedLocation && markerIcon && (
+              <Marker position={selectedLocation} icon={markerIcon} />
+            )}
+            {selectedRegion && (
+              <Rectangle
+                bounds={[
+                  [selectedRegion[0], selectedRegion[1]],
+                  [selectedRegion[2], selectedRegion[3]]
+                ]}
+                pathOptions={{ color: '#2a7052', fillColor: '#2a7052', fillOpacity: 0.2, weight: 2 }}
+              />
+            )}
+            {selectedRegion && markerIcon && (
+              <Marker
+                position={[
+                  (selectedRegion[0] + selectedRegion[2]) / 2,
+                  (selectedRegion[1] + selectedRegion[3]) / 2,
+                ]}
+                icon={markerIcon}
+              />
+            )}
+
+            {/* Custom Region Selector - Always enabled for drag selection */}
+            <CustomRegionSelector
+              onBoundsChange={handleBoundsChange}
+              drawMode={drawMode}
+            />
+            <MapClickHandler />
+          </MapContainer>
+        </ClientOnlyMap>
+
+        {/* Draw-mode hint (mobile) */}
+        {drawMode && (
+          <div className="pointer-events-none absolute inset-x-0 top-3 z-[1000] flex justify-center md:hidden">
+            <span className="rounded-full bg-ink-900/85 px-3 py-1.5 text-xs font-medium text-white shadow-float backdrop-blur">
+              Tap the map to place a selection square
+            </span>
+          </div>
+        )}
+
+        {/* Clear selection button */}
+        {selectedRegion && (
+          <div className="absolute right-3 top-3 z-[1000]">
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-sand-200 bg-white/95 px-3 py-2 text-xs font-medium text-ink-700 shadow-card backdrop-blur transition-colors hover:bg-white hover:text-red-700"
+              title="Clear selection"
+            >
+              <XIcon size={14} />
+              Clear selection
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Region information */}
+      {regionBounds && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-sand-200 bg-sand-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-strong">
+              <RulerIcon size={16} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-400">Selected region</p>
+              <p className="truncate text-sm text-ink-700 tnum">
+                {formatLatitude(regionBounds.south)} – {formatLatitude(regionBounds.north)}
+                <span className="mx-1.5 text-ink-300">·</span>
+                {formatLongitude(regionBounds.west)} – {formatLongitude(regionBounds.east)}
+              </p>
+            </div>
+          </div>
+          <div className="sm:text-right">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-400">Area</p>
+            <p className="text-base font-semibold text-accent-strong tnum">{formatArea(calculateRegionArea(regionBounds))}</p>
           </div>
         </div>
       )}
