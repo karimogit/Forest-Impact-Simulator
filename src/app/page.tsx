@@ -417,8 +417,8 @@ export default function Home() {
             title={isPlanting ? 'Configure the project and review the impact' : 'Configure the removal and review the impact'}
             description={
               isPlanting
-                ? 'Adjust the time horizon and spacing, then explore environmental, economic, social, and land-use results.'
-                : 'Set the time horizon and forest age, then explore environmental, economic, social, and land-use impacts.'
+                ? 'Adjust the simulation years and spacing, then explore environmental, economic, social, and land-use results.'
+                : 'Set the simulation years and forest age, then explore environmental, economic, social, and land-use impacts.'
             }
           />
 
