@@ -10,15 +10,16 @@ export function middleware() {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   
   // Content Security Policy
-  // Note: Next.js requires 'unsafe-inline' for both scripts and styles for:
-  // - Hot Module Replacement (HMR) in development
-  // - Runtime hydration scripts
-  // - Dynamic chunk loading
-  // We cannot use 'strict-dynamic' as it causes browsers to ignore 'unsafe-inline'
-  // Other security measures (XSS protection, frame options, etc.) remain in place
+  // Note: Next.js requires 'unsafe-inline' for scripts/styles (hydration, chunks).
+  // Development also needs 'unsafe-eval' for React Refresh / webpack HMR — without
+  // it, client components never hydrate and the UI stays stuck on loading shells.
+  const isDev = process.env.NODE_ENV !== 'production';
+  const scriptSrc = isDev
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+    : "script-src 'self' 'unsafe-inline'";
   response.headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://nominatim.openstreetmap.org https://rest.isric.org https://api.open-meteo.com https://archive-api.open-meteo.com https://overpass-api.de; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'self'; upgrade-insecure-requests; block-all-mixed-content;"
+    `default-src 'self'; ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://nominatim.openstreetmap.org https://rest.isric.org https://api.open-meteo.com https://archive-api.open-meteo.com https://overpass-api.de; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'self'; upgrade-insecure-requests; block-all-mixed-content;`
   )
 
   return response
