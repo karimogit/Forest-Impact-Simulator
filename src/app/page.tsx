@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { TreeType, getTreeTypeById } from '@/types/treeTypes';
 import { ExportData } from '@/utils/exportUtils';
 import { getShareParameterFromUrl, decodeUrlToState } from '@/utils/shareableLink';
@@ -214,30 +214,45 @@ export default function Home() {
     setPlantingData(null);
   };
 
-  const handleImpactDataReady = (data: Partial<ExportData>) => {
+  const handleImpactDataReady = useCallback((data: Partial<ExportData>) => {
     try {
       setExportData(prev => prev ? { ...prev, ...data } : data as ExportData);
     } catch (error) {
       logger.warn('Error updating impact data:', error);
     }
-  };
+  }, []);
 
-  const handlePlantingDataReady = (data: Partial<ExportData>) => {
+  const handlePlantingDataReady = useCallback((data: Partial<ExportData>) => {
     try {
       setExportData(prev => prev ? { ...prev, ...data } : data as ExportData);
       // Store planting data for ForestImpactCalculator
       if (data.plantingData) {
-        setPlantingData(data.plantingData);
+        const next = data.plantingData;
+        setPlantingData(prev => {
+          if (
+            prev &&
+            prev.area === next.area &&
+            prev.totalTrees === next.totalTrees &&
+            prev.spacing === next.spacing &&
+            prev.density === next.density
+          ) {
+            return prev;
+          }
+          return next;
+        });
       }
     } catch (error) {
       logger.warn('Error updating planting data:', error);
     }
-  };
+  }, []);
 
-  const handleSoilClimateDataReady = (soil: { carbon: number | null; ph: number | null } | null, climate: { temperature: number | null; precipitation: number | null; historicalData?: { temperatures: number[]; precipitations: number[] } } | null) => {
+  const handleSoilClimateDataReady = useCallback((
+    soil: { carbon: number | null; ph: number | null } | null,
+    climate: { temperature: number | null; precipitation: number | null; historicalData?: { temperatures: number[]; precipitations: number[] } } | null
+  ) => {
     setSoilData(soil);
     setClimateData(climate);
-  };
+  }, []);
 
   const handleClearSelection = () => {
     setSelectedLatitude(null);
@@ -279,7 +294,7 @@ export default function Home() {
       <div className="mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-6 md:pt-14 lg:px-8">
         {/* Hero */}
         <section className="mx-auto max-w-3xl text-center" aria-labelledby="main-heading">
-          <Eyebrow>Live soil &amp; climate data · 80+ species · 1–100 year horizon</Eyebrow>
+          <Eyebrow>Live soil &amp; climate data · 80+ species · 1–100 years</Eyebrow>
           <h1 id="main-heading" className="font-display mt-3 text-4xl leading-[1.05] text-ink-900 sm:text-5xl md:text-6xl">
             Simulate the impact of{' '}
             <span className="text-accent-strong">{isPlanting ? 'planting' : 'clearing'}</span> a forest

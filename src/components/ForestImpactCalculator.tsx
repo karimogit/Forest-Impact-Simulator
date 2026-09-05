@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { TreeType } from '@/types/treeTypes';
 import { validateLatitude, validateLongitude, apiRateLimiter } from '@/utils/security';
 import { ExportData } from '@/utils/exportUtils';
@@ -565,6 +565,14 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
     }));
   };
 
+  // Keep latest callback in a ref so location fetches are not re-triggered when
+  // the parent re-renders (e.g. simulation years slider), which previously hid
+  // results behind a loading state and made the calculator look broken.
+  const onSoilClimateDataReadyRef = useRef(onSoilClimateDataReady);
+  useEffect(() => {
+    onSoilClimateDataReadyRef.current = onSoilClimateDataReady;
+  }, [onSoilClimateDataReady]);
+
   // Fetch soil and climate data for the selected location with caching
   useEffect(() => {
     let cancelled = false;
@@ -588,9 +596,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
         setError(null);
         
         // Notify parent component about cached soil and climate data
-        if (onSoilClimateDataReady) {
-          onSoilClimateDataReady(cachedData.soil, cachedData.climate);
-        }
+        onSoilClimateDataReadyRef.current?.(cachedData.soil, cachedData.climate);
         return;
       }
       
@@ -632,9 +638,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
           setCachedData(cacheKey, { soil: soilData, climate: climateData }, 60 * 60 * 1000);
           
           // Notify parent component about soil and climate data
-          if (onSoilClimateDataReady) {
-            onSoilClimateDataReady(soilData, climateData);
-          }
+          onSoilClimateDataReadyRef.current?.(soilData, climateData);
           
           logger.log('Environmental data cached in localStorage for:', cacheKey);
         })
@@ -651,15 +655,13 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
       setClimate(null);
       
       // Notify parent component that no data is available
-      if (onSoilClimateDataReady) {
-        onSoilClimateDataReady(null, null);
-      }
+      onSoilClimateDataReadyRef.current?.(null, null);
     }
 
     return () => {
       cancelled = true;
     };
-  }, [latitude, longitude, onSoilClimateDataReady]);
+  }, [latitude, longitude]);
 
   const calculateImpact = useCallback((
     lat: number,
@@ -907,14 +909,18 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
     };
   }, [plantingData, selectedRegion, simulationMode]);
   
-  // Format total carbon based on calculation mode
+  // Format total carbon based on calculation mode — keep enough precision that
+  // year-by-year slider changes stay visible even for large projects.
   const formatTotalCarbon = (carbon: number) => {
     if (calculationMode === 'perTree') {
       return carbon.toFixed(1);
     } else {
-      // For entire area, show in metric tons for better readability
       const tons = carbon / 1000;
-      return tons > 1000 ? `${(tons / 1000).toFixed(1)}k` : tons.toFixed(1);
+      if (tons > 10000) return `${(tons / 1000).toFixed(2)}k`;
+      if (tons > 1000) return `${(tons / 1000).toFixed(2)}k`;
+      if (tons >= 100) return tons.toFixed(0);
+      if (tons >= 10) return tons.toFixed(1);
+      return tons.toFixed(2);
     }
   };
   
@@ -1078,7 +1084,7 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
           <div>
             <h3 className="font-display text-lg text-ink-900">Impact analysis</h3>
             <p className="mt-0.5 text-xs text-ink-500">
-              Explore environmental, economic, social, and land-use outcomes for your scenario.
+              {years}-year projection across environmental, economic, social, and land-use outcomes.
             </p>
           </div>
           <div className="overflow-x-auto -mx-1 px-1" role="tablist" aria-label="Impact analysis categories">
