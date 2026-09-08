@@ -149,14 +149,15 @@ export const calculatePlantationCarbonSequestration = (
   return plantingConfig.totalTrees * carbonPerTree;
 };
 
-// Format area for display
+// Format area for display — keep hectares visible alongside km² for large regions
 export const formatArea = (areaHectares: number): string => {
   if (areaHectares < 1) {
     return `${(areaHectares * 10000).toFixed(0)} m²`;
   } else if (areaHectares < 100) {
     return `${areaHectares.toFixed(2)} hectares`;
   } else {
-    return `${(areaHectares / 100).toFixed(2)} km²`;
+    const areaKm2 = areaHectares / 100;
+    return `${areaHectares.toFixed(2)} hectares (${areaKm2.toFixed(2)} km²)`;
   }
 };
 
