@@ -154,10 +154,12 @@ export const formatArea = (areaHectares: number): string => {
   if (areaHectares < 1) {
     return `${(areaHectares * 10000).toFixed(0)} m²`;
   } else if (areaHectares < 100) {
-    return `${areaHectares.toFixed(2)} hectares`;
+    // One decimal is enough for mid-size plots
+    return `${areaHectares.toFixed(1)} hectares`;
   } else {
     const areaKm2 = areaHectares / 100;
-    return `${areaHectares.toFixed(2)} hectares (${areaKm2.toFixed(2)} km²)`;
+    // Large totals: whole hectares, one decimal km²
+    return `${areaHectares.toFixed(0)} hectares (${areaKm2.toFixed(1)} km²)`;
   }
 };
 

@@ -5,7 +5,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ExportData } from './exportUtils';
-import { calculateRegionArea } from './treePlanting';
+import { calculateRegionArea, formatArea } from './treePlanting';
 import { formatLatitude, formatLongitude, hasCoordinates } from './geo';
 import { TreeType } from '@/types/treeTypes';
 
@@ -94,10 +94,9 @@ export async function generatePDFReport(data: ExportData): Promise<void> {
     ]);
     
     const areaHa = calculateRegionArea(region);
-    const areaKm2 = areaHa / 100;
     metadataInfo.push([
       'Region Area',
-      `${areaHa.toFixed(2)} hectares (${areaKm2.toFixed(2)} km²)`
+      formatArea(areaHa)
     ]);
   } else if (hasCoordinates(data.metadata.location?.latitude, data.metadata.location?.longitude)) {
     const lat = data.metadata.location.latitude as number;
@@ -284,7 +283,7 @@ export async function generatePDFReport(data: ExportData): Promise<void> {
     yPos += 8;
     
     const plantingInfo = [
-      ['Total Area', `${data.plantingData.area?.toFixed(2) || 'N/A'} hectares`],
+      ['Total Area', data.plantingData.area != null ? formatArea(data.plantingData.area) : 'N/A'],
       ['Total Trees', (data.plantingData.totalTrees || 0).toLocaleString()],
       ['Tree Spacing', `${data.plantingData.spacing?.toFixed(1) || 'N/A'} meters`],
       ['Planting Density', `${typeof data.plantingData.density === 'number' ? data.plantingData.density.toFixed(0) : 'N/A'} trees/hectare`],
