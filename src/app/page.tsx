@@ -9,7 +9,7 @@ import { equalSplitPercentages, hasCoordinates } from '@/utils/geo';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import FaqSection from '@/components/FaqSection';
 import { Panel, StepHeader, Eyebrow, Callout, LoadingBlock, EmptyState } from '@/components/ui/primitives';
-import { SproutIcon, AxeIcon, RefreshIcon, CheckIcon, MapPinIcon, TreeIcon, ChartIcon } from '@/components/ui/Icons';
+import { SproutIcon, AxeIcon, RefreshIcon, CheckIcon, MapPinIcon, TreeIcon, ChartIcon, DownloadIcon } from '@/components/ui/Icons';
 
 // Lazy load components for better performance
 const LocationMap = lazy(() => import('@/components/LocationMap'));
@@ -328,7 +328,9 @@ export default function Home() {
             <span className="hidden h-px w-6 bg-sand-300 sm:block" aria-hidden="true" />
             <ProgressStep index={2} label="Species" status={hasTrees ? 'done' : hasLocation ? 'active' : 'todo'} icon={<TreeIcon size={14} />} />
             <span className="hidden h-px w-6 bg-sand-300 sm:block" aria-hidden="true" />
-            <ProgressStep index={3} label="Results" status={isReady ? 'active' : 'todo'} icon={<ChartIcon size={14} />} />
+            <ProgressStep index={3} label="Results" status={isReady ? 'done' : hasTrees ? 'active' : 'todo'} icon={<ChartIcon size={14} />} />
+            <span className="hidden h-px w-6 bg-sand-300 sm:block" aria-hidden="true" />
+            <ProgressStep index={4} label="Export" status={isReady ? 'active' : 'todo'} icon={<DownloadIcon size={14} />} />
           </ol>
         </nav>
 

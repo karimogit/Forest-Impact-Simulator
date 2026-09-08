@@ -140,6 +140,7 @@ export function SegmentedControl<T extends string>({
   size = 'md',
   ariaLabel,
   className = '',
+  fullWidth = false,
 }: {
   value: T;
   onChange: (value: T) => void;
@@ -147,13 +148,15 @@ export function SegmentedControl<T extends string>({
   size?: 'sm' | 'md' | 'lg';
   ariaLabel: string;
   className?: string;
+  /** Stretch options evenly across the available width */
+  fullWidth?: boolean;
 }) {
   const pad = size === 'lg' ? 'h-11 px-5 text-sm' : size === 'sm' ? 'h-8 px-3 text-xs' : 'h-9 px-4 text-sm';
   return (
     <div
       role="group"
       aria-label={ariaLabel}
-      className={`inline-flex items-center rounded-2xl border border-sand-200 bg-sand-100 p-1 ${className}`}
+      className={`${fullWidth ? 'flex w-full' : 'inline-flex'} items-center rounded-2xl border border-sand-200 bg-sand-100 p-1 ${className}`}
     >
       {options.map(opt => {
         const active = opt.value === value;
@@ -163,14 +166,14 @@ export function SegmentedControl<T extends string>({
             type="button"
             aria-pressed={active}
             onClick={() => onChange(opt.value)}
-            className={`inline-flex items-center gap-2 rounded-xl font-medium transition-all ${pad} ${
+            className={`${fullWidth ? 'flex-1 justify-center' : ''} inline-flex items-center gap-1.5 sm:gap-2 rounded-xl font-medium transition-all ${pad} ${
               active
                 ? 'bg-white text-ink-900 shadow-sm ring-1 ring-sand-200'
                 : 'text-ink-500 hover:text-ink-900'
             }`}
           >
-            {opt.icon && <span className={active ? 'text-accent' : 'text-ink-400'}>{opt.icon}</span>}
-            {opt.label}
+            {opt.icon && <span className={`shrink-0 ${active ? 'text-accent' : 'text-ink-400'}`}>{opt.icon}</span>}
+            <span className={fullWidth ? 'truncate' : undefined}>{opt.label}</span>
           </button>
         );
       })}

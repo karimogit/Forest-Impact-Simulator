@@ -12,7 +12,7 @@ import {
 } from '@/utils/exportUtils';
 import { generatePDFReport } from '@/utils/pdfExport';
 import { generateShareableUrl, copyToClipboard, ShareableState } from '@/utils/shareableLink';
-import { Panel, Callout, EmptyState } from './ui/primitives';
+import { Panel, Callout, EmptyState, StepHeader } from './ui/primitives';
 import {
   DownloadIcon,
   LinkIcon,
@@ -120,11 +120,18 @@ const ExportResults: React.FC<ExportResultsProps> = ({
 
   if (disabled) {
     return (
-      <Panel className="p-5 sm:p-6">
+      <Panel className="p-5 sm:p-6" aria-labelledby="step-export">
+        <StepHeader
+          step={4}
+          id="step-export"
+          title="Export and share"
+          description="Select a location, choose species, and review the impact results to unlock PDF, data exports, and shareable links."
+        />
         <EmptyState
+          className="mt-5"
           icon={<DownloadIcon size={20} />}
           title="Complete your analysis to enable exports"
-          description="Select a location, choose species, and review the impact results to unlock PDF, data exports, and shareable links."
+          description="Exports unlock once location, species, and impact results are ready."
         />
       </Panel>
     );
@@ -133,15 +140,15 @@ const ExportResults: React.FC<ExportResultsProps> = ({
   const busy = isExporting || isSharing;
 
   return (
-    <Panel className="p-5 sm:p-6">
-      <div className="mb-5">
-        <h3 className="font-display text-lg text-ink-900">Export and share</h3>
-        <p className="mt-0.5 text-sm text-ink-500">
-          Download your results or copy a link that restores this exact scenario.
-        </p>
-      </div>
+    <Panel className="p-5 sm:p-6" aria-labelledby="step-export">
+      <StepHeader
+        step={4}
+        id="step-export"
+        title="Export and share"
+        description="Download your results or copy a link that restores this exact scenario."
+      />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {exportOptions.map(({ format, label, hint, icon }) => (
           <button
             key={format}
@@ -157,22 +164,26 @@ const ExportResults: React.FC<ExportResultsProps> = ({
             <span className="mt-0.5 hidden text-[11px] text-ink-400 sm:block">{hint}</span>
           </button>
         ))}
+      </div>
 
-        {shareableState && (
+      {shareableState && (
+        <div className="mt-3">
           <button
             type="button"
             onClick={handleShare}
             disabled={busy}
-            className="group flex flex-col items-center rounded-2xl border border-sand-200 bg-white p-4 text-center transition-all hover:border-accent hover:bg-accent-soft/40 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+            className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-sand-200 bg-white px-4 py-3 text-center transition-all hover:border-accent hover:bg-accent-soft/40 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 sm:justify-start"
           >
-            <span className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-sand-100 text-ink-500 transition-colors group-hover:bg-white group-hover:text-accent">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-sand-100 text-ink-500 transition-colors group-hover:bg-white group-hover:text-accent">
               <LinkIcon size={20} />
             </span>
-            <span className="text-xs font-semibold text-ink-900">Share link</span>
-            <span className="mt-0.5 hidden text-[11px] text-ink-400 sm:block">Copy URL</span>
+            <span className="text-left">
+              <span className="block text-xs font-semibold text-ink-900">Share link</span>
+              <span className="hidden text-[11px] text-ink-400 sm:block">Copy a URL that restores this exact scenario</span>
+            </span>
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {busy && (
         <div className="mt-4 flex items-center justify-center gap-2 text-sm text-ink-500">
