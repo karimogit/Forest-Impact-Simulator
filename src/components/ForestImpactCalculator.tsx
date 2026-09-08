@@ -1080,21 +1080,21 @@ const ForestImpactCalculator: React.FC<ForestImpactCalculatorProps> = ({ latitud
       )}
 
       <div className="rounded-2xl border border-sand-200 bg-white p-4 sm:p-5">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-4">
           <div>
             <h3 className="font-display text-lg text-ink-900">Impact analysis</h3>
             <p className="mt-0.5 text-xs text-ink-500">
               {years}-year projection across environmental, economic, social, and land-use outcomes.
             </p>
           </div>
-          <div className="overflow-x-auto -mx-1 px-1" role="tablist" aria-label="Impact analysis categories">
+          <div className="mt-3" role="tablist" aria-label="Impact analysis categories">
             <SegmentedControl
               ariaLabel="Impact analysis categories"
               value={activeEnvTab}
               onChange={setActiveEnvTab}
               options={impactTabs}
               size="sm"
-              className="min-w-max"
+              fullWidth
             />
           </div>
         </div>
